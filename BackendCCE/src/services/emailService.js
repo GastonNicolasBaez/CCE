@@ -296,6 +296,135 @@ class EmailService {
       throw error;
     }
   }
+
+  async enviarInformacionPago(memberData) {
+    try {
+      if (!this.transporter) {
+        throw new Error('Email service not configured');
+      }
+
+      const tipoMembership = memberData.membershipType === 'socio' ? 'Socio' : 'Jugador';
+      const actividad = memberData.activity ? 
+        (memberData.activity === 'basketball' ? 'Básquet' :
+         memberData.activity === 'volleyball' ? 'Vóley' :
+         memberData.activity === 'karate' ? 'Karate' : 'Gimnasio') : '';
+
+      const montoBase = {
+        'socio': 8000,
+        'basketball': 15000,
+        'volleyball': 12000,
+        'karate': 18000,
+        'gym': 10000
+      };
+
+      const monto = memberData.membershipType === 'socio' ? 
+        montoBase['socio'] : 
+        montoBase[memberData.activity] || 12000;
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #002C6F, #FFA500); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .welcome { background: #e3f2fd; border: 1px solid #bbdefb; color: #1976d2; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .payment-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FFA500; }
+            .method { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #dee2e6; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏀 Club Comandante Espora</h1>
+              <p>¡Bienvenido a nuestra comunidad deportiva!</p>
+            </div>
+            <div class="content">
+              <h2>¡Hola ${memberData.name}!</h2>
+              
+              <div class="welcome">
+                <h3>✅ Tu inscripción ha sido registrada exitosamente</h3>
+                <p>Ya formas parte del Club Comandante Espora como <strong>${tipoMembership}</strong>${actividad ? ` en ${actividad}` : ''}.</p>
+              </div>
+              
+              <div class="payment-info">
+                <h3>💳 Información para completar tu pago</h3>
+                <p><strong>Monto a pagar:</strong> $${monto.toLocaleString('es-AR')}</p>
+                <p><strong>Concepto:</strong> Cuota mensual - ${tipoMembership}${actividad ? ` (${actividad})` : ''}</p>
+              </div>
+
+              <h3>💰 Métodos de Pago Disponibles:</h3>
+              
+              <div class="method">
+                <h4>🏛️ Transferencia Bancaria</h4>
+                <p><strong>Banco:</strong> Banco Nación</p>
+                <p><strong>CBU:</strong> 0110593930000932817295</p>
+                <p><strong>Alias:</strong> CLUB.ESPORA.CCE</p>
+                <p><strong>Titular:</strong> Club Comandante Espora</p>
+                <p><strong>CUIT:</strong> 30-12345678-9</p>
+              </div>
+
+              <div class="method">
+                <h4>📱 MercadoPago</h4>
+                <p>Escaneá el código QR o ingresá a:</p>
+                <p><strong>Alias:</strong> club.comandante.espora</p>
+                <p><strong>Link directo:</strong> <a href="https://mercadopago.com.ar/checkout/v1/redirect?pref_id=ejemplo">Pagar con MercadoPago</a></p>
+              </div>
+
+              <div class="method">
+                <h4>💵 Efectivo</h4>
+                <p><strong>Sede del Club:</strong></p>
+                <p>📍 Av. Comandante Espora 1234, Villa Ejemplo</p>
+                <p>🕐 <strong>Horarios de atención:</strong></p>
+                <p>Lunes a Viernes: 9:00 - 13:00 y 17:00 - 21:00</p>
+                <p>Sábados: 9:00 - 13:00</p>
+              </div>
+
+              <div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>📝 Importante:</strong> Una vez realizado el pago, envía el comprobante por WhatsApp al +54 11 1234-5678 o por email para activar tu membresía inmediatamente.</p>
+              </div>
+              
+              <hr style="margin: 30px 0; border: 1px solid #ddd;">
+              
+              <h3>📞 ¿Necesitas ayuda?</h3>
+              <p>Estamos aquí para ayudarte:</p>
+              <p>📧 <strong>Email:</strong> info@clubcomandanteespora.com</p>
+              <p>📱 <strong>WhatsApp:</strong> +54 11 1234-5678</p>
+              <p>🏠 <strong>Sede:</strong> Av. Comandante Espora 1234</p>
+            </div>
+            <div class="footer">
+              <p>Club Comandante Espora - Sistema de Gestión</p>
+              <p>¡Gracias por elegirnos para tu actividad deportiva!</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: config.email.from,
+        to: memberData.email,
+        subject: `🏀 Información de Pago - ${tipoMembership} - Club Comandante Espora`,
+        html: htmlContent
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: info.messageId,
+        recipient: memberData.email,
+        type: 'payment_info'
+      };
+    } catch (error) {
+      console.error('Error sending payment info email:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EmailService();

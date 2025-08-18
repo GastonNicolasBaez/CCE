@@ -8,7 +8,16 @@ module.exports = {
   },
   
   database: {
-    path: process.env.DB_PATH || './database.sqlite'
+    // SQLite (development)
+    path: process.env.DB_PATH || './database.sqlite',
+    
+    // PostgreSQL (production)
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT) || 5432,
+    name: process.env.DB_NAME || 'cce_db',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+    usePostgres: process.env.USE_POSTGRES === 'true' || process.env.NODE_ENV === 'production'
   },
   
   jwt: {

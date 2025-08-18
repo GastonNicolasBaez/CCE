@@ -37,4 +37,9 @@ router.delete('/:id',
   sociosController.eliminarSocio
 );
 
+// POST /api/socios/send-payment-email - Send payment email
+router.post('/send-payment-email', 
+  sociosController.enviarEmailPago
+);
+
 module.exports = router;

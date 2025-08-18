@@ -111,6 +111,13 @@ export const api = {
       const response = await fetchApi(`/api/socios?actividad=${actividad}`)
       return response.success && Array.isArray(response.data) ? response.data : []
     },
+
+    sendPaymentEmail: async (memberData: any): Promise<any> => {
+      return await fetchApi('/api/socios/send-payment-email', {
+        method: 'POST',
+        body: JSON.stringify({ memberData }),
+      })
+    },
   },
 
   // Pagos endpoints

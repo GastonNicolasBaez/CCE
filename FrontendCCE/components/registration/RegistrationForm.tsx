@@ -17,14 +17,23 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '../../lib/store'
 import { useCreateMember } from '../../lib/hooks'
+import { api } from '../../lib/api'
 import toast from 'react-hot-toast'
 
-const registrationSchema = z.object({
+// Schema base para información personal
+const baseSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos'),
   address: z.string().min(10, 'La dirección debe tener al menos 10 caracteres'),
   birthDate: z.string().min(1, 'La fecha de nacimiento es requerida'),
+  membershipType: z.enum(['socio', 'jugador']),
+  trialMonth: z.boolean().optional(),
+  terms: z.boolean().refine(val => val === true, 'Debes aceptar los términos y condiciones')
+})
+
+// Schema para jugadores (incluye actividad, contacto emergencia y datos médicos)
+const jugadorSchema = baseSchema.extend({
   activity: z.enum(['basketball', 'volleyball', 'karate', 'gym']),
   emergencyContact: z.object({
     name: z.string().min(2, 'El nombre del contacto de emergencia es requerido'),
@@ -36,16 +45,25 @@ const registrationSchema = z.object({
     conditions: z.string().optional(),
     allergies: z.string().optional(),
     medications: z.string().optional()
-  }),
-  terms: z.boolean().refine(val => val === true, 'Debes aceptar los términos y condiciones')
+  })
 })
 
-type RegistrationFormData = z.infer<typeof registrationSchema>
+// Schema dinámico basado en el tipo de membresía
+const getRegistrationSchema = (membershipType: string) => {
+  return membershipType === 'jugador' ? jugadorSchema : baseSchema
+}
+
+type BaseFormData = z.infer<typeof baseSchema>
+type JugadorFormData = z.infer<typeof jugadorSchema>
+type RegistrationFormData = BaseFormData | JugadorFormData
 
 export default function RegistrationForm() {
   const { createMember } = useCreateMember()
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [membershipType, setMembershipType] = useState<'socio' | 'jugador' | ''>('')
+  const [trialMonth, setTrialMonth] = useState(false)
   const [medicalInfo, setMedicalInfo] = useState({
     hasConditions: false,
     conditions: '',
@@ -58,10 +76,13 @@ export default function RegistrationForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-    setValue
-  } = useForm<RegistrationFormData>({
-    resolver: zodResolver(registrationSchema),
+    setValue,
+    reset
+  } = useForm<any>({
+    resolver: zodResolver(membershipType ? getRegistrationSchema(membershipType) : baseSchema),
     defaultValues: {
+      membershipType: '',
+      trialMonth: false,
       medicalInfo: {
         hasConditions: false,
         conditions: '',
@@ -73,23 +94,44 @@ export default function RegistrationForm() {
 
   const watchedValues = watch()
 
-  const onSubmit = async (data: RegistrationFormData) => {
+  const sendPaymentEmail = async (memberData: any) => {
+    try {
+      const response = await api.socios.sendPaymentEmail(memberData)
+      if (response.success) {
+        setEmailSent(true)
+        toast.success('¡Email de pago enviado!')
+      } else {
+        toast.error('Error al enviar el email')
+      }
+    } catch (error) {
+      console.error('Error enviando email:', error)
+      toast.error('Error al enviar el email')
+    }
+  }
+
+  const onSubmit = async (data: any) => {
     try {
       const newMember = {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        activity: data.activity,
+        activity: data.activity || undefined,
         status: 'active' as const,
-        paymentStatus: 'pending' as const,
+        paymentStatus: trialMonth ? 'paid' : 'pending' as const,
         registrationDate: new Date().toISOString().split('T')[0],
-        membershipType: 'jugador' as const,
+        membershipType: membershipType as 'socio' | 'jugador',
+        trialMonth
       }
 
       const success = await createMember(newMember)
       if (success) {
-        setIsSubmitted(true)
-        toast.success('¡Inscripción exitosa!')
+        if (trialMonth) {
+          setIsSubmitted(true)
+          toast.success('¡Inscripción exitosa! Mes de prueba activado.')
+        } else {
+          // Enviar email con información de pago
+          await sendPaymentEmail(newMember)
+        }
       } else {
         toast.error('Error al procesar la inscripción')
       }
@@ -98,10 +140,29 @@ export default function RegistrationForm() {
     }
   }
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3))
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1))
+  const getMaxSteps = () => {
+    if (membershipType === 'socio') return 3 // Personal + Email + Confirmación
+    if (membershipType === 'jugador') return 4 // Personal + Actividad/Emergencia + Médico + Email
+    return 3
+  }
 
-  if (isSubmitted) {
+  const nextStep = () => {
+    if (membershipType === 'socio' && currentStep === 1) {
+      setCurrentStep(3) // Skip step 2 for socios
+    } else {
+      setCurrentStep(prev => Math.min(prev + 1, getMaxSteps()))
+    }
+  }
+  
+  const prevStep = () => {
+    if (membershipType === 'socio' && currentStep === 3) {
+      setCurrentStep(1) // Go back to step 1 for socios
+    } else {
+      setCurrentStep(prev => Math.max(prev - 1, 1))
+    }
+  }
+
+  if (isSubmitted || emailSent) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -112,13 +173,23 @@ export default function RegistrationForm() {
           <CheckCircle size={32} className="text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          ¡Inscripción Exitosa!
+          {isSubmitted ? '¡Inscripción Completada!' : '¡Email Enviado!'}
         </h2>
         <p className="text-gray-600 mb-6">
-          Gracias por unirte al Club Comandante Espora. Te hemos enviado un email de confirmación.
+          {isSubmitted 
+            ? 'Tu inscripción ha sido procesada exitosamente. ¡Bienvenido al Club Comandante Espora!'
+            : 'Te hemos enviado un email con la información de pago. Revisa tu bandeja de entrada.'
+          }
         </p>
         <button
-          onClick={() => setIsSubmitted(false)}
+          onClick={() => {
+            setIsSubmitted(false)
+            setEmailSent(false)
+            setCurrentStep(1)
+            setMembershipType('')
+            setTrialMonth(false)
+            reset()
+          }}
           className="primary-button"
         >
           Nueva Inscripción
@@ -145,7 +216,7 @@ export default function RegistrationForm() {
 
       {/* Progress Steps */}
       <div className="flex items-center justify-center mb-8">
-        {[1, 2, 3].map((step) => (
+        {Array.from({ length: getMaxSteps() }, (_, i) => i + 1).map((step) => (
           <div key={step} className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               step <= currentStep 
@@ -154,7 +225,7 @@ export default function RegistrationForm() {
             }`}>
               {step < currentStep ? '✓' : step}
             </div>
-            {step < 3 && (
+            {step < getMaxSteps() && (
               <div className={`w-16 h-1 mx-2 ${
                 step < currentStep ? 'bg-primary' : 'bg-gray-200'
               }`} />
@@ -163,8 +234,21 @@ export default function RegistrationForm() {
         ))}
       </div>
 
+      {/* Step Labels */}
+      <div className="flex justify-center mb-8">
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            {currentStep === 1 && 'Información Personal'}
+            {currentStep === 2 && membershipType === 'jugador' && 'Actividad y Contacto de Emergencia'}
+            {currentStep === 3 && membershipType === 'jugador' && 'Información Médica'}
+            {currentStep === 3 && membershipType === 'socio' && 'Confirmación y Pago'}
+            {currentStep === 4 && 'Confirmación y Pago'}
+          </p>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Step 1: Personal Information */}
+        {/* Step 1: Personal Information and Membership Type */}
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
             <motion.div
@@ -178,6 +262,78 @@ export default function RegistrationForm() {
                 <User size={24} className="text-primary" />
                 Información Personal
               </h3>
+              
+              {/* Membership Type Selection */}
+              <div className="mb-8">
+                <label className="form-label">Tipo de Membresía *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                  <div 
+                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                      membershipType === 'socio' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setMembershipType('socio')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="membershipType"
+                        value="socio"
+                        checked={membershipType === 'socio'}
+                        onChange={(e) => setMembershipType('socio')}
+                        className="text-blue-600"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Socio</h4>
+                        <p className="text-sm text-gray-600">Solo acceso a instalaciones del club</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                      membershipType === 'jugador' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setMembershipType('jugador')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="membershipType"
+                        value="jugador"
+                        checked={membershipType === 'jugador'}
+                        onChange={(e) => setMembershipType('jugador')}
+                        className="text-blue-600"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Jugador</h4>
+                        <p className="text-sm text-gray-600">Participación en actividades deportivas</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trial Month Option */}
+              <div className="mb-6 p-4 border border-yellow-200 rounded-xl bg-yellow-50">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={trialMonth}
+                    onChange={(e) => setTrialMonth(e.target.checked)}
+                    className="text-yellow-600 rounded"
+                  />
+                  <div>
+                    <span className="font-semibold text-yellow-800">Mes de Prueba</span>
+                    <p className="text-sm text-yellow-700">
+                      Inscríbete sin pago inicial. Tendrás 30 días para decidir si continuar.
+                    </p>
+                  </div>
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -320,9 +476,9 @@ export default function RegistrationForm() {
           )}
         </AnimatePresence>
 
-        {/* Step 3: Medical Information and Terms */}
+        {/* Step 3: Medical Information and Terms (Solo Jugadores) */}
         <AnimatePresence mode="wait">
-          {currentStep === 3 && (
+          {currentStep === 3 && membershipType === 'jugador' && (
             <motion.div
               key="step3"
               initial={{ opacity: 0, x: 20 }}
@@ -417,6 +573,87 @@ export default function RegistrationForm() {
           )}
         </AnimatePresence>
 
+        {/* Step 3: Confirmación y Pago (Solo Socios) / Step 4: Confirmación y Pago (Jugadores) */}
+        <AnimatePresence mode="wait">
+          {((currentStep === 3 && membershipType === 'socio') || 
+            (currentStep === 4 && membershipType === 'jugador')) && (
+            <motion.div
+              key="confirmation"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="neumorphism-card p-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                <Mail size={24} className="text-blue-600" />
+                Confirmación y Información de Pago
+              </h3>
+
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">Resumen de tu inscripción</h4>
+                  <div className="text-sm text-blue-700 space-y-1">
+                    <p><strong>Tipo:</strong> {membershipType === 'socio' ? 'Socio' : 'Jugador'}</p>
+                    {membershipType === 'jugador' && watchedValues.activity && (
+                      <p><strong>Actividad:</strong> {
+                        watchedValues.activity === 'basketball' ? 'Básquet' :
+                        watchedValues.activity === 'volleyball' ? 'Vóley' :
+                        watchedValues.activity === 'karate' ? 'Karate' : 'Gimnasio'
+                      }</p>
+                    )}
+                    <p><strong>Modalidad:</strong> {trialMonth ? 'Mes de Prueba' : 'Membresía Regular'}</p>
+                  </div>
+                </div>
+
+                {trialMonth ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <h4 className="font-semibold text-yellow-800 mb-2">✨ Mes de Prueba</h4>
+                    <p className="text-sm text-yellow-700">
+                      Te has registrado para el mes de prueba. No necesitas realizar ningún pago inicial.
+                      Tendrás 30 días para probar nuestras instalaciones y decidir si continuar.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <h4 className="font-semibold text-green-800 mb-2">💳 Información de Pago</h4>
+                    <p className="text-sm text-green-700 mb-3">
+                      Te enviaremos un email con toda la información necesaria para completar tu pago:
+                    </p>
+                    <ul className="text-sm text-green-700 space-y-1 list-disc list-inside">
+                      <li>Datos bancarios para transferencia</li>
+                      <li>Código QR para MercadoPago</li>
+                      <li>Horarios de atención para pago en efectivo</li>
+                      <li>Monto exacto de la cuota mensual</li>
+                    </ul>
+                  </div>
+                )}
+
+                <div className="border-t pt-6">
+                  <div className="mb-4">
+                    <label className="form-label">¿Confirmas que los datos ingresados son correctos?</label>
+                  </div>
+                  <label className="flex items-start gap-3">
+                    <input
+                      {...register('terms')}
+                      type="checkbox"
+                      className="mt-1 text-primary rounded"
+                    />
+                    <span className="text-sm text-gray-600">
+                      Confirmo que los datos ingresados son correctos y acepto los{' '}
+                      <a href="#" className="text-primary hover:underline">términos y condiciones</a>{' '}
+                      del Club Comandante Espora, incluyendo el uso de mi información personal 
+                      para fines administrativos y de comunicación.
+                    </span>
+                  </label>
+                  {errors.terms && (
+                    <p className="text-red-500 text-sm mt-1">{errors.terms.message}</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between">
           <button
@@ -429,11 +666,16 @@ export default function RegistrationForm() {
             Anterior
           </button>
 
-          {currentStep < 3 ? (
+          {currentStep < getMaxSteps() ? (
             <button
               type="button"
               onClick={nextStep}
-              className="accent-button"
+              disabled={currentStep === 1 && !membershipType}
+              className={`accent-button ${
+                currentStep === 1 && !membershipType 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
+              }`}
             >
               Siguiente
             </button>
@@ -450,8 +692,8 @@ export default function RegistrationForm() {
                 </>
               ) : (
                 <>
-                  <CheckCircle size={20} />
-                  Completar Inscripción
+                  <Mail size={20} />
+                  {trialMonth ? 'Completar Inscripción' : 'Enviar Email de Pago'}
                 </>
               )}
             </button>

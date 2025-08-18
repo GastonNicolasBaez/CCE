@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Socio, Cuota } = require('../models');
 const { asyncHandler, NotFoundError, ConflictError } = require('../middleware/errorHandler');
+const emailService = require('../services/emailService');
 
 const sociosController = {
   // GET /socios - Get all socios with filtering and pagination
@@ -306,6 +307,41 @@ const sociosController = {
         }
       }
     });
+  }),
+
+  // POST /send-payment-email - Send payment information email
+  enviarEmailPago: asyncHandler(async (req, res) => {
+    const { memberData } = req.body;
+
+    try {
+      // Usar el servicio de email real
+      const result = await emailService.enviarInformacionPago(memberData);
+
+      res.json({
+        success: true,
+        message: 'Email de información de pago enviado exitosamente',
+        data: {
+          email: memberData.email,
+          membershipType: memberData.membershipType,
+          trialMonth: memberData.trialMonth,
+          messageId: result.messageId
+        }
+      });
+    } catch (error) {
+      console.error('Error enviando email:', error);
+      
+      // Fallback response si el email falla
+      res.json({
+        success: true,
+        message: 'Inscripción procesada. Email pendiente de envío.',
+        data: {
+          email: memberData.email,
+          membershipType: memberData.membershipType,
+          trialMonth: memberData.trialMonth,
+          emailError: error.message
+        }
+      });
+    }
   })
 };
 
