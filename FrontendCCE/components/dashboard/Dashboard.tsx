@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '../../lib/store'
+import { useLoadMembers } from '../../lib/hooks'
 import { Users, CreditCard, TrendingUp, UserPlus } from 'lucide-react'
 import MetricCard from './MetricCard'
 import PaymentChart from './PaymentChart'
@@ -11,19 +11,14 @@ import Link from 'next/link'
 
 export default function Dashboard() {
   const { members } = useAppStore()
-  const [isLoading, setIsLoading] = useState(true)
+  const { isLoading, error } = useLoadMembers()
 
-  useEffect(() => {
-    // Simular carga de datos
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Calcular métricas
-  const totalMembers = members.length
-  const activeMembers = members.filter(m => m.status === 'active').length
-  const pendingPayments = members.filter(m => m.paymentStatus === 'pending').length
-  const overduePayments = members.filter(m => m.paymentStatus === 'overdue').length
+  // Calcular métricas - validar que members sea un array
+  const membersArray = Array.isArray(members) ? members : []
+  const totalMembers = membersArray.length
+  const activeMembers = membersArray.filter(m => m.status === 'active').length
+  const pendingPayments = membersArray.filter(m => m.paymentStatus === 'pending').length
+  const overduePayments = membersArray.filter(m => m.paymentStatus === 'overdue').length
 
   const metrics: Array<{
     title: string
@@ -71,6 +66,22 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error al cargar los datos: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     )
   }

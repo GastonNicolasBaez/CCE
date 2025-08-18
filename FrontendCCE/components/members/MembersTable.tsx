@@ -25,8 +25,9 @@ export default function MembersTable() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [filterType, setFilterType] = useState<'all' | 'socio' | 'jugador'>('all')
 
-  // Filtrar miembros
-  const filteredMembers = members.filter(member => {
+  // Filtrar miembros - validar que members sea un array
+  const membersArray = Array.isArray(members) ? members : []
+  const filteredMembers = membersArray.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === 'all' || member.status === filterStatus
@@ -71,7 +72,7 @@ export default function MembersTable() {
             Socios y Jugadores
           </h2>
           <div className="text-sm text-gray-600">
-            Total: {filteredMembers.length} de {members.length}
+            Total: {filteredMembers.length} de {membersArray.length}
           </div>
         </div>
 
@@ -150,7 +151,25 @@ export default function MembersTable() {
               </tr>
             </thead>
             <tbody className="bg-white/50 divide-y divide-gray-200/50">
-              {filteredMembers.map((member) => (
+              {filteredMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center text-gray-500">
+                      <Users size={48} className="mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {membersArray.length === 0 ? 'No hay miembros registrados' : 'No se encontraron resultados'}
+                      </h3>
+                      <p className="text-sm text-gray-500 max-w-sm">
+                        {membersArray.length === 0 
+                          ? 'Comienza registrando tu primer socio o jugador del club.'
+                          : 'Intenta modificar los filtros de búsqueda para encontrar lo que buscas.'
+                        }
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredMembers.map((member) => (
                 <>
                   <tr 
                     key={member.id}
@@ -314,7 +333,8 @@ export default function MembersTable() {
                     )}
                   </AnimatePresence>
                 </>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

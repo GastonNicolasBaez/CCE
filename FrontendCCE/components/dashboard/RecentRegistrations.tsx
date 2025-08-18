@@ -10,8 +10,9 @@ export default function RecentRegistrations() {
   const { members } = useAppStore()
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  // Obtener las 5 inscripciones más recientes
-  const recentMembers = members
+  // Obtener las 5 inscripciones más recientes - validar que members sea un array
+  const membersArray = Array.isArray(members) ? members : []
+  const recentMembers = membersArray
     .sort((a, b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime())
     .slice(0, 5)
 

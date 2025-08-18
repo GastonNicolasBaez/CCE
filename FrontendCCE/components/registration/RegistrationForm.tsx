@@ -16,6 +16,7 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import { useAppStore } from '../../lib/store'
+import { useCreateMember } from '../../lib/hooks'
 import toast from 'react-hot-toast'
 
 const registrationSchema = z.object({
@@ -42,7 +43,7 @@ const registrationSchema = z.object({
 type RegistrationFormData = z.infer<typeof registrationSchema>
 
 export default function RegistrationForm() {
-  const { addMember } = useAppStore()
+  const { createMember } = useCreateMember()
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [medicalInfo, setMedicalInfo] = useState({
@@ -75,20 +76,23 @@ export default function RegistrationForm() {
   const onSubmit = async (data: RegistrationFormData) => {
     try {
       const newMember = {
-        ...data,
-        id: Date.now().toString(),
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        activity: data.activity,
         status: 'active' as const,
         paymentStatus: 'pending' as const,
-        registrationDate: new Date().toISOString(),
-        medicalInfo: {
-          ...data.medicalInfo,
-          ...medicalInfo
-        }
+        registrationDate: new Date().toISOString().split('T')[0],
+        membershipType: 'jugador' as const,
       }
 
-      addMember(newMember)
-      setIsSubmitted(true)
-      toast.success('¡Inscripción exitosa!')
+      const success = await createMember(newMember)
+      if (success) {
+        setIsSubmitted(true)
+        toast.success('¡Inscripción exitosa!')
+      } else {
+        toast.error('Error al procesar la inscripción')
+      }
     } catch (error) {
       toast.error('Error al procesar la inscripción')
     }
