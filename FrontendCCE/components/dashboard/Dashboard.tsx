@@ -87,45 +87,41 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-6">
-      {/* Header con título y botón */}
-      <div className="flex items-start justify-between">
+    <div className="h-full flex flex-col space-y-3">
+      {/* Header compacto */}
+      <div className="flex items-center justify-between flex-shrink-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center flex-1"
         >
-          <h1 className="text-4xl font-bold text-orange-500 mb-2">
+          <h1 className="text-2xl font-bold text-orange-500 dark:text-orange-400">
             Club Comandante Espora
           </h1>
-          <p className="text-xl text-gray-600 font-medium">
-            Panel de Control
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            Vista general del club
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Panel de Control - Vista general del club
           </p>
         </motion.div>
 
-        {/* Botón de nueva inscripción arriba a la derecha */}
+        {/* Botón de nueva inscripción */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="flex-shrink-0"
         >
-          <Link href="/registration" className="accent-button flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <UserPlus size={20} />
-            <span>Nueva Inscripción</span>
+          <Link href="/registration" className="accent-button flex items-center gap-2 px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <UserPlus size={16} />
+            <span className="hidden sm:block">Nueva Inscripción</span>
           </Link>
         </motion.div>
       </div>
 
-      {/* Metrics Grid */}
+      {/* Metrics Grid - más compacto */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0"
       >
         {metrics.map((metric, index) => (
           <MetricCard
@@ -136,14 +132,14 @@ export default function Dashboard() {
         ))}
       </motion.div>
 
-      {/* Charts and Recent Activity */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-0">
+      {/* Charts and Recent Activity - optimizado para altura */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Payment Chart */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="xl:col-span-2"
+          className="xl:col-span-2 min-h-0"
         >
           <PaymentChart />
         </motion.div>
@@ -153,7 +149,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="hidden xl:block"
+          className="hidden xl:block min-h-0"
         >
           <RecentRegistrations />
         </motion.div>

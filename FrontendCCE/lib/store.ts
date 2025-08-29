@@ -30,6 +30,12 @@ interface AppState {
   // Estado de la aplicación
   sidebarCollapsed: boolean
   currentPage: string
+  darkMode: boolean
+  
+  // Búsqueda global
+  globalSearchQuery: string
+  globalSearchResults: any[]
+  isSearching: boolean
   
   // Datos de miembros
   members: Member[]
@@ -44,6 +50,10 @@ interface AppState {
   // Acciones
   toggleSidebar: () => void
   setCurrentPage: (page: string) => void
+  toggleDarkMode: () => void
+  setGlobalSearchQuery: (query: string) => void
+  performGlobalSearch: (query: string) => void
+  clearSearch: () => void
   setMembers: (members: Member[]) => void
   addMember: (member: Omit<Member, 'id'>) => void
   updateMember: (id: string, updates: Partial<Member>) => void
@@ -65,6 +75,10 @@ export const useAppStore = create<AppState>()(
       // Estado inicial
       sidebarCollapsed: false,
       currentPage: 'dashboard',
+      darkMode: false,
+      globalSearchQuery: '',
+      globalSearchResults: [],
+      isSearching: false,
       members: [],
       selectedMembers: [],
       isLoading: false,
@@ -78,6 +92,51 @@ export const useAppStore = create<AppState>()(
       })),
       
       setCurrentPage: (page: string) => set({ currentPage: page }),
+      
+      toggleDarkMode: () => set((state) => ({ 
+        darkMode: !state.darkMode 
+      })),
+      
+      setGlobalSearchQuery: (query: string) => set({ globalSearchQuery: query }),
+      
+      performGlobalSearch: (query: string) => {
+        set({ isSearching: true, globalSearchQuery: query })
+        
+        const state = get()
+        const results: any[] = []
+        
+        // Buscar en secciones/páginas
+        const sections = [
+          { id: 'dashboard', name: 'Panel de Control', description: 'Vista general del club', type: 'section' },
+          { id: 'members', name: 'Socios y Jugadores', description: 'Gestión de miembros', type: 'section' },
+          { id: 'payments', name: 'Estado de Pagos', description: 'Control de cuotas', type: 'section' },
+          { id: 'registration', name: 'Inscripción', description: 'Nuevos registros', type: 'section' }
+        ]
+        
+        sections.forEach(section => {
+          if (section.name.toLowerCase().includes(query.toLowerCase()) ||
+              section.description.toLowerCase().includes(query.toLowerCase())) {
+            results.push(section)
+          }
+        })
+        
+        // Buscar en miembros
+        state.members.forEach(member => {
+          if (member.name.toLowerCase().includes(query.toLowerCase()) ||
+              member.email.toLowerCase().includes(query.toLowerCase()) ||
+              (member.activity && member.activity.toLowerCase().includes(query.toLowerCase()))) {
+            results.push({ ...member, type: 'member' })
+          }
+        })
+        
+        set({ globalSearchResults: results, isSearching: false })
+      },
+      
+      clearSearch: () => set({ 
+        globalSearchQuery: '', 
+        globalSearchResults: [], 
+        isSearching: false 
+      }),
       
       setMembers: (members) => set({ members }),
       
@@ -135,6 +194,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         currentPage: state.currentPage,
+        darkMode: state.darkMode,
         remindersEnabled: state.remindersEnabled,
       }),
     }

@@ -64,20 +64,20 @@ export default function MembersTable() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header con filtros */}
-      <div className="glass-card glass-card-hover p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <Users size={28} className="text-blue-600" />
+      {/* Header con filtros compacto */}
+      <div className="glass-card glass-card-hover p-4 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <Users size={20} className="text-blue-600" />
             Socios y Jugadores
           </h2>
-          <div className="text-sm text-gray-600">
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             Total: {filteredMembers.length} de {membersArray.length}
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Filtros compactos */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <input
               type="text"
@@ -116,7 +116,7 @@ export default function MembersTable() {
                 setFilterStatus('all')
                 setFilterType('all')
               }}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              className="px-3 py-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
               Limpiar filtros
             </button>
@@ -125,7 +125,7 @@ export default function MembersTable() {
       </div>
 
       {/* Tabla con scroll interno */}
-      <div className="glass-card glass-card-hover flex-1 overflow-hidden">
+      <div className="glass-card glass-card-hover flex-1 min-h-0 overflow-hidden">
         <div className="h-full overflow-y-auto">
           <table className="w-full">
             <thead className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200/50">

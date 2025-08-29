@@ -77,16 +77,16 @@ export default function PaymentChart() {
       transition={{ delay: 0.3, duration: 0.6 }}
       className="glass-card glass-card-hover h-full flex flex-col"
     >
-      <div className="text-center mb-6 flex-shrink-0">
-        <h3 className="text-lg font-semibold text-gray-800">
+      <div className="text-center mb-3 flex-shrink-0">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
           Estado de Pagos por Actividad
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Bar Chart */}
         <div className="xl:col-span-2 min-h-0">
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
               <XAxis 

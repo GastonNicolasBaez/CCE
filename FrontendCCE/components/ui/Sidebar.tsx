@@ -53,9 +53,9 @@ export default function Sidebar() {
          <motion.div
        initial={{ x: -300 }}
        animate={{ x: 0 }}
-       className={`fixed left-0 top-0 h-full bg-white/90 backdrop-blur-md border-r border-white/30 shadow-glass z-50 transition-all duration-300 ${
-         sidebarCollapsed ? 'w-16 sm:w-20' : 'w-64'
-       }`}
+             className={`fixed left-0 top-0 h-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-r border-white/30 dark:border-gray-700/30 shadow-glass z-50 transition-all duration-300 ${
+        sidebarCollapsed ? 'w-16 sm:w-20' : 'w-64'
+      }`}
      >
              {/* Header */}
        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/30">
@@ -70,7 +70,7 @@ export default function Sidebar() {
              </div>
              <div>
                <h1 className="font-bold text-primary text-sm">Club Espora</h1>
-               <p className="text-xs text-gray-500">Dashboard</p>
+               <p className="text-xs text-gray-500 dark:text-gray-400">Dashboard</p>
              </div>
           </motion.div>
         )}
@@ -96,7 +96,7 @@ export default function Sidebar() {
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 ${
                 isActive 
                   ? 'bg-primary text-white shadow-lg' 
-                  : 'text-gray-700 hover:bg-white/50 hover:text-primary'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:text-primary dark:hover:text-primary'
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -109,7 +109,7 @@ export default function Sidebar() {
                   className="text-left"
                 >
                   <div className="font-medium">{item.label}</div>
-                  <div className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
+                  <div className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
                     {item.description}
                   </div>
                 </motion.div>
@@ -127,8 +127,8 @@ export default function Sidebar() {
            className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-white/30"
          >
           <div className="text-center">
-            <p className="text-xs text-gray-600 font-medium">Club Comandante Espora</p>
-            <p className="text-xs text-gray-500">Sistema de Gestión</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Club Comandante Espora</p>
+            <p className="text-xs text-gray-500 dark:text-gray-500">Sistema de Gestión</p>
           </div>
         </motion.div>
       )}

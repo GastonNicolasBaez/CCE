@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useAppStore } from './store'
-import { api, transformApiMemberToFrontend } from './api'
+import { api, transformApiMemberToFrontend, transformFrontendMemberToApi } from './api'
 
 export function useLoadMembers() {
   const { setMembers, setLoading, setError, isLoading, error } = useAppStore()

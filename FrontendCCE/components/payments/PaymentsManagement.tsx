@@ -76,101 +76,94 @@ export default function PaymentsManagement() {
     }
   }
 
-  // Debug info
-  console.log('PaymentsManagement render:', { members, pendingMembers, selectedMembers })
+
 
   return (
-    <div className="h-full flex flex-col space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 flex-shrink-0">
+    <div className="h-full flex flex-col space-y-3">
+      {/* Header compacto */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Estado de Pagos</h1>
-          <p className="text-sm text-gray-600">Gestiona las cuotas pendientes y vencidas</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Estado de Pagos</h1>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Gestiona las cuotas pendientes y vencidas</p>
         </div>
         
         {/* Reminders Toggle */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <Bell size={16} className="text-accent" />
-            <span className="text-xs text-gray-600">Recordatorios Automáticos</span>
+            <Bell size={14} className="text-accent" />
+            <span className="text-xs text-gray-600 dark:text-gray-400">Recordatorios</span>
           </div>
           <button
             onClick={toggleReminders}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              remindersEnabled ? 'bg-accent' : 'bg-gray-200'
+            className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${
+              remindersEnabled ? 'bg-accent' : 'bg-gray-200 dark:bg-gray-600'
             }`}
           >
             <span
-              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                remindersEnabled ? 'translate-x-5' : 'translate-x-1'
+              className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
+                remindersEnabled ? 'translate-x-4' : 'translate-x-1'
               }`}
             />
           </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+      {/* Summary Cards compactas */}
+      <div className="grid grid-cols-3 gap-3 flex-shrink-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="neumorphism-card p-4 text-center"
+          className="neumorphism-card p-3 text-center"
         >
-          <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <Clock size={20} className="text-yellow-600" />
+          <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mx-auto mb-1">
+            <Clock size={16} className="text-yellow-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-1">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
             {pendingMembers.filter(m => m.paymentStatus === 'pending').length}
           </h3>
-          <p className="text-xs text-gray-600">Pendientes</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Pendientes</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="neumorphism-card p-4 text-center"
+          className="neumorphism-card p-3 text-center"
         >
-          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <AlertCircle size={20} className="text-red-600" />
+          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mx-auto mb-1">
+            <AlertCircle size={16} className="text-red-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-1">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
             {pendingMembers.filter(m => m.paymentStatus === 'overdue').length}
           </h3>
-          <p className="text-xs text-gray-600">Vencidas</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Vencidas</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="neumorphism-card p-4 text-center"
+          className="neumorphism-card p-3 text-center"
         >
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <CheckCircle size={20} className="text-green-600" />
+          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-1">
+            <CheckCircle size={16} className="text-green-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-1">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
             {formatCurrency(getTotalAmount())}
           </h3>
-          <p className="text-xs text-gray-600">Total Seleccionado</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">Total Seleccionado</p>
         </motion.div>
       </div>
 
-      {/* Debug Info */}
-      <div className="neumorphism-card p-3 flex-shrink-0">
-        <h3 className="text-xs font-medium text-gray-700 mb-1">Debug Info:</h3>
-        <p className="text-xs text-gray-600">Total members: {members.length}</p>
-        <p className="text-xs text-gray-600">Pending members: {pendingMembers.length}</p>
-        <p className="text-xs text-gray-600">Selected members: {selectedMembers.length}</p>
-      </div>
+
 
 
 
       {/* Members Table */}
       <div className="neumorphism-card overflow-hidden flex-1 min-h-0">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-800">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               Socios con Pagos Pendientes
             </h3>
             <button
@@ -184,29 +177,29 @@ export default function PaymentsManagement() {
 
         <div className="overflow-auto h-full">
           <table className="w-full">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
               <tr>
-                <th className="px-4 py-2 text-left">
+                <th className="px-3 py-2 text-left">
                   <input
                     type="checkbox"
                     checked={selectedMembers.length === pendingMembers.length && pendingMembers.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2"
+                    className="w-3 h-3 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2"
                   />
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Socio
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Actividad
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estado
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Monto
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Vencimiento
                 </th>
               </tr>
@@ -217,36 +210,36 @@ export default function PaymentsManagement() {
                   key={member.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
-                  <td className="px-4 py-2">
+                  <td className="px-3 py-2">
                     <input
                       type="checkbox"
                       checked={selectedMembers.includes(member.id)}
                       onChange={() => handleSelectMember(member.id)}
-                      className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2"
+                      className="w-3 h-3 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2"
                     />
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 py-2">
                     <div>
-                      <div className="font-medium text-gray-900 text-sm">{member.name}</div>
-                      <div className="text-xs text-gray-500">{member.email}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">{member.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{member.email}</div>
                     </div>
                   </td>
-                  <td className="px-4 py-2">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                  <td className="px-3 py-2">
+                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-medium">
                       {getActivityLabel(member.activity)}
                     </span>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 py-2">
                     <span className={getStatusBadge(member.paymentStatus)}>
                       {member.paymentStatus === 'pending' ? 'Pendiente' : 'Vencido'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 font-medium text-gray-900 text-sm">
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100 text-sm">
                     {formatCurrency(5000)}
                   </td>
-                  <td className="px-4 py-2 text-xs text-gray-500">
+                  <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
                     {member.paymentStatus === 'overdue' ? 'Vencido' : '15 días'}
                   </td>
                 </motion.tr>

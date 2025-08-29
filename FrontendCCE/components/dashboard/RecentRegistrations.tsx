@@ -39,9 +39,9 @@ export default function RecentRegistrations() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="glass-card glass-card-hover p-6 text-center h-full flex flex-col justify-center"
+        className="glass-card glass-card-hover p-4 text-center h-full flex flex-col justify-center"
       >
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
           Inscripciones Recientes
         </h3>
         <div className="text-gray-500">
@@ -57,10 +57,10 @@ export default function RecentRegistrations() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.6 }}
-      className="glass-card glass-card-hover p-6 h-full flex flex-col"
+      className="glass-card glass-card-hover p-4 h-full flex flex-col"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
           Inscripciones Recientes
         </h3>
         <div className="flex items-center gap-2">

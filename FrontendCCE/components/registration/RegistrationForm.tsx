@@ -1,705 +1,559 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   User, 
   Mail, 
   Phone, 
-  MapPin, 
   Calendar, 
+  MapPin, 
   Activity, 
+  Users, 
+  Heart, 
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react'
-import { useAppStore } from '../../lib/store'
-import { useCreateMember } from '../../lib/hooks'
-import { api } from '../../lib/api'
-import toast from 'react-hot-toast'
-
-// Schema base para información personal
-const baseSchema = z.object({
-  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos'),
-  address: z.string().min(10, 'La dirección debe tener al menos 10 caracteres'),
-  birthDate: z.string().min(1, 'La fecha de nacimiento es requerida'),
-  membershipType: z.enum(['socio', 'jugador']),
-  trialMonth: z.boolean().optional(),
-  terms: z.boolean().refine(val => val === true, 'Debes aceptar los términos y condiciones')
-})
-
-// Schema para jugadores (incluye actividad, contacto emergencia y datos médicos)
-const jugadorSchema = baseSchema.extend({
-  activity: z.enum(['basketball', 'volleyball', 'karate', 'gym']),
-  emergencyContact: z.object({
-    name: z.string().min(2, 'El nombre del contacto de emergencia es requerido'),
-    phone: z.string().min(10, 'El teléfono del contacto de emergencia es requerido'),
-    relationship: z.string().min(2, 'La relación es requerida')
-  }),
-  medicalInfo: z.object({
-    hasConditions: z.boolean(),
-    conditions: z.string().optional(),
-    allergies: z.string().optional(),
-    medications: z.string().optional()
-  })
-})
-
-// Schema dinámico basado en el tipo de membresía
-const getRegistrationSchema = (membershipType: string) => {
-  return membershipType === 'jugador' ? jugadorSchema : baseSchema
-}
-
-type BaseFormData = z.infer<typeof baseSchema>
-type JugadorFormData = z.infer<typeof jugadorSchema>
-type RegistrationFormData = BaseFormData | JugadorFormData
+import { registrationSchema, type RegistrationFormData } from '../../lib/validations'
 
 export default function RegistrationForm() {
-  const { createMember } = useCreateMember()
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [membershipType, setMembershipType] = useState<'socio' | 'jugador' | ''>('')
   const [trialMonth, setTrialMonth] = useState(false)
-  const [medicalInfo, setMedicalInfo] = useState({
-    hasConditions: false,
-    conditions: '',
-    allergies: '',
-    medications: ''
-  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue,
-    reset
-  } = useForm<any>({
-    resolver: zodResolver(membershipType ? getRegistrationSchema(membershipType) : baseSchema),
-    defaultValues: {
-      membershipType: '',
-      trialMonth: false,
-      medicalInfo: {
-        hasConditions: false,
-        conditions: '',
-        allergies: '',
-        medications: ''
-      }
-    }
+    formState: { errors },
+    reset,
+    trigger,
+    watch
+  } = useForm<RegistrationFormData>({
+    resolver: zodResolver(registrationSchema),
+    mode: 'onChange'
   })
 
-  const watchedValues = watch()
-
-  const sendPaymentEmail = async (memberData: any) => {
-    try {
-      const response = await api.socios.sendPaymentEmail(memberData)
-      if (response.success) {
-        setEmailSent(true)
-        toast.success('¡Email de pago enviado!')
-      } else {
-        toast.error('Error al enviar el email')
-      }
-    } catch (error) {
-      console.error('Error enviando email:', error)
-      toast.error('Error al enviar el email')
-    }
-  }
-
-  const onSubmit = async (data: any) => {
-    try {
-      const newMember = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        activity: data.activity || undefined,
-        status: 'active' as const,
-        paymentStatus: trialMonth ? 'paid' : 'pending' as const,
-        registrationDate: new Date().toISOString().split('T')[0],
-        membershipType: membershipType as 'socio' | 'jugador',
-        trialMonth
-      }
-
-      const success = await createMember(newMember)
-      if (success) {
-        if (trialMonth) {
-          setIsSubmitted(true)
-          toast.success('¡Inscripción exitosa! Mes de prueba activado.')
-        } else {
-          // Enviar email con información de pago
-          await sendPaymentEmail(newMember)
-        }
-      } else {
-        toast.error('Error al procesar la inscripción')
-      }
-    } catch (error) {
-      toast.error('Error al procesar la inscripción')
-    }
-  }
-
   const getMaxSteps = () => {
-    if (membershipType === 'socio') return 3 // Personal + Email + Confirmación
-    if (membershipType === 'jugador') return 4 // Personal + Actividad/Emergencia + Médico + Email
-    return 3
+    return membershipType === 'jugador' ? 4 : 3
   }
 
-  const nextStep = () => {
-    if (membershipType === 'socio' && currentStep === 1) {
-      setCurrentStep(3) // Skip step 2 for socios
-    } else {
-      setCurrentStep(prev => Math.min(prev + 1, getMaxSteps()))
+  const nextStep = async () => {
+    let fieldsToValidate: (keyof RegistrationFormData)[] = []
+    
+    if (currentStep === 1) {
+      fieldsToValidate = ['name', 'email', 'phone', 'birthDate', 'address']
+    } else if (currentStep === 2 && membershipType === 'jugador') {
+      fieldsToValidate = ['activity', 'emergencyContact']
+    } else if (currentStep === 3 && membershipType === 'jugador') {
+      fieldsToValidate = ['medicalInfo']
+    }
+
+    const isValid = await trigger(fieldsToValidate)
+    if (isValid && currentStep < getMaxSteps()) {
+      setCurrentStep(currentStep + 1)
     }
   }
-  
+
   const prevStep = () => {
-    if (membershipType === 'socio' && currentStep === 3) {
-      setCurrentStep(1) // Go back to step 1 for socios
-    } else {
-      setCurrentStep(prev => Math.max(prev - 1, 1))
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
     }
   }
 
-  if (isSubmitted || emailSent) {
+  const onSubmit = async (data: RegistrationFormData) => {
+    setIsSubmitting(true)
+    try {
+      // Simular envío
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('Registration data:', { ...data, membershipType, trialMonth })
+      setSubmitted(true)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (submitted) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="neumorphism-card p-8 text-center max-w-md mx-auto"
+        className="h-full flex items-center justify-center"
       >
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle size={32} className="text-green-600" />
+        <div className="neumorphism-card p-8 max-w-md text-center">
+          <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+            ¡Inscripción Enviada!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {trialMonth 
+              ? 'Tu período de prueba de 30 días ha comenzado. Te contactaremos pronto.'
+              : 'Recibirás un email con los datos de pago en los próximos minutos.'
+            }
+          </p>
+          <button
+            onClick={() => {
+              setSubmitted(false)
+              setCurrentStep(1)
+              setMembershipType('')
+              setTrialMonth(false)
+              reset()
+            }}
+            className="primary-button"
+          >
+            Nueva Inscripción
+          </button>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          {isSubmitted ? '¡Inscripción Completada!' : '¡Email Enviado!'}
-        </h2>
-        <p className="text-gray-600 mb-6">
-          {isSubmitted 
-            ? 'Tu inscripción ha sido procesada exitosamente. ¡Bienvenido al Club Comandante Espora!'
-            : 'Te hemos enviado un email con la información de pago. Revisa tu bandeja de entrada.'
-          }
-        </p>
-        <button
-          onClick={() => {
-            setIsSubmitted(false)
-            setEmailSent(false)
-            setCurrentStep(1)
-            setMembershipType('')
-            setTrialMonth(false)
-            reset()
-          }}
-          className="primary-button"
-        >
-          Nueva Inscripción
-        </button>
       </motion.div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
+    <div className="h-full flex flex-col max-w-7xl mx-auto">
+      {/* Header compacto */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
+        className="text-center mb-4 flex-shrink-0"
       >
-        <h1 className="text-3xl font-bold text-gradient mb-2">
-          Inscripción al Club
+        <h1 className="text-xl font-bold text-orange-500 dark:text-orange-400 mb-1">
+          Inscripción al Club Comandante Espora
         </h1>
-        <p className="text-gray-600">
-          Únete al Club Comandante Espora y forma parte de nuestra comunidad deportiva
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Complete el formulario para unirse a nuestra comunidad deportiva
         </p>
       </motion.div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-center mb-8">
-        {Array.from({ length: getMaxSteps() }, (_, i) => i + 1).map((step) => (
-          <div key={step} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step <= currentStep 
-                ? 'bg-primary text-white' 
-                : 'bg-gray-200 text-gray-500'
-            }`}>
-              {step < currentStep ? '✓' : step}
+      {/* Layout usando grid más compacto */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Sidebar con progreso - más estrecho */}
+        <div className="lg:col-span-3 xl:col-span-2">
+          <div className="neumorphism-card p-3 h-fit">
+            <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-3">
+              Progreso
+            </h3>
+            
+            {/* Steps compactos verticales */}
+            <div className="space-y-3">
+              {Array.from({ length: getMaxSteps() }, (_, i) => i + 1).map((step) => {
+                const stepLabels = [
+                  'Datos Personales',
+                  membershipType === 'jugador' ? 'Actividad/Emergencia' : 'Confirmación',
+                  membershipType === 'jugador' ? 'Info. Médica' : '',
+                  membershipType === 'jugador' ? 'Confirmación' : ''
+                ].filter(Boolean)
+
+                return (
+                  <div key={step} className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${
+                      step <= currentStep 
+                        ? 'bg-primary text-white' 
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {step < currentStep ? '✓' : step}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-medium ${
+                        step <= currentStep 
+                          ? 'text-primary dark:text-blue-400' 
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {stepLabels[step - 1]}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-            {step < getMaxSteps() && (
-              <div className={`w-16 h-1 mx-2 ${
-                step < currentStep ? 'bg-primary' : 'bg-gray-200'
-              }`} />
-            )}
           </div>
-        ))}
-      </div>
-
-      {/* Step Labels */}
-      <div className="flex justify-center mb-8">
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            {currentStep === 1 && 'Información Personal'}
-            {currentStep === 2 && membershipType === 'jugador' && 'Actividad y Contacto de Emergencia'}
-            {currentStep === 3 && membershipType === 'jugador' && 'Información Médica'}
-            {currentStep === 3 && membershipType === 'socio' && 'Confirmación y Pago'}
-            {currentStep === 4 && 'Confirmación y Pago'}
-          </p>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Step 1: Personal Information and Membership Type */}
-        <AnimatePresence mode="wait">
-          {currentStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="neumorphism-card p-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <User size={24} className="text-primary" />
-                Información Personal
-              </h3>
-              
-              {/* Membership Type Selection */}
-              <div className="mb-8">
-                <label className="form-label">Tipo de Membresía *</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                  <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                      membershipType === 'socio' 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setMembershipType('socio')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="membershipType"
-                        value="socio"
-                        checked={membershipType === 'socio'}
-                        onChange={(e) => setMembershipType('socio')}
-                        className="text-blue-600"
-                      />
-                      <div>
-                        <h4 className="font-semibold text-gray-800">Socio</h4>
-                        <p className="text-sm text-gray-600">Solo acceso a instalaciones del club</p>
+        {/* Área principal del formulario */}
+        <div className="lg:col-span-9 xl:col-span-10 flex flex-col min-h-0">
+          <div className="neumorphism-card p-4 flex-1 min-h-0 overflow-hidden">
+            <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
+              {/* Contenido del formulario con scroll interno */}
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                
+                {/* Step 1: Personal Information */}
+                <AnimatePresence mode="wait">
+                  {currentStep === 1 && (
+                    <motion.div
+                      key="step1"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <User size={16} className="text-primary" />
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          Información Personal
+                        </h3>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div 
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                      membershipType === 'jugador' 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setMembershipType('jugador')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="membershipType"
-                        value="jugador"
-                        checked={membershipType === 'jugador'}
-                        onChange={(e) => setMembershipType('jugador')}
-                        className="text-blue-600"
-                      />
+                      
+                      {/* Membership Type Selection */}
                       <div>
-                        <h4 className="font-semibold text-gray-800">Jugador</h4>
-                        <p className="text-sm text-gray-600">Participación en actividades deportivas</p>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Membresía *</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div 
+                            className={`border rounded-lg p-2 cursor-pointer transition-all ${
+                              membershipType === 'socio' 
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                            }`}
+                            onClick={() => setMembershipType('socio')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="membershipType"
+                                value="socio"
+                                checked={membershipType === 'socio'}
+                                onChange={() => setMembershipType('socio')}
+                                className="text-blue-600"
+                              />
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200">Socio</h4>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Instalaciones</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div 
+                            className={`border rounded-lg p-2 cursor-pointer transition-all ${
+                              membershipType === 'jugador' 
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                            }`}
+                            onClick={() => setMembershipType('jugador')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="membershipType"
+                                value="jugador"
+                                checked={membershipType === 'jugador'}
+                                onChange={() => setMembershipType('jugador')}
+                                className="text-blue-600"
+                              />
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200">Jugador</h4>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Deportes</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
+
+                      {/* Trial Month Option */}
+                      <div className="p-2 border border-yellow-200 dark:border-yellow-700 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={trialMonth}
+                            onChange={(e) => setTrialMonth(e.target.checked)}
+                            className="w-3 h-3 text-yellow-600"
+                          />
+                          <div>
+                            <span className="text-xs font-semibold text-yellow-800 dark:text-yellow-200">Mes de Prueba</span>
+                            <span className="text-xs text-yellow-700 dark:text-yellow-300 ml-1">- 30 días sin pago</span>
+                          </div>
+                        </label>
+                      </div>
+                      
+                      {/* Personal Info Fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo *</label>
+                          <input
+                            {...register('name')}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Tu nombre completo"
+                          />
+                          {errors.name && (
+                            <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
+                          <input
+                            {...register('email')}
+                            type="email"
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="tu@email.com"
+                          />
+                          {errors.email && (
+                            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono *</label>
+                          <input
+                            {...register('phone')}
+                            type="tel"
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.phone ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="+54 9 11 1234-5678"
+                          />
+                          {errors.phone && (
+                            <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Nacimiento *</label>
+                          <input
+                            {...register('birthDate')}
+                            type="date"
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                          />
+                          {errors.birthDate && (
+                            <p className="text-red-500 text-xs mt-1">{errors.birthDate.message}</p>
+                          )}
+                        </div>
+
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección *</label>
+                          <input
+                            {...register('address')}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.address ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Calle, número, ciudad, provincia"
+                          />
+                          {errors.address && (
+                            <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 2: Activity and Emergency Contact (Only for players) */}
+                  {currentStep === 2 && membershipType === 'jugador' && (
+                    <motion.div
+                      key="step2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Activity size={16} className="text-accent" />
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          Actividad y Contacto de Emergencia
+                        </h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Actividad Principal *</label>
+                          <select
+                            {...register('activity')}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.activity ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                          >
+                            <option value="">Selecciona una actividad</option>
+                            <option value="basketball">Básquet</option>
+                            <option value="volleyball">Vóley</option>
+                            <option value="karate">Karate</option>
+                            <option value="gym">Gimnasio</option>
+                          </select>
+                          {errors.activity && (
+                            <p className="text-red-500 text-xs mt-1">{errors.activity.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Contacto de Emergencia *</label>
+                          <input
+                            {...register('emergencyContact.name')}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.name ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Nombre del contacto"
+                          />
+                          {errors.emergencyContact?.name && (
+                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.name.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono Emergencia *</label>
+                          <input
+                            {...register('emergencyContact.phone')}
+                            type="tel"
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.phone ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="+54 9 11 1234-5678"
+                          />
+                          {errors.emergencyContact?.phone && (
+                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.phone.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Relación</label>
+                          <input
+                            {...register('emergencyContact.relationship')}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.relationship ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Ej: Padre, Madre, Hermano"
+                          />
+                          {errors.emergencyContact?.relationship && (
+                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.relationship.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 3: Medical Info (Only for players) */}
+                  {currentStep === 3 && membershipType === 'jugador' && (
+                    <motion.div
+                      key="step3"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Heart size={16} className="text-red-500" />
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          Información Médica
+                        </h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">¿Tienes alguna condición médica?</label>
+                          <textarea
+                            {...register('medicalInfo.conditions')}
+                            rows={3}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none ${errors.medicalInfo?.conditions ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Describe cualquier condición médica relevante o escribe 'Ninguna'"
+                          />
+                          {errors.medicalInfo?.conditions && (
+                            <p className="text-red-500 text-xs mt-1">{errors.medicalInfo.conditions.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">¿Tomas algún medicamento?</label>
+                          <textarea
+                            {...register('medicalInfo.medications')}
+                            rows={2}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none ${errors.medicalInfo?.medications ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="Lista medicamentos actuales o escribe 'Ninguno'"
+                          />
+                          {errors.medicalInfo?.medications && (
+                            <p className="text-red-500 text-xs mt-1">{errors.medicalInfo.medications.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Final Step: Confirmation */}
+                  {((currentStep === 2 && membershipType === 'socio') || 
+                    (currentStep === 4 && membershipType === 'jugador')) && (
+                    <motion.div
+                      key="final"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle size={16} className="text-green-500" />
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          Confirmación
+                        </h3>
+                      </div>
+                      
+                      <div className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            {...register('terms')}
+                            type="checkbox"
+                            className="mt-0.5 w-3 h-3 text-blue-600"
+                          />
+                          <span className="text-xs text-gray-700 dark:text-gray-300">
+                            Acepto los <span className="text-blue-600 underline">términos y condiciones</span> del club
+                          </span>
+                        </label>
+                        {errors.terms && (
+                          <p className="text-red-500 text-xs mt-1">{errors.terms.message}</p>
+                        )}
+                      </div>
+
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-200 mb-2">Resumen de Inscripción</h4>
+                        <div className="space-y-1 text-xs text-blue-700 dark:text-blue-300">
+                          <p><strong>Tipo:</strong> {membershipType === 'socio' ? 'Socio' : 'Jugador'}</p>
+                          <p><strong>Modalidad:</strong> {trialMonth ? 'Mes de prueba (30 días)' : 'Inscripción completa'}</p>
+                          {membershipType === 'jugador' && watch('activity') && (
+                            <p><strong>Actividad:</strong> {watch('activity')}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {/* Trial Month Option */}
-              <div className="mb-6 p-4 border border-yellow-200 rounded-xl bg-yellow-50">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={trialMonth}
-                    onChange={(e) => setTrialMonth(e.target.checked)}
-                    className="text-yellow-600 rounded"
-                  />
-                  <div>
-                    <span className="font-semibold text-yellow-800">Mes de Prueba</span>
-                    <p className="text-sm text-yellow-700">
-                      Inscríbete sin pago inicial. Tendrás 30 días para decidir si continuar.
-                    </p>
-                  </div>
-                </label>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="form-label">Nombre Completo *</label>
-                  <input
-                    {...register('name')}
-                    className={`form-input ${errors.name ? 'border-red-300' : ''}`}
-                    placeholder="Ingresa tu nombre completo"
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Email *</label>
-                  <input
-                    {...register('email')}
-                    type="email"
-                    className={`form-input ${errors.email ? 'border-red-300' : ''}`}
-                    placeholder="tu@email.com"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Teléfono *</label>
-                  <input
-                    {...register('phone')}
-                    type="tel"
-                    className={`form-input ${errors.phone ? 'border-red-300' : ''}`}
-                    placeholder="+54 9 11 1234-5678"
-                  />
-                  {errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Fecha de Nacimiento *</label>
-                  <input
-                    {...register('birthDate')}
-                    type="date"
-                    className={`form-input ${errors.birthDate ? 'border-red-300' : ''}`}
-                  />
-                  {errors.birthDate && (
-                    <p className="text-red-500 text-sm mt-1">{errors.birthDate.message}</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="form-label">Dirección *</label>
-                  <input
-                    {...register('address')}
-                    className={`form-input ${errors.address ? 'border-red-300' : ''}`}
-                    placeholder="Calle, número, ciudad, provincia"
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step 2: Activity and Emergency Contact */}
-        <AnimatePresence mode="wait">
-          {currentStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="neumorphism-card p-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <Activity size={24} className="text-accent" />
-                Actividad y Contacto de Emergencia
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="form-label">Actividad Principal *</label>
-                  <select
-                    {...register('activity')}
-                    className="form-input"
+              {/* Botones de navegación compactos */}
+              <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+                {currentStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="flex items-center gap-1 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                   >
-                    <option value="">Selecciona una actividad</option>
-                    <option value="basketball">Básquet</option>
-                    <option value="volleyball">Vóley</option>
-                    <option value="karate">Karate</option>
-                    <option value="gym">Gimnasio</option>
-                  </select>
-                  {errors.activity && (
-                    <p className="text-red-500 text-sm mt-1">{errors.activity.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Nombre del Contacto de Emergencia *</label>
-                  <input
-                    {...register('emergencyContact.name')}
-                    className={`form-input ${errors.emergencyContact?.name ? 'border-red-300' : ''}`}
-                    placeholder="Nombre completo"
-                  />
-                  {errors.emergencyContact?.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.name.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Teléfono de Emergencia *</label>
-                  <input
-                    {...register('emergencyContact.phone')}
-                    type="tel"
-                    className={`form-input ${errors.emergencyContact?.phone ? 'border-red-300' : ''}`}
-                    placeholder="+54 9 11 1234-5678"
-                  />
-                  {errors.emergencyContact?.phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.phone.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label">Relación *</label>
-                  <input
-                    {...register('emergencyContact.relationship')}
-                    className={`form-input ${errors.emergencyContact?.relationship ? 'border-red-300' : ''}`}
-                    placeholder="Padre, madre, cónyuge, etc."
-                  />
-                  {errors.emergencyContact?.relationship && (
-                    <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.relationship.message}</p>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step 3: Medical Information and Terms (Solo Jugadores) */}
-        <AnimatePresence mode="wait">
-          {currentStep === 3 && membershipType === 'jugador' && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="neumorphism-card p-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <CheckCircle size={24} className="text-green-600" />
-                Información Médica y Términos
-              </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="form-label">¿Tienes alguna condición médica?</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={medicalInfo.hasConditions}
-                        onChange={() => setMedicalInfo(prev => ({ ...prev, hasConditions: true }))}
-                        className="text-primary"
-                      />
-                      Sí
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={!medicalInfo.hasConditions}
-                        onChange={() => setMedicalInfo(prev => ({ ...prev, hasConditions: false }))}
-                        className="text-primary"
-                      />
-                      No
-                    </label>
-                  </div>
-                </div>
-
-                {medicalInfo.hasConditions && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="form-label">Condiciones Médicas</label>
-                      <textarea
-                        value={medicalInfo.conditions}
-                        onChange={(e) => setMedicalInfo(prev => ({ ...prev, conditions: e.target.value }))}
-                        className="form-input"
-                        rows={3}
-                        placeholder="Describe tus condiciones médicas"
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Alergias</label>
-                      <textarea
-                        value={medicalInfo.allergies}
-                        onChange={(e) => setMedicalInfo(prev => ({ ...prev, allergies: e.target.value }))}
-                        className="form-input"
-                        rows={3}
-                        placeholder="Lista de alergias (si las hay)"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="form-label">Medicamentos</label>
-                  <textarea
-                    value={medicalInfo.medications}
-                    onChange={(e) => setMedicalInfo(prev => ({ ...prev, medications: e.target.value }))}
-                    className="form-input"
-                    rows={3}
-                    placeholder="Medicamentos que tomas regularmente (si los hay)"
-                  />
-                </div>
-
-                <div className="border-t pt-6">
-                  <label className="flex items-start gap-3">
-                    <input
-                      {...register('terms')}
-                      type="checkbox"
-                      className="mt-1 text-primary rounded"
-                    />
-                    <span className="text-sm text-gray-600">
-                      Acepto los <a href="#" className="text-primary hover:underline">términos y condiciones</a> del club, 
-                      incluyendo el uso de mi información personal para fines administrativos y de comunicación.
-                    </span>
-                  </label>
-                  {errors.terms && (
-                    <p className="text-red-500 text-sm mt-1">{errors.terms.message}</p>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step 3: Confirmación y Pago (Solo Socios) / Step 4: Confirmación y Pago (Jugadores) */}
-        <AnimatePresence mode="wait">
-          {((currentStep === 3 && membershipType === 'socio') || 
-            (currentStep === 4 && membershipType === 'jugador')) && (
-            <motion.div
-              key="confirmation"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="neumorphism-card p-6"
-            >
-              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <Mail size={24} className="text-blue-600" />
-                Confirmación y Información de Pago
-              </h3>
-
-              <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">Resumen de tu inscripción</h4>
-                  <div className="text-sm text-blue-700 space-y-1">
-                    <p><strong>Tipo:</strong> {membershipType === 'socio' ? 'Socio' : 'Jugador'}</p>
-                    {membershipType === 'jugador' && watchedValues.activity && (
-                      <p><strong>Actividad:</strong> {
-                        watchedValues.activity === 'basketball' ? 'Básquet' :
-                        watchedValues.activity === 'volleyball' ? 'Vóley' :
-                        watchedValues.activity === 'karate' ? 'Karate' : 'Gimnasio'
-                      }</p>
-                    )}
-                    <p><strong>Modalidad:</strong> {trialMonth ? 'Mes de Prueba' : 'Membresía Regular'}</p>
-                  </div>
-                </div>
-
-                {trialMonth ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-yellow-800 mb-2">✨ Mes de Prueba</h4>
-                    <p className="text-sm text-yellow-700">
-                      Te has registrado para el mes de prueba. No necesitas realizar ningún pago inicial.
-                      Tendrás 30 días para probar nuestras instalaciones y decidir si continuar.
-                    </p>
-                  </div>
+                    <ArrowLeft size={12} />
+                    Anterior
+                  </button>
                 ) : (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">💳 Información de Pago</h4>
-                    <p className="text-sm text-green-700 mb-3">
-                      Te enviaremos un email con toda la información necesaria para completar tu pago:
-                    </p>
-                    <ul className="text-sm text-green-700 space-y-1 list-disc list-inside">
-                      <li>Datos bancarios para transferencia</li>
-                      <li>Código QR para MercadoPago</li>
-                      <li>Horarios de atención para pago en efectivo</li>
-                      <li>Monto exacto de la cuota mensual</li>
-                    </ul>
-                  </div>
+                  <div></div>
                 )}
 
-                <div className="border-t pt-6">
-                  <div className="mb-4">
-                    <label className="form-label">¿Confirmas que los datos ingresados son correctos?</label>
-                  </div>
-                  <label className="flex items-start gap-3">
-                    <input
-                      {...register('terms')}
-                      type="checkbox"
-                      className="mt-1 text-primary rounded"
-                    />
-                    <span className="text-sm text-gray-600">
-                      Confirmo que los datos ingresados son correctos y acepto los{' '}
-                      <a href="#" className="text-primary hover:underline">términos y condiciones</a>{' '}
-                      del Club Comandante Espora, incluyendo el uso de mi información personal 
-                      para fines administrativos y de comunicación.
-                    </span>
-                  </label>
-                  {errors.terms && (
-                    <p className="text-red-500 text-sm mt-1">{errors.terms.message}</p>
-                  )}
-                </div>
+                {currentStep < getMaxSteps() ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={currentStep === 1 && !membershipType}
+                    className={`flex items-center gap-1 px-4 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                      currentStep === 1 && !membershipType ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    Siguiente
+                    <ArrowRight size={12} />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center gap-1 px-4 py-2 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={12} />
+                        {trialMonth ? 'Completar' : 'Enviar'}
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowLeft size={20} />
-            Anterior
-          </button>
-
-          {currentStep < getMaxSteps() ? (
-            <button
-              type="button"
-              onClick={nextStep}
-              disabled={currentStep === 1 && !membershipType}
-              className={`accent-button ${
-                currentStep === 1 && !membershipType 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : ''
-              }`}
-            >
-              Siguiente
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="primary-button flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <Mail size={20} />
-                  {trialMonth ? 'Completar Inscripción' : 'Enviar Email de Pago'}
-                </>
-              )}
-            </button>
-          )}
+            </form>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   )
 }
