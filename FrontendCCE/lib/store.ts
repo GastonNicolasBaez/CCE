@@ -34,7 +34,7 @@ interface AppState {
   
   // Búsqueda global
   globalSearchQuery: string
-  globalSearchResults: any[]
+  globalSearchResults: Array<{ id: string; name: string; type: 'section' | 'member'; description?: string; email?: string; activity?: string }>
   isSearching: boolean
   
   // Datos de miembros
@@ -103,7 +103,7 @@ export const useAppStore = create<AppState>()(
         set({ isSearching: true, globalSearchQuery: query })
         
         const state = get()
-        const results: any[] = []
+        const results: Array<{ id: string; name: string; type: 'section' | 'member'; description?: string; email?: string; activity?: string }> = []
         
         // Buscar en secciones/páginas
         const sections = [

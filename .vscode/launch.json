@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 Launch Full Application",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/start-app.bat",
+      "console": "externalTerminal",
+      "preLaunchTask": "🚀 Start All Services"
+    },
+    {
+      "name": "Debug Backend",
+      "type": "node", 
+      "request": "launch",
+      "program": "${workspaceFolder}/BackendCCE/src/server.js",
+      "cwd": "${workspaceFolder}/BackendCCE",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "restart": true,
+      "runtimeArgs": ["--inspect"]
+    },
+    {
+      "name": "Debug Frontend",
+      "type": "node",
+      "request": "launch", 
+      "cwd": "${workspaceFolder}/FrontendCCE",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🔧 Debug Full Stack",
+      "configurations": [
+        "Debug Backend",
+        "Debug Frontend"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 1
+      }
+    }
+  ]
+}

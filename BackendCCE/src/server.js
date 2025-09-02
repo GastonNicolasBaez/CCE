@@ -118,7 +118,7 @@ const startServer = async () => {
       console.log('\n📋 Services Status:');
       console.log(`  • Database: ✅ Connected (SQLite)`);
       console.log(`  • Email: ${config.email.auth.user ? '✅' : '⚠️'} ${config.email.auth.user ? 'Configured' : 'Not configured'}`);
-      console.log(`  • SMS: ${config.sms.twilio.accountSid ? '✅' : '⚠️'} ${config.sms.twilio.accountSid ? 'Configured' : 'Not configured'}`);
+      console.log(`  • SMS: ⚠️ Not configured (service removed)`);
       console.log(`  • MercadoPago: ${config.mercadoPago.accessToken ? '✅' : '⚠️'} ${config.mercadoPago.accessToken ? 'Configured' : 'Not configured'}`);
       
       // Initialize cron service

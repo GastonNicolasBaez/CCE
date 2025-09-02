@@ -1,0 +1,32 @@
+{
+  "name": "club-comandante-espora-full-stack",
+  "version": "1.0.0",
+  "description": "Sistema completo de gestión para Club Comandante Espora",
+  "main": "index.js",
+  "scripts": {
+    "start": "node start-services.js",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd BackendCCE && npm run dev",
+    "frontend": "cd FrontendCCE && npm run dev",
+    "install-all": "npm run install-backend && npm run install-frontend",
+    "install-backend": "cd BackendCCE && npm install",
+    "install-frontend": "cd FrontendCCE && npm install",
+    "build": "cd FrontendCCE && npm run build",
+    "test": "concurrently \"cd BackendCCE && npm test\" \"cd FrontendCCE && npm test\"",
+    "lint": "concurrently \"cd BackendCCE && npm run lint\" \"cd FrontendCCE && npm run lint\"",
+    "startup": "node startup-script.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "open": "^9.1.0"
+  },
+  "keywords": [
+    "club",
+    "management",
+    "sports",
+    "nextjs",
+    "node"
+  ],
+  "author": "Club Comandante Espora",
+  "license": "MIT"
+}

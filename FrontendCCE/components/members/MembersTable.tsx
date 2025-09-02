@@ -19,7 +19,7 @@ import {
 import { getActivityLabel, formatDate } from '../../lib/utils'
 
 export default function MembersTable() {
-  const { members, selectedMembers, selectMember, deselectMember } = useAppStore()
+  const { members } = useAppStore()
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
@@ -90,7 +90,7 @@ export default function MembersTable() {
           <div>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
               className="form-input w-full"
             >
               <option value="all">Todos los estados</option>
@@ -101,7 +101,7 @@ export default function MembersTable() {
           <div>
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
+              onChange={(e) => setFilterType(e.target.value as 'all' | 'socio' | 'jugador')}
               className="form-input w-full"
             >
               <option value="all">Todos los tipos</option>

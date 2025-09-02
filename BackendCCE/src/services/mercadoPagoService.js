@@ -1,4 +1,4 @@
-const mercadopago = require('mercadopago');
+const { MercadoPagoConfig, Preference } = require('mercadopago');
 const config = require('../config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -6,12 +6,15 @@ class MercadoPagoService {
   constructor() {
     if (!config.mercadoPago.accessToken) {
       console.warn('MercadoPago access token not configured');
+      this.client = null;
       return;
     }
 
-    mercadopago.configure({
-      access_token: config.mercadoPago.accessToken
+    this.client = new MercadoPagoConfig({
+      accessToken: config.mercadoPago.accessToken,
     });
+    
+    this.preference = new Preference(this.client);
   }
 
   async crearLinkPago(cuota, socio) {
@@ -54,13 +57,17 @@ class MercadoPagoService {
         expiration_date_to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
       };
 
-      const response = await mercadopago.preferences.create(preference);
+      if (!this.preference) {
+        throw new Error('MercadoPago not initialized');
+      }
+
+      const response = await this.preference.create({ body: preference });
       
-      if (response.body && response.body.init_point) {
+      if (response && response.init_point) {
         return {
-          id: response.body.id,
-          init_point: response.body.init_point,
-          sandbox_init_point: response.body.sandbox_init_point
+          id: response.id,
+          init_point: response.init_point,
+          sandbox_init_point: response.sandbox_init_point
         };
       }
       

@@ -4,7 +4,7 @@ interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
 }
 
-const Checkbox = ({ className, label, ...props }: CheckboxProps) => {
+const Checkbox = ({ label, ...props }: CheckboxProps) => {
   return (
     <label className="flex items-center gap-2 cursor-pointer">
       <input

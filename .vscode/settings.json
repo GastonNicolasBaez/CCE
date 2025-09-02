@@ -1,0 +1,16 @@
+{
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.automationShell.windows": "cmd.exe",
+  "workbench.startupEditor": "none",
+  "extensions.ignoreRecommendations": false,
+  "files.associations": {
+    "*.env*": "properties"
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}"
+}

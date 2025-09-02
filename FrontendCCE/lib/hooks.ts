@@ -1,11 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useAppStore } from './store'
 import { api, transformApiMemberToFrontend, transformFrontendMemberToApi } from './api'
 
 export function useLoadMembers() {
   const { setMembers, setLoading, setError, isLoading, error } = useAppStore()
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -38,17 +38,17 @@ export function useLoadMembers() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setMembers, setLoading, setError])
 
   useEffect(() => {
     loadMembers()
-  }, [])
+  }, [loadMembers])
 
   return { loadMembers, isLoading, error }
 }
 
 export function useCreateMember() {
-  const { addMember, setError, setMembers } = useAppStore()
+  const { addMember, setError } = useAppStore()
 
   const createMember = async (memberData: Parameters<typeof addMember>[0]) => {
     try {

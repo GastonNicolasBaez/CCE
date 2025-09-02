@@ -7,11 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   User, 
   Mail, 
-  Phone, 
-  Calendar, 
-  MapPin, 
   Activity, 
-  Users, 
   Heart, 
   CheckCircle,
   ArrowLeft,

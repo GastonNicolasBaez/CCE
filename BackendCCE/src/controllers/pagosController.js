@@ -3,7 +3,6 @@ const { Socio, Cuota, sequelize } = require('../models');
 const { asyncHandler, NotFoundError, ValidationError } = require('../middleware/errorHandler');
 const mercadoPagoService = require('../services/mercadoPagoService');
 const emailService = require('../services/emailService');
-const smsService = require('../services/smsService');
 
 const pagosController = {
   // GET /pagos - Get payment status for all socios
@@ -167,7 +166,7 @@ const pagosController = {
             // Send SMS if requested
             if (incluirSMS) {
               try {
-                const smsResult = await smsService.enviarSMSLinkPago(socio, cuota, mpResult.init_point);
+                // SMS functionality removed
                 envioResultados.sms = {
                   success: smsResult.success,
                   sid: smsResult.sid
@@ -271,7 +270,7 @@ const pagosController = {
         }
 
         try {
-          await smsService.enviarSMSConfirmacionPago(cuota.socio, cuota);
+          // SMS confirmation removed
         } catch (smsError) {
           console.error('Error sending confirmation SMS:', smsError);
         }
@@ -356,7 +355,7 @@ const pagosController = {
 
           // Send SMS reminder
           try {
-            const smsResult = await smsService.enviarSMSRecordatorio(cuota.socio, cuota);
+            // SMS reminder removed
             envioResultado.sms = {
               success: smsResult.success,
               sid: smsResult.sid

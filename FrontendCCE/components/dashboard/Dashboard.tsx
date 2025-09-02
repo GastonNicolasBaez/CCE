@@ -23,7 +23,7 @@ export default function Dashboard() {
   const metrics: Array<{
     title: string
     value: number
-    icon: any
+    icon: React.ComponentType<{ size?: number | string; className?: string }>
     color: string
     change: string
     changeType: 'positive' | 'negative'

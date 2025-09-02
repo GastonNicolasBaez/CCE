@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010'
 
 export interface ApiMember {
   id: number
@@ -87,21 +87,21 @@ export const api = {
       return response.success ? response.data : response
     },
     
-    create: async (data: CreateMemberData): Promise<any> => {
+    create: async (data: CreateMemberData): Promise<{ success: boolean; data?: ApiMember; message?: string }> => {
       return await fetchApi('/api/socios', {
         method: 'POST',
         body: JSON.stringify(data),
       })
     },
     
-    update: async (id: number, data: Partial<CreateMemberData>): Promise<any> => {
+    update: async (id: number, data: Partial<CreateMemberData>): Promise<{ success: boolean; data?: ApiMember; message?: string }> => {
       return await fetchApi(`/api/socios/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       })
     },
     
-    delete: async (id: number): Promise<any> => {
+    delete: async (id: number): Promise<{ success: boolean; message?: string }> => {
       return await fetchApi(`/api/socios/${id}`, {
         method: 'DELETE',
       })
@@ -112,7 +112,7 @@ export const api = {
       return response.success && Array.isArray(response.data) ? response.data : []
     },
 
-    sendPaymentEmail: async (memberData: any): Promise<any> => {
+    sendPaymentEmail: async (memberData: { id: string; name: string; email: string; phone: string }): Promise<{ success: boolean; message?: string }> => {
       return await fetchApi('/api/socios/send-payment-email', {
         method: 'POST',
         body: JSON.stringify({ memberData }),
@@ -122,10 +122,10 @@ export const api = {
 
   // Pagos endpoints
   pagos: {
-    getOverdue: (): Promise<any[]> => 
+    getOverdue: (): Promise<ApiMember[]> => 
       fetchApi('/api/pagos/vencidos'),
     
-    processPayment: (socioId: number, monto: number): Promise<any> => 
+    processPayment: (socioId: number, monto: number): Promise<{ success: boolean; message?: string }> => 
       fetchApi('/api/pagos/procesar', {
         method: 'POST',
         body: JSON.stringify({ socioId, monto }),
@@ -134,7 +134,7 @@ export const api = {
 }
 
 // Utility functions to transform data between API and frontend formats
-export function transformApiMemberToFrontend(apiMember: any): import('./store').Member {
+export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPagos?: { vencidas: number; pendientes: number; pagadas: number; ultimaCuota?: { fechaPago: string; fechaVencimiento: string } } }): import('./store').Member {
   // Map backend activities to frontend activities
   const activityMap: Record<string, string> = {
     'Basquet': 'basketball',
@@ -161,7 +161,7 @@ export function transformApiMemberToFrontend(apiMember: any): import('./store').
     name: apiMember.nombreCompleto || `${apiMember.nombre} ${apiMember.apellido}`,
     email: apiMember.email,
     phone: apiMember.telefono,
-    activity: activityMap[apiMember.actividad] as any,
+    activity: activityMap[apiMember.actividad] as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'socio',
     status: apiMember.estado === 'Activo' ? 'active' : 'inactive',
     paymentStatus,
     registrationDate: apiMember.fechaIngreso,
@@ -195,7 +195,7 @@ export function transformFrontendMemberToApi(member: Omit<import('./store').Memb
     fechaNacimiento: '1990-01-01', // Placeholder - should be collected from form
     telefono: member.phone,
     email: member.email,
-    actividad: (activityMap[member.activity || 'socio'] || 'Socio') as any,
+    actividad: (activityMap[member.activity || 'socio'] || 'Socio') as CreateMemberData['actividad'],
     esJugador: member.membershipType === 'jugador',
     estado: member.status === 'active' ? 'Activo' : 'Inactivo'
   }

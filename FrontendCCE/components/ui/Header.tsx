@@ -13,7 +13,6 @@ export default function Header() {
     toggleDarkMode,
     globalSearchQuery,
     globalSearchResults,
-    isSearching,
     setGlobalSearchQuery,
     performGlobalSearch,
     clearSearch,
@@ -44,7 +43,7 @@ export default function Header() {
     }
   }
 
-  const handleResultClick = (result: any) => {
+  const handleResultClick = (result: { type: string; id: string }) => {
     if (result.type === 'section') {
       setCurrentPage(result.id)
     } else if (result.type === 'member') {
@@ -54,7 +53,7 @@ export default function Header() {
     clearSearch()
   }
 
-  const getResultIcon = (result: any) => {
+  const getResultIcon = (result: { type: string }) => {
     if (result.type === 'section') {
       return <LayoutDashboard size={16} className="text-blue-500" />
     } else {

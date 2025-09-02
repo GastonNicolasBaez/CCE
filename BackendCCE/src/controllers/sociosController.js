@@ -6,14 +6,15 @@ const emailService = require('../services/emailService');
 const sociosController = {
   // GET /socios - Get all socios with filtering and pagination
   obtenerSocios: asyncHandler(async (req, res) => {
-    const {
-      actividad,
-      estado,
-      estadoCuota,
-      page,
-      limit,
-      search
-    } = req.query;
+    try {
+      const {
+        actividad,
+        estado,
+        estadoCuota,
+        page = '1',
+        limit = '20',
+        search
+      } = req.query;
 
     // Build where conditions
     const whereConditions = {};
@@ -47,57 +48,70 @@ const sociosController = {
       includeConditions.required = true;
     }
 
+    // Parse and validate pagination parameters
+    const pageNumber = Math.max(1, parseInt(page) || 1);
+    const limitNumber = Math.max(1, Math.min(100, parseInt(limit) || 20));
+    
     // Calculate offset
-    const offset = (page - 1) * limit;
+    const offset = (pageNumber - 1) * limitNumber;
 
     // Get socios with pagination
     const { count, rows: socios } = await Socio.findAndCountAll({
       where: whereConditions,
       include: [includeConditions],
-      limit: limit,
+      limit: limitNumber,
       offset: offset,
       order: [['createdAt', 'DESC']],
       distinct: true
     });
 
     // Calculate pagination info
-    const totalPages = Math.ceil(count / limit);
-    const hasNextPage = page < totalPages;
-    const hasPreviousPage = page > 1;
+    const totalPages = Math.ceil(count / limitNumber);
+    const hasNextPage = pageNumber < totalPages;
+    const hasPreviousPage = pageNumber > 1;
 
     // Transform socios data
     const sociosData = socios.map(socio => {
-      const socioData = socio.toJSON();
-      
-      // Add computed fields
-      socioData.nombreCompleto = socio.getNombreCompleto();
-      socioData.edad = socio.getEdad();
-      
-      // Add payment summary
-      const cuotas = socioData.cuotas || [];
-      socioData.resumenPagos = {
-        total: cuotas.length,
-        pendientes: cuotas.filter(c => c.estado === 'Pendiente').length,
-        pagadas: cuotas.filter(c => c.estado === 'Pagada').length,
-        vencidas: cuotas.filter(c => c.estado === 'Vencida').length,
-        ultimaCuota: cuotas.length > 0 ? cuotas[cuotas.length - 1] : null
-      };
+      try {
+        const socioData = socio.toJSON();
+        
+        // Add computed fields
+        socioData.nombreCompleto = socio.getNombreCompleto();
+        socioData.edad = socio.getEdad();
+        
+        // Add payment summary
+        const cuotas = socioData.cuotas || [];
+        socioData.resumenPagos = {
+          total: cuotas.length,
+          pendientes: cuotas.filter(c => c.estado === 'Pendiente').length,
+          pagadas: cuotas.filter(c => c.estado === 'Pagada').length,
+          vencidas: cuotas.filter(c => c.estado === 'Vencida').length,
+          ultimaCuota: cuotas.length > 0 ? cuotas[cuotas.length - 1] : null
+        };
 
-      return socioData;
+        return socioData;
+      } catch (error) {
+        console.error('Error processing socio:', socio.id, error);
+        throw error;
+      }
     });
 
     res.json({
       success: true,
       data: sociosData,
       pagination: {
-        currentPage: page,
+        currentPage: pageNumber,
         totalPages,
         totalItems: count,
-        itemsPerPage: limit,
+        itemsPerPage: limitNumber,
         hasNextPage,
         hasPreviousPage
       }
     });
+    } catch (error) {
+      console.error('Error in obtenerSocios:', error);
+      throw error;
+    }
   }),
 
   // GET /socios/:id - Get single socio by ID

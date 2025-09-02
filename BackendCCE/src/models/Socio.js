@@ -114,8 +114,18 @@ Socio.prototype.getNombreCompleto = function() {
 };
 
 Socio.prototype.getEdad = function() {
+  if (!this.fechaNacimiento) {
+    return null;
+  }
+  
   const today = new Date();
   const birthDate = new Date(this.fechaNacimiento);
+  
+  // Validate that birthDate is a valid date
+  if (isNaN(birthDate.getTime())) {
+    return null;
+  }
+  
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
   

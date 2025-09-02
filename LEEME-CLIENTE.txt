@@ -1,0 +1,35 @@
+================================================================
+    🏀 CLUB COMANDANTE ESPORA - SISTEMA DE GESTIÓN 🏀
+================================================================
+
+¡Hola! Este es tu sistema de gestión para el Club Comandante Espora.
+
+📋 PRIMERA VEZ (Solo hacer UNA vez):
+   1️⃣ Hacer doble click en "crear-icono-escritorio.bat"
+   2️⃣ ¡Se creará un ícono en tu escritorio!
+
+💻 USO DIARIO (Súper fácil):
+   1️⃣ Doble click en "Club Comandante Espora" (ícono del escritorio)  
+   2️⃣ Se abre una ventana negra - NO LA CIERRES
+   3️⃣ Se abre el navegador automáticamente
+   4️⃣ ¡Ya puedes usar la aplicación!
+
+🛑 CERRAR:
+   1️⃣ Ve a la ventana negra
+   2️⃣ Presiona cualquier tecla
+   3️⃣ ¡Todo se cierra automáticamente!
+
+⚠️  IMPORTANTE:
+   - NUNCA cerrar la ventana negra con la "X"
+   - SIEMPRE usar "cualquier tecla" para cerrar
+   - La ventana negra es lo que mantiene todo funcionando
+
+📚 MANUAL COMPLETO:
+   - Abre "INSTRUCCIONES-CLIENTE.md" para más detalles
+
+📞 SOPORTE:
+   - Si algo no funciona, contacta al soporte técnico
+
+================================================================
+          ¡Disfruta gestionando tu club! 🏀⚡
+================================================================

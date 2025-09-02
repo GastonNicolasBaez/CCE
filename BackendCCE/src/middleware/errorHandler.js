@@ -64,7 +64,8 @@ const handleSequelizeError = (error) => {
   }
 
   if (error.name === 'SequelizeDatabaseError') {
-    return new AppError('Database error', 500, false);
+    console.error('Original Sequelize error:', error);
+    return new AppError(`Database error: ${error.message}`, 500, false);
   }
 
   return error;

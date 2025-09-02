@@ -1,18 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { useAppStore } from '../../lib/store'
 import { 
   LayoutDashboard, 
   Users, 
   CreditCard, 
   UserPlus, 
-  Menu, 
-  X,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 const navigationItems = [
   {

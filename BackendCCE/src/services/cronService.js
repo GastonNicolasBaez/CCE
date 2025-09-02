@@ -2,7 +2,6 @@ const cron = require('node-cron');
 const { Op } = require('sequelize');
 const { Socio, Cuota } = require('../models');
 const emailService = require('./emailService');
-const smsService = require('./smsService');
 
 class CronService {
   constructor() {
@@ -135,7 +134,7 @@ class CronService {
 
           // Send SMS reminder (optional, based on configuration)
           try {
-            await smsService.enviarSMSRecordatorio(cuota.socio, cuota);
+            // SMS reminder removed
             console.log(`📱 SMS reminder sent to ${cuota.socio.telefono}`);
           } catch (smsError) {
             console.error(`❌ SMS reminder failed for ${cuota.socio.telefono}:`, smsError.message);

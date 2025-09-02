@@ -22,7 +22,7 @@ export default function DarkModeProvider({ children }: { children: React.ReactNo
     if (savedDarkMode !== darkMode) {
       useAppStore.getState().toggleDarkMode()
     }
-  }, [])
+  }, [darkMode])
 
   return <>{children}</>
 }

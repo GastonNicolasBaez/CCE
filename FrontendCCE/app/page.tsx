@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import React from 'react'
 import { useAppStore } from '../lib/store'
 import Sidebar from '../components/ui/Sidebar'
 import Header from '../components/ui/Header'

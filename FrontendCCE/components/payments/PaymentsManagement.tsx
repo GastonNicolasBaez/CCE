@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Bell, 
@@ -8,9 +8,8 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react'
-import { useAppStore, Member } from '../../lib/store'
+import { useAppStore } from '../../lib/store'
 import { getActivityLabel, getStatusBadge, formatCurrency } from '../../lib/utils'
-import toast from 'react-hot-toast'
 
 export default function PaymentsManagement() {
   const { 
