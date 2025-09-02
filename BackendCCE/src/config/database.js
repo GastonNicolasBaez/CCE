@@ -14,6 +14,10 @@ if (process.env.NODE_ENV === 'production' || process.env.USE_POSTGRES === 'true'
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'password',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    dialectOptions: {
+      charset: 'utf8',
+      ssl: false
+    },
     pool: {
       max: 10,
       min: 0,
@@ -24,7 +28,7 @@ if (process.env.NODE_ENV === 'production' || process.env.USE_POSTGRES === 'true'
       timestamps: true,
       underscored: false,
       createdAt: 'createdAt',
-      updatedAt: 'updatedAt'
+      updatedAt: 'updatedAt',
     }
   });
 } else {

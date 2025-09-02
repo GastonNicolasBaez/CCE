@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export interface ApiMember {
   id: number
@@ -47,12 +47,15 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
       ...options,
     })
 
-    if (!response.ok) {
-      throw new ApiError(response.status, `API Error: ${response.statusText}`)
-    }
-
     const data = await response.json()
     console.log('API Response for', endpoint, ':', data)
+
+    if (!response.ok) {
+      // If response has error message, use it; otherwise use generic message
+      const errorMessage = data?.message || `API Error: ${response.statusText}`
+      throw new ApiError(response.status, errorMessage)
+    }
+
     return data
   } catch (error) {
     if (error instanceof ApiError) {
@@ -101,8 +104,9 @@ export const api = {
       })
     },
     
-    delete: async (id: number): Promise<{ success: boolean; message?: string }> => {
-      return await fetchApi(`/api/socios/${id}`, {
+    delete: async (id: number, force: boolean = false): Promise<{ success: boolean; message?: string }> => {
+      const url = `/api/socios/${id}${force ? '?force=true' : ''}`
+      return await fetchApi(url, {
         method: 'DELETE',
       })
     },

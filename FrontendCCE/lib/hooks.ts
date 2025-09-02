@@ -85,16 +85,46 @@ export function useUpdateMember() {
   const updateMemberData = async (id: string, updates: Parameters<typeof updateMember>[1]) => {
     try {
       setError(null)
-      // Here we would make the API call to update the member
-      // const apiMember = await api.socios.update(parseInt(id), updates)
-      // const frontendMember = transformApiMemberToFrontend(apiMember)
-      updateMember(id, updates)
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar el miembro'
+      
+      // Make API call to update the member - send only changed fields
+      const updateFields: any = {}
+      
+      if (updates.name !== undefined) {
+        const nameParts = updates.name.split(' ')
+        updateFields.nombre = nameParts[0] || ''
+        updateFields.apellido = nameParts.slice(1).join(' ') || ''
+      }
+      
+      if (updates.email !== undefined) {
+        updateFields.email = updates.email
+      }
+      
+      if (updates.phone !== undefined) {
+        updateFields.telefono = updates.phone
+      }
+      
+      if (updates.status !== undefined) {
+        updateFields.estado = updates.status === 'active' ? 'Activo' : 'Inactivo'
+      }
+
+      const apiResponse = await api.socios.update(parseInt(id), updateFields)
+      
+      if (apiResponse && apiResponse.success) {
+        // Update local state with API response
+        updateMember(id, updates)
+        return { success: true, message: apiResponse.message || 'Miembro actualizado exitosamente' }
+      } else {
+        const errorMessage = apiResponse?.message || 'Error al actualizar el miembro'
+        setError(errorMessage)
+        return { success: false, message: errorMessage }
+      }
+    } catch (err: any) {
+      // Extract error message - could be from ApiError or other sources
+      const errorMessage = err?.message || 'Error al actualizar el miembro'
+      
       setError(errorMessage)
       console.error('Error updating member:', err)
-      return false
+      return { success: false, message: errorMessage }
     }
   }
 
@@ -104,18 +134,32 @@ export function useUpdateMember() {
 export function useDeleteMember() {
   const { deleteMember, setError } = useAppStore()
 
-  const deleteMemberData = async (id: string) => {
+  const deleteMemberData = async (id: string, force: boolean = false) => {
     try {
       setError(null)
-      // Here we would make the API call to delete the member
-      // await api.socios.delete(parseInt(id))
-      deleteMember(id)
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al eliminar el miembro'
+      
+      // Make API call to delete the member
+      const apiResponse = await api.socios.delete(parseInt(id), force)
+      
+      if (apiResponse && apiResponse.success) {
+        // Delete from local state only if API call succeeded
+        deleteMember(id)
+        return { success: true, message: apiResponse.message }
+      } else {
+        // Return error information for modal handling
+        return { 
+          success: false, 
+          message: apiResponse?.message || 'Error al eliminar el miembro',
+          data: apiResponse?.data
+        }
+      }
+    } catch (err: any) {
+      // Extract error message - could be from ApiError or other sources
+      const errorMessage = err?.message || 'Error al eliminar el miembro'
+      
       setError(errorMessage)
       console.error('Error deleting member:', err)
-      return false
+      return { success: false, message: errorMessage }
     }
   }
 

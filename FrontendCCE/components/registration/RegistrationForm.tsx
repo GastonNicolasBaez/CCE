@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { registrationSchema, type RegistrationFormData } from '../../lib/validations'
+import { useCreateMember } from '../../lib/hooks'
 
 export default function RegistrationForm() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -21,6 +22,7 @@ export default function RegistrationForm() {
   const [trialMonth, setTrialMonth] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const { createMember } = useCreateMember()
 
   const {
     register,
@@ -64,12 +66,33 @@ export default function RegistrationForm() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true)
     try {
-      // Simular envío
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('Registration data:', { ...data, membershipType, trialMonth })
-      setSubmitted(true)
+      // Transformar los datos del formulario al formato esperado por el store
+      const memberData = {
+        id: Date.now().toString(), // Temporal, se generará en el backend
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        activity: membershipType === 'jugador' ? (data.activity as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'socio') : undefined,
+        status: 'active' as 'active',
+        paymentStatus: trialMonth ? 'paid' as 'paid' : 'pending' as 'pending',
+        membershipType: membershipType as 'socio' | 'jugador',
+        registrationDate: new Date().toISOString().split('T')[0],
+        lastPaymentDate: trialMonth ? new Date().toISOString().split('T')[0] : undefined,
+        nextPaymentDate: trialMonth ? 
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
+          new Date().toISOString().split('T')[0]
+      }
+
+      const success = await createMember(memberData)
+      if (success) {
+        console.log('Member created successfully:', { ...data, membershipType, trialMonth })
+        setSubmitted(true)
+      } else {
+        throw new Error('Failed to create member')
+      }
     } catch (error) {
       console.error('Error submitting form:', error)
+      alert('Error al registrar el miembro. Por favor intenta nuevamente.')
     } finally {
       setIsSubmitting(false)
     }

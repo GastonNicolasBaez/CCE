@@ -85,6 +85,7 @@ export default function Header() {
                 value={globalSearchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="bg-transparent outline-none text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 w-48 sm:w-64"
+                suppressHydrationWarning
               />
               {globalSearchQuery && (
                 <button
@@ -210,6 +211,7 @@ export default function Header() {
               value={globalSearchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 flex-1"
+              suppressHydrationWarning
             />
             {globalSearchQuery && (
               <button

@@ -224,6 +224,7 @@ const sociosController = {
   // DELETE /socios/:id - Delete socio
   eliminarSocio: asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { force } = req.query; // Add force parameter from query string
 
     const socio = await Socio.findByPk(id, {
       include: [{
@@ -239,7 +240,7 @@ const sociosController = {
     // Check if socio has pending payments
     const cuotasPendientes = socio.cuotas?.filter(c => c.estado === 'Pendiente' || c.estado === 'Vencida') || [];
     
-    if (cuotasPendientes.length > 0) {
+    if (cuotasPendientes.length > 0 && force !== 'true') {
       return res.status(400).json({
         success: false,
         message: 'No se puede eliminar el socio porque tiene cuotas pendientes',
@@ -250,11 +251,22 @@ const sociosController = {
       });
     }
 
+    // If force=true, delete all associated cuotas first
+    if (force === 'true' && cuotasPendientes.length > 0) {
+      await Cuota.destroy({
+        where: {
+          socioId: id
+        }
+      });
+    }
+
     await socio.destroy();
 
     res.json({
       success: true,
-      message: 'Socio eliminado exitosamente'
+      message: force === 'true' && cuotasPendientes.length > 0 
+        ? 'Socio y sus cuotas eliminados exitosamente'
+        : 'Socio eliminado exitosamente'
     });
   }),
 

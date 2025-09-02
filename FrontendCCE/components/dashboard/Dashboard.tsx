@@ -7,10 +7,9 @@ import { Users, CreditCard, TrendingUp, UserPlus } from 'lucide-react'
 import MetricCard from './MetricCard'
 import PaymentChart from './PaymentChart'
 import RecentRegistrations from './RecentRegistrations'
-import Link from 'next/link'
 
 export default function Dashboard() {
-  const { members } = useAppStore()
+  const { members, setCurrentPage } = useAppStore()
   const { isLoading, error } = useLoadMembers()
 
   // Calcular métricas - validar que members sea un array
@@ -109,10 +108,13 @@ export default function Dashboard() {
           transition={{ delay: 0.2 }}
           className="flex-shrink-0"
         >
-          <Link href="/registration" className="accent-button flex items-center gap-2 px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <button 
+            onClick={() => setCurrentPage('registration')}
+            className="accent-button flex items-center gap-2 px-4 py-2 text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+          >
             <UserPlus size={16} />
             <span className="hidden sm:block">Nueva Inscripción</span>
-          </Link>
+          </button>
         </motion.div>
       </div>
 

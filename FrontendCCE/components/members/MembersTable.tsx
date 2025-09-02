@@ -14,16 +14,49 @@ import {
   ChevronDown, 
   ChevronUp,
   UserCheck,
-  UserX
+  UserX,
+  Edit,
+  Trash2
 } from 'lucide-react'
 import { getActivityLabel, formatDate } from '../../lib/utils'
+import { useUpdateMember, useDeleteMember } from '../../lib/hooks'
+import ConfirmationModal from '../ui/ConfirmationModal'
+import NotificationModal from '../ui/NotificationModal'
 
 export default function MembersTable() {
   const { members } = useAppStore()
+  const { updateMemberData } = useUpdateMember()
+  const { deleteMemberData } = useDeleteMember()
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [filterType, setFilterType] = useState<'all' | 'socio' | 'jugador'>('all')
+  const [editingMember, setEditingMember] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    status: 'active' as 'active' | 'inactive'
+  })
+  
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'danger' | 'warning' | 'info',
+    onConfirm: () => {},
+    showForceOption: false,
+    onForceConfirm: () => {},
+    memberToDelete: null as string | null
+  })
+  
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  })
 
   // Filtrar miembros - validar que members sea un array
   const membersArray = Array.isArray(members) ? members : []
@@ -60,6 +93,100 @@ export default function MembersTable() {
       case 'overdue': return 'Vencido'
       default: return 'Desconocido'
     }
+  }
+
+  const handleEditClick = (member: any, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingMember(member.id)
+    setEditForm({
+      name: member.name,
+      email: member.email,
+      phone: member.phone,
+      status: member.status
+    })
+  }
+
+  const handleDeleteClick = (memberId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const member = membersArray.find(m => m.id === memberId)
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Eliminar Miembro',
+      message: `¿Estás seguro de que deseas eliminar a ${member?.name}? Esta acción no se puede deshacer.`,
+      type: 'danger',
+      onConfirm: () => performDelete(memberId, false),
+      showForceOption: false,
+      onForceConfirm: () => {},
+      memberToDelete: memberId
+    })
+  }
+
+  const performDelete = async (memberId: string, force: boolean) => {
+    const result = await deleteMemberData(memberId, force)
+    
+    setConfirmModal(prev => ({ ...prev, isOpen: false }))
+    
+    if (result.success) {
+      setNotification({
+        isOpen: true,
+        title: 'Éxito',
+        message: result.message || 'Miembro eliminado exitosamente',
+        type: 'success'
+      })
+    } else {
+      // Check if it's a "pending payments" error
+      if (result.message?.includes('cuotas pendientes') && !force) {
+        const member = membersArray.find(m => m.id === memberId)
+        setConfirmModal({
+          isOpen: true,
+          title: 'Miembro con Cuotas Pendientes',
+          message: `${member?.name} tiene cuotas pendientes. ${result.message}`,
+          type: 'warning',
+          onConfirm: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+          showForceOption: true,
+          onForceConfirm: () => performDelete(memberId, true),
+          memberToDelete: memberId
+        })
+      } else {
+        setNotification({
+          isOpen: true,
+          title: 'Error',
+          message: result.message || 'Error al eliminar el miembro',
+          type: 'error'
+        })
+      }
+    }
+  }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (editingMember) {
+      const result = await updateMemberData(editingMember, editForm)
+      
+      if (result.success) {
+        setEditingMember(null)
+        setEditForm({ name: '', email: '', phone: '', status: 'active' })
+        setNotification({
+          isOpen: true,
+          title: 'Éxito',
+          message: result.message || 'Miembro actualizado exitosamente',
+          type: 'success'
+        })
+      } else {
+        setNotification({
+          isOpen: true,
+          title: 'Error',
+          message: result.message || 'Error al actualizar el miembro',
+          type: 'error'
+        })
+      }
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMember(null)
+    setEditForm({ name: '', email: '', phone: '', status: 'active' })
   }
 
   return (
@@ -231,13 +358,29 @@ export default function MembersTable() {
                       {formatDate(member.registrationDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        {expandedMember === member.id ? (
-                          <ChevronUp size={20} />
-                        ) : (
-                          <ChevronDown size={20} />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => handleEditClick(member, e)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                          title="Editar miembro"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(member.id, e)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded"
+                          title="Eliminar miembro"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded">
+                          {expandedMember === member.id ? (
+                            <ChevronUp size={20} />
+                          ) : (
+                            <ChevronDown size={20} />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   
@@ -339,6 +482,124 @@ export default function MembersTable() {
           </table>
         </div>
       </div>
+
+      {/* Modal de edición */}
+      <AnimatePresence>
+        {editingMember && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={handleCancelEdit}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl p-6 w-96 max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Editar Miembro
+              </h3>
+              
+              <form onSubmit={handleSaveEdit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({...editForm, status: e.target.value as 'active' | 'inactive'})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </div>
+                
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Guardar Cambios
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modales */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.showForceOption ? "Cancelar" : "Eliminar"}
+        showForceOption={confirmModal.showForceOption}
+        onForceConfirm={confirmModal.onForceConfirm}
+        forceText="Eliminar con Cuotas"
+      />
+
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   )
 }
