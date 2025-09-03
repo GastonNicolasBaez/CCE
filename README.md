@@ -67,9 +67,10 @@ El proyecto incluye datos de prueba:
 - ✅ Diseño glassmorphism/neumorphism
 - ✅ Responsive design
 
-### Backend (Express + SQLite)
+### Backend (Express + PostgreSQL)
 - ✅ API RESTful completa
-- ✅ Base de datos SQLite con Sequelize ORM
+- ✅ Base de datos PostgreSQL con Sequelize ORM
+- ✅ Compatible con Supabase
 - ✅ Validación de datos con Joi
 - ✅ Manejo de errores robusto
 - ✅ Rate limiting
@@ -107,7 +108,8 @@ El proyecto incluye datos de prueba:
 
 ### Backend  
 - Express.js
-- SQLite + Sequelize ORM
+- PostgreSQL + Sequelize ORM
+- Supabase compatible
 - Joi (validación)
 - bcryptjs (encriptación)
 - nodemailer (emails)
@@ -146,7 +148,7 @@ CCE/
 │   │   ├── services/     # Servicios (email, SMS, etc)
 │   │   ├── middleware/   # Middlewares
 │   │   └── utils/        # Utilidades
-│   ├── database.sqlite   # Base de datos
+│   ├── database-schema.sql # Schema de PostgreSQL
 │   └── .env             # Variables de entorno
 ├── FrontendCCE/          # Frontend Next.js
 │   ├── app/             # App Router de Next.js
@@ -164,9 +166,14 @@ CCE/
 - Helmet para headers de seguridad
 - Variables de entorno para secrets
 
+## 🚀 Deploy en Producción
+
+Para deploy en producción con Vercel + Supabase, consulta el archivo `DEPLOY.md` que contiene instrucciones detalladas paso a paso.
+
 ## 📞 Soporte
 
 Si tienes problemas:
 1. Verifica que ambos servidores estén ejecutándose
 2. Revisa la consola para errores
 3. Verifica que los puertos 3000 y 3001 estén disponibles
+4. Para deploy en producción, consulta `DEPLOY.md`

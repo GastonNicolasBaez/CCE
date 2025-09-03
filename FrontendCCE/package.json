@@ -9,10 +9,12 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "export": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
+    "@supabase/supabase-js": "^2.57.0",
     "@tanstack/react-table": "^8.10.7",
     "@types/node": "^20",
     "@types/react": "^18",

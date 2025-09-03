@@ -7,6 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "init-db": "node src/utils/initDatabase.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "npm run init-db",
     "lint": "eslint src/",
     "test": "jest"
   },
@@ -48,6 +50,6 @@
     "supertest": "^6.3.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
