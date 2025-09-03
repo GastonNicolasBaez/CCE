@@ -1,9 +1,10 @@
 # Guía de Deploy - Vercel + Supabase
 
 ## Prerrequisitos
-1. Cuenta en Vercel (https://vercel.com)
-2. Cuenta en Supabase (https://supabase.com)
-3. Proyecto creado en Supabase
+1. Node.js 22.0.0 o superior
+2. Cuenta en Vercel (https://vercel.com)
+3. Cuenta en Supabase (https://supabase.com)
+4. Proyecto creado en Supabase
 
 ## Pasos para Deploy:
 

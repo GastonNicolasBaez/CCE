@@ -8,7 +8,7 @@
     "dev": "nodemon src/server.js",
     "init-db": "node src/utils/initDatabase.js",
     "build": "echo 'No build step required'",
-    "vercel-build": "npm run init-db",
+    "vercel-build": "echo 'Build completed - database initialization skipped in Vercel'",
     "lint": "eslint src/",
     "test": "jest"
   },
@@ -44,12 +44,13 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/pg": "^8.15.5",
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.4"
   },
   "engines": {
-    "node": "18.x"
+    "node": ">=22.0.0"
   }
 }

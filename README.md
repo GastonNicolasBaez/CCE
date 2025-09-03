@@ -5,7 +5,7 @@ Sistema completo de gestión para el Club Comandante Espora, incluyendo gestión
 ## 🚀 Inicio Rápido
 
 ### Prerrequisitos
-- Node.js 18.0.0 o superior
+- Node.js 22.0.0 o superior
 - npm o yarn
 
 ### 1. Instalar dependencias
