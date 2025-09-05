@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+// ✅ ACTIVIDADES UNIFICADAS CON EL BACKEND
+const ACTIVITIES = ['Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'] as const
+const FRONTEND_ACTIVITIES = ['basketball', 'volleyball', 'karate', 'gym', 'solo-socio'] as const
+
+// ✅ ESTADOS UNIFICADOS CON EL BACKEND  
+const MEMBER_STATES = ['active', 'inactive', 'suspended'] as const
+const PAYMENT_STATES = ['paid', 'pending', 'overdue', 'cancelled'] as const
+
 // Schema for emergency contact
 const emergencyContactSchema = z.object({
   name: z.string().min(1, 'El nombre del contacto es requerido'),
@@ -13,7 +21,7 @@ const medicalInfoSchema = z.object({
   medications: z.string().min(1, 'La información sobre medicamentos es requerida')
 })
 
-// Main registration schema
+// ✅ SCHEMA DE REGISTRO CORREGIDO
 export const registrationSchema = z.object({
   // Personal Information
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -21,9 +29,12 @@ export const registrationSchema = z.object({
   phone: z.string().min(8, 'El teléfono debe tener al menos 8 dígitos'),
   birthDate: z.string().min(1, 'La fecha de nacimiento es requerida'),
   address: z.string().min(5, 'La dirección debe tener al menos 5 caracteres'),
+  dni: z.string().min(7, 'El DNI debe tener al menos 7 dígitos').max(20, 'El DNI no puede tener más de 20 dígitos'),
+  
+  // ✅ Actividades corregidas - usa las 5 actividades del club
+  activity: z.enum(FRONTEND_ACTIVITIES).optional(),
   
   // Optional fields for players
-  activity: z.string().optional(),
   emergencyContact: emergencyContactSchema.optional(),
   medicalInfo: medicalInfoSchema.optional(),
   
@@ -36,30 +47,86 @@ export const registrationSchema = z.object({
 // Type inference from schema
 export type RegistrationFormData = z.infer<typeof registrationSchema>
 
-// Schema for member data (used in store)
+// ✅ SCHEMA DE MIEMBRO CORREGIDO CON CRITERIOS UNIFICADOS
 export const memberSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string().email(),
   phone: z.string(),
-  activity: z.string().optional(),
-  status: z.enum(['activo', 'inactivo', 'pendiente']).default('activo'),
+  activity: z.enum(FRONTEND_ACTIVITIES).optional(),
+  status: z.enum(MEMBER_STATES).default('active'), // ✅ Estados corregidos
   membershipType: z.enum(['socio', 'jugador']).default('socio'),
-  paymentStatus: z.enum(['al-dia', 'pendiente', 'vencido']).default('al-dia'),
-  joinDate: z.string(),
-  lastPayment: z.string().optional()
+  paymentStatus: z.enum(PAYMENT_STATES).default('pending'), // ✅ Estados de pago corregidos
+  registrationDate: z.string(), // ✅ Renombrado de joinDate
+  lastPaymentDate: z.string().optional(), // ✅ Renombrado de lastPayment
+  nextPaymentDate: z.string().optional() // ✅ Nuevo campo
 })
 
 export type Member = z.infer<typeof memberSchema>
 
-// Schema for payment reminders
+// ✅ SCHEMA DE RECORDATORIO DE PAGO CORREGIDO
 export const paymentReminderSchema = z.object({
   id: z.string(),
   memberId: z.string(),
+  memberName: z.string(),
+  activity: z.string(),
   amount: z.number(),
   dueDate: z.string(),
-  status: z.enum(['pending', 'sent', 'paid']).default('pending'),
-  createdAt: z.string()
+  sent: z.boolean().default(false), // ✅ Corregido de status a sent
+  sentDate: z.string().optional() // ✅ Nuevo campo
 })
 
 export type PaymentReminder = z.infer<typeof paymentReminderSchema>
+
+// ✅ CONSTANTES EXPORTADAS PARA USO EN COMPONENTES
+export const CLUB_ACTIVITIES = {
+  // Para mostrar en la UI (español)
+  BACKEND: ACTIVITIES,
+  // Para usar en el código (inglés/kebab-case)
+  FRONTEND: FRONTEND_ACTIVITIES,
+  // Mapeo de backend a frontend
+  BACKEND_TO_FRONTEND: {
+    'Basquet': 'basketball',
+    'Voley': 'volleyball',
+    'Karate': 'karate', 
+    'Gimnasio': 'gym',
+    'Solo socio': 'solo-socio'
+  } as const,
+  // Mapeo de frontend a backend
+  FRONTEND_TO_BACKEND: {
+    'basketball': 'Basquet',
+    'volleyball': 'Voley',
+    'karate': 'Karate',
+    'gym': 'Gimnasio', 
+    'solo-socio': 'Solo socio'
+  } as const,
+  // Labels para mostrar en la UI
+  LABELS: {
+    'basketball': 'Básquet',
+    'volleyball': 'Vóley',
+    'karate': 'Karate',
+    'gym': 'Gimnasio',
+    'solo-socio': 'Solo Socio'
+  } as const
+} as const
+
+export const MEMBER_STATUS = {
+  FRONTEND: MEMBER_STATES,
+  BACKEND: ['Activo', 'Inactivo', 'Suspendido'] as const,
+  LABELS: {
+    'active': 'Activo',
+    'inactive': 'Inactivo', 
+    'suspended': 'Suspendido'
+  } as const
+} as const
+
+export const PAYMENT_STATUS = {
+  FRONTEND: PAYMENT_STATES,
+  BACKEND: ['Pendiente', 'Pagada', 'Vencida', 'Cancelada'] as const,
+  LABELS: {
+    'pending': 'Pendiente',
+    'paid': 'Pagada',
+    'overdue': 'Vencida',
+    'cancelled': 'Cancelada'
+  } as const
+} as const

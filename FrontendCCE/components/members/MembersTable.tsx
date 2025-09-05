@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, Member } from '../../lib/store'
 import { 
   Users, 
   User, 
@@ -29,14 +29,14 @@ export default function MembersTable() {
   const { deleteMemberData } = useDeleteMember()
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all')
   const [filterType, setFilterType] = useState<'all' | 'socio' | 'jugador'>('all')
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
     phone: '',
-    status: 'active' as 'active' | 'inactive'
+    status: 'active' as 'active' | 'inactive' | 'suspended'
   })
   
   // Modal states
@@ -74,7 +74,12 @@ export default function MembersTable() {
   }
 
   const getStatusColor = (status: string) => {
-    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800'
+      case 'inactive': return 'bg-red-100 text-red-800'
+      case 'suspended': return 'bg-orange-100 text-orange-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
   }
 
   const getPaymentStatusColor = (status: string) => {
@@ -95,7 +100,7 @@ export default function MembersTable() {
     }
   }
 
-  const handleEditClick = (member: any, e: React.MouseEvent) => {
+  const handleEditClick = (member: Member, e: React.MouseEvent) => {
     e.stopPropagation()
     setEditingMember(member.id)
     setEditForm({
@@ -217,12 +222,13 @@ export default function MembersTable() {
           <div>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive' | 'suspended')}
               className="form-input w-full"
             >
               <option value="all">Todos los estados</option>
               <option value="active">Activos</option>
               <option value="inactive">Inactivos</option>
+              <option value="suspended">Suspendidos</option>
             </select>
           </div>
           <div>
@@ -339,6 +345,11 @@ export default function MembersTable() {
                           <>
                             <UserCheck size={12} className="mr-1" />
                             Activo
+                          </>
+                        ) : member.status === 'suspended' ? (
+                          <>
+                            <UserX size={12} className="mr-1" />
+                            Suspendido
                           </>
                         ) : (
                           <>
@@ -550,11 +561,12 @@ export default function MembersTable() {
                   </label>
                   <select
                     value={editForm.status}
-                    onChange={(e) => setEditForm({...editForm, status: e.target.value as 'active' | 'inactive'})}
+                    onChange={(e) => setEditForm({...editForm, status: e.target.value as 'active' | 'inactive' | 'suspended'})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="active">Activo</option>
                     <option value="inactive">Inactivo</option>
+                    <option value="suspended">Suspendido</option>
                   </select>
                 </div>
                 

@@ -8,9 +8,9 @@ export interface ApiMember {
   fechaNacimiento: string
   telefono: string
   email: string
-  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Socio'
+  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Solo socio' // ✅ Actualizado con criterios unificados
   esJugador: boolean
-  estado: 'Activo' | 'Inactivo' | 'Suspendido'
+  estado: 'Activo' | 'Inactivo' | 'Suspendido' // ✅ Estados unificados
   fechaIngreso: string
   nombreCompleto?: string
   edad?: number
@@ -23,9 +23,9 @@ export interface CreateMemberData {
   fechaNacimiento: string
   telefono: string
   email: string
-  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Socio'
+  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Solo socio' // ✅ Actualizado
   esJugador?: boolean
-  estado?: 'Activo' | 'Inactivo' | 'Suspendido'
+  estado?: 'Activo' | 'Inactivo' | 'Suspendido' // ✅ Estados unificados
 }
 
 class ApiError extends Error {
@@ -51,7 +51,6 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     console.log('API Response for', endpoint, ':', data)
 
     if (!response.ok) {
-      // If response has error message, use it; otherwise use generic message
       const errorMessage = data?.message || `API Error: ${response.statusText}`
       throw new ApiError(response.status, errorMessage)
     }
@@ -61,19 +60,16 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     if (error instanceof ApiError) {
       throw error
     }
-    // Error de red o parsing
     console.error('Network or parsing error:', error)
     throw new ApiError(0, `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
 export const api = {
-  // Socios endpoints
   socios: {
     getAll: async (): Promise<ApiMember[]> => {
       try {
         const response = await fetchApi('/api/socios')
-        // El backend devuelve { success: true, data: [...] }
         if (response && response.success && Array.isArray(response.data)) {
           return response.data
         }
@@ -124,7 +120,6 @@ export const api = {
     },
   },
 
-  // Pagos endpoints
   pagos: {
     getOverdue: (): Promise<ApiMember[]> => 
       fetchApi('/api/pagos/vencidos'),
@@ -137,19 +132,26 @@ export const api = {
   },
 }
 
-// Utility functions to transform data between API and frontend formats
+// ✅ MAPEO CORREGIDO: Backend → Frontend
 export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPagos?: { vencidas: number; pendientes: number; pagadas: number; ultimaCuota?: { fechaPago: string; fechaVencimiento: string } } }): import('./store').Member {
-  // Map backend activities to frontend activities
+  // ✅ Mapeo correcto de actividades (Backend → Frontend)
   const activityMap: Record<string, string> = {
     'Basquet': 'basketball',
     'Voley': 'volleyball', 
     'Karate': 'karate',
     'Gimnasio': 'gym',
-    'Socio': 'socio'
+    'Solo socio': 'solo-socio' // ✅ CORREGIDO: "Solo socio" → "solo-socio"
+  }
+
+  // ✅ Mapeo correcto de estados (Backend → Frontend)  
+  const statusMap: Record<string, 'active' | 'inactive' | 'suspended'> = {
+    'Activo': 'active',
+    'Inactivo': 'inactive', 
+    'Suspendido': 'suspended'
   }
 
   // Determine payment status from resumenPagos
-  let paymentStatus: 'paid' | 'pending' | 'overdue' = 'pending'
+  let paymentStatus: 'paid' | 'pending' | 'overdue' | 'cancelled' = 'pending'
   if (apiMember.resumenPagos) {
     if (apiMember.resumenPagos.vencidas > 0) {
       paymentStatus = 'overdue'
@@ -165,8 +167,8 @@ export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPag
     name: apiMember.nombreCompleto || `${apiMember.nombre} ${apiMember.apellido}`,
     email: apiMember.email,
     phone: apiMember.telefono,
-    activity: activityMap[apiMember.actividad] as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'socio',
-    status: apiMember.estado === 'Activo' ? 'active' : 'inactive',
+    activity: activityMap[apiMember.actividad] as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio',
+    status: statusMap[apiMember.estado] || 'inactive',
     paymentStatus,
     registrationDate: apiMember.fechaIngreso,
     membershipType: apiMember.esJugador ? 'jugador' : 'socio',
@@ -177,14 +179,22 @@ export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPag
   }
 }
 
+// ✅ MAPEO CORREGIDO: Frontend → Backend
 export function transformFrontendMemberToApi(member: Omit<import('./store').Member, 'id'>): CreateMemberData {
-  // Map frontend activities to backend activities
+  // ✅ Mapeo correcto de actividades (Frontend → Backend)
   const activityMap: Record<string, string> = {
     'basketball': 'Basquet',
     'volleyball': 'Voley',
     'karate': 'Karate', 
     'gym': 'Gimnasio',
-    'socio': 'Socio'
+    'solo-socio': 'Solo socio' // ✅ CORREGIDO: "solo-socio" → "Solo socio"
+  }
+
+  // ✅ Mapeo correcto de estados (Frontend → Backend)
+  const statusMap: Record<string, 'Activo' | 'Inactivo' | 'Suspendido'> = {
+    'active': 'Activo',
+    'inactive': 'Inactivo',
+    'suspended': 'Suspendido'
   }
 
   // Extract first and last name
@@ -199,8 +209,8 @@ export function transformFrontendMemberToApi(member: Omit<import('./store').Memb
     fechaNacimiento: '1990-01-01', // Placeholder - should be collected from form
     telefono: member.phone,
     email: member.email,
-    actividad: (activityMap[member.activity || 'socio'] || 'Socio') as CreateMemberData['actividad'],
+    actividad: (activityMap[member.activity || 'solo-socio'] || 'Solo socio') as CreateMemberData['actividad'],
     esJugador: member.membershipType === 'jugador',
-    estado: member.status === 'active' ? 'Activo' : 'Inactivo'
+    estado: statusMap[member.status] || 'Activo'
   }
 }

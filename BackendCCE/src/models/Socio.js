@@ -5,7 +5,8 @@ const Socio = sequelize.define('Socio', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    allowNull: false
   },
   nombre: {
     type: DataTypes.STRING(100),
@@ -33,12 +34,13 @@ const Socio = sequelize.define('Socio', {
       len: [7, 20]
     }
   },
-  fechaNacimiento: {
-    type: DataTypes.DATEONLY,
+  email: {
+    type: DataTypes.STRING(150),
     allowNull: false,
+    unique: true,
     validate: {
-      isDate: true,
-      isBefore: new Date().toISOString().split('T')[0] // Must be before today
+      isEmail: true,
+      notEmpty: true
     }
   },
   telefono: {
@@ -49,47 +51,42 @@ const Socio = sequelize.define('Socio', {
       is: /^[\+]?[0-9\s\-\(\)]{10,20}$/
     }
   },
-  email: {
-    type: DataTypes.STRING(150),
+  fechaNacimiento: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
-    unique: true,
+    field: 'fecha_nacimiento',
     validate: {
-      isEmail: true,
-      notEmpty: true
+      isDate: true,
+      isBefore: new Date().toISOString().split('T')[0]
     }
   },
-  actividad: {
-    type: DataTypes.ENUM('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Socio'),
+  fechaIngreso: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
-    defaultValue: 'Socio'
+    field: 'fecha_ingreso',
+    defaultValue: DataTypes.NOW
+  },
+  actividad: {
+    type: DataTypes.ENUM('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
+    allowNull: false,
+    defaultValue: 'Solo socio'
   },
   esJugador: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    field: 'es_jugador',
     defaultValue: false
   },
   estado: {
     type: DataTypes.ENUM('Activo', 'Inactivo', 'Suspendido'),
     allowNull: false,
     defaultValue: 'Activo'
-  },
-  fechaIngreso: {
-    type: DataTypes.DATEONLY,
-    allowNull: false,
-    defaultValue: DataTypes.NOW
-  },
-  mesPrueba: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false
-  },
-  fechaFinPrueba: {
-    type: DataTypes.DATEONLY,
-    allowNull: true
   }
 }, {
   tableName: 'socios',
   timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   indexes: [
     {
       unique: true,

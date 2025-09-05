@@ -7,21 +7,6 @@ module.exports = {
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
   },
   
-  database: {
-    // SQLite (development)
-    path: process.env.DB_PATH || './database.sqlite',
-    
-    // PostgreSQL (production)
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    name: process.env.DB_NAME || 'cce_db',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'password',
-
-    // Se activa postgres si está USE_POSTGRES=true o si NODE_ENV=production
-    usePostgres: process.env.USE_POSTGRES === 'true' || process.env.NODE_ENV === 'production'
-  },
-  
   jwt: {
     secret: process.env.JWT_SECRET || (() => {
       console.error('🚨 SECURITY WARNING: JWT_SECRET not set! Using insecure default.');

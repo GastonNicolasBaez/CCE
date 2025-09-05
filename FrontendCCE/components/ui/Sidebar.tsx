@@ -42,10 +42,12 @@ const navigationItems = [
 export default function Sidebar() {
   const { 
     sidebarCollapsed, 
-    toggleSidebar, 
+    setSidebarCollapsed,
     currentPage, 
     setCurrentPage 
   } = useAppStore()
+  
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
 
   return (
          <motion.div

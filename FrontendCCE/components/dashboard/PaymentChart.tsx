@@ -23,7 +23,7 @@ export default function PaymentChart() {
   const { members } = useAppStore()
 
   const chartData = useMemo(() => {
-    const activities = ['basketball', 'volleyball', 'karate', 'gym']
+    const activities = ['basketball', 'volleyball', 'karate', 'gym', 'solo-socio']
     
     return activities.map((activity, index) => {
       const activityMembers = members.filter(m => m.activity === activity)

@@ -61,7 +61,7 @@ const sociosController = {
       include: [includeConditions],
       limit: limitNumber,
       offset: offset,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       distinct: true
     });
 

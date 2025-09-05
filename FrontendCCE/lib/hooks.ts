@@ -57,7 +57,7 @@ export function useCreateMember() {
       const apiMemberData = transformFrontendMemberToApi(memberData)
       const apiResponse = await api.socios.create(apiMemberData)
       
-      if (apiResponse && apiResponse.success) {
+      if (apiResponse && apiResponse.success && apiResponse.data) {
         const frontendMember = transformApiMemberToFrontend(apiResponse.data)
         addMember(frontendMember)
         return true
@@ -87,7 +87,7 @@ export function useUpdateMember() {
       setError(null)
       
       // Make API call to update the member - send only changed fields
-      const updateFields: any = {}
+      const updateFields: Record<string, unknown> = {}
       
       if (updates.name !== undefined) {
         const nameParts = updates.name.split(' ')
@@ -118,9 +118,9 @@ export function useUpdateMember() {
         setError(errorMessage)
         return { success: false, message: errorMessage }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extract error message - could be from ApiError or other sources
-      const errorMessage = err?.message || 'Error al actualizar el miembro'
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Error al actualizar el miembro'
       
       setError(errorMessage)
       console.error('Error updating member:', err)
@@ -132,7 +132,7 @@ export function useUpdateMember() {
 }
 
 export function useDeleteMember() {
-  const { deleteMember, setError } = useAppStore()
+  const { removeMember, setError } = useAppStore()
 
   const deleteMemberData = async (id: string, force: boolean = false) => {
     try {
@@ -143,19 +143,18 @@ export function useDeleteMember() {
       
       if (apiResponse && apiResponse.success) {
         // Delete from local state only if API call succeeded
-        deleteMember(id)
+        removeMember(id)
         return { success: true, message: apiResponse.message }
       } else {
         // Return error information for modal handling
         return { 
           success: false, 
-          message: apiResponse?.message || 'Error al eliminar el miembro',
-          data: apiResponse?.data
+          message: apiResponse?.message || 'Error al eliminar el miembro'
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extract error message - could be from ApiError or other sources
-      const errorMessage = err?.message || 'Error al eliminar el miembro'
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Error al eliminar el miembro'
       
       setError(errorMessage)
       console.error('Error deleting member:', err)

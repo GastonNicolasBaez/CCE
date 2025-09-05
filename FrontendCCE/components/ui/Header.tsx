@@ -8,19 +8,30 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function Header() {
   const { 
     sidebarCollapsed, 
-    toggleSidebar, 
+    setSidebarCollapsed,
     darkMode, 
     toggleDarkMode,
-    globalSearchQuery,
-    globalSearchResults,
-    setGlobalSearchQuery,
-    performGlobalSearch,
-    clearSearch,
     setCurrentPage
   } = useAppStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('')
+  const [globalSearchResults, setGlobalSearchResults] = useState<any[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
+
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
+  
+  const performGlobalSearch = (query: string) => {
+    // TODO: Implement actual search functionality
+    console.log('Searching for:', query)
+    setGlobalSearchResults([])
+  }
+  
+  const clearSearch = () => {
+    setGlobalSearchQuery('')
+    setGlobalSearchResults([])
+    setShowSearchResults(false)
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -8,13 +8,11 @@ const config = require('./config');
 const { sequelize } = require('./models');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
+const cronService = require('./services/cronService');
 
 // Import routes
 const sociosRoutes = require('./routes/socios');
 const pagosRoutes = require('./routes/pagos');
-
-// Import services
-const cronService = require('./services/cronService');
 
 // Create Express app
 const app = express();
@@ -44,7 +42,9 @@ app.use(cors({
     const allowedOrigins = [
       config.server.frontendUrl,
       'http://localhost:3000',
-      'http://127.0.0.1:3000'
+      'http://127.0.0.1:3000',
+      'https://frontend-cce-git-main-gastonnicolasbaezs-projects.vercel.app',
+      'https://frontend-cce.vercel.app' // URL más corta si está disponible
     ];
     
     if (allowedOrigins.includes(origin)) {
@@ -74,7 +74,7 @@ app.use(generalLimiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     message: 'Server is running',
     timestamp: new Date().toISOString(),
@@ -100,10 +100,20 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully');
 
-    // Sync database (create tables if they don't exist)
-    if (config.server.env === 'development') {
-      await sequelize.sync({ alter: false }); // Use alter: true only if you want to modify existing tables
-      console.log('✅ Database synchronized successfully');
+    // IMPORTANTE: NO usamos sync() porque ahora usamos migraciones
+    // Las tablas se crean con: npm run db:migrate
+    console.log('ℹ️  Using migration-based database schema');
+    console.log('ℹ️  Run "npm run db:migrate" to create/update tables');
+
+    // Verificar que las tablas principales existan
+    try {
+      const { Socio } = require('./models');
+      await Socio.findOne({ limit: 1 });
+      console.log('✅ Database tables verified');
+    } catch (error) {
+      console.warn('⚠️  Database tables may not exist.');
+      console.warn('⚠️  Please run migrations: npm run db:migrate');
+      console.warn('   Error details:', error.message);
     }
 
     // Start server
@@ -116,9 +126,9 @@ const startServer = async () => {
       
       // Log service status
       console.log('\n📋 Services Status:');
-      console.log(`  • Database: ✅ Connected (SQLite)`);
+      const dbType = config.server.env === 'development' ? 'SQLite' : 'PostgreSQL (Railway)';
+      console.log(`  • Database: ✅ Connected (${dbType})`);
       console.log(`  • Email: ${config.email.auth.user ? '✅' : '⚠️'} ${config.email.auth.user ? 'Configured' : 'Not configured'}`);
-      console.log(`  • SMS: ⚠️ Not configured (service removed)`);
       console.log(`  • MercadoPago: ${config.mercadoPago.accessToken ? '✅' : '⚠️'} ${config.mercadoPago.accessToken ? 'Configured' : 'Not configured'}`);
       
       // Initialize cron service
@@ -126,6 +136,11 @@ const startServer = async () => {
         cronService.init();
         console.log(`  • Cron Jobs: ✅ Initialized`);
       }
+
+      console.log('\n🔧 Database Migration Commands:');
+      console.log('  • Create tables: npm run db:migrate');
+      console.log('  • Rollback: npm run db:migrate:undo');
+      console.log('  • Seed data: npm run db:seed');
     });
   } catch (error) {
     console.error('❌ Unable to start server:', error);

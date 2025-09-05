@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { LucideIcon } from 'lucide-react'
+import React from 'react'
 import { cn } from '../../lib/utils'
 
 interface MetricCardProps {
   title: string
   value: number
-  icon: LucideIcon
+  icon: React.ComponentType<{ size?: number | string; className?: string }>
   color: string
   change: string
   changeType: 'positive' | 'negative'

@@ -72,9 +72,9 @@ export default function RegistrationForm() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        activity: membershipType === 'jugador' ? (data.activity as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'socio') : undefined,
-        status: 'active' as 'active',
-        paymentStatus: trialMonth ? 'paid' as 'paid' : 'pending' as 'pending',
+        activity: membershipType === 'jugador' ? (data.activity as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio') : undefined,
+        status: 'active' as const,
+        paymentStatus: trialMonth ? ('paid' as const) : ('pending' as const),
         membershipType: membershipType as 'socio' | 'jugador',
         registrationDate: new Date().toISOString().split('T')[0],
         lastPaymentDate: trialMonth ? new Date().toISOString().split('T')[0] : undefined,
@@ -382,6 +382,7 @@ export default function RegistrationForm() {
                             <option value="volleyball">Vóley</option>
                             <option value="karate">Karate</option>
                             <option value="gym">Gimnasio</option>
+                            <option value="solo-socio">Solo Socio</option>
                           </select>
                           {errors.activity && (
                             <p className="text-red-500 text-xs mt-1">{errors.activity.message}</p>

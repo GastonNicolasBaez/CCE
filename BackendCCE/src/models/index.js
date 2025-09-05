@@ -1,6 +1,7 @@
 const sequelize = require('../config/database');
 const Socio = require('./Socio');
 const Cuota = require('./Cuota');
+const Usuario = require('./Usuario');
 
 // Define associations
 Socio.hasMany(Cuota, {
@@ -21,5 +22,6 @@ Cuota.belongsTo(Socio, {
 module.exports = {
   sequelize,
   Socio,
-  Cuota
+  Cuota,
+  Usuario
 };

@@ -5,17 +5,24 @@ const Cuota = sequelize.define('Cuota', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    allowNull: false
   },
   socioId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'socio_id',
     references: {
       model: 'socios',
       key: 'id'
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE'
+  },
+  periodo: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    comment: 'Formato: YYYY-MM (ej: 2024-01)'
   },
   monto: {
     type: DataTypes.DECIMAL(10, 2),
@@ -28,6 +35,7 @@ const Cuota = sequelize.define('Cuota', {
   fechaVencimiento: {
     type: DataTypes.DATEONLY,
     allowNull: false,
+    field: 'fecha_vencimiento',
     validate: {
       isDate: true
     }
@@ -35,70 +43,52 @@ const Cuota = sequelize.define('Cuota', {
   fechaPago: {
     type: DataTypes.DATEONLY,
     allowNull: true,
+    field: 'fecha_pago',
     validate: {
       isDate: true
     }
   },
   estado: {
-    type: DataTypes.ENUM('Pendiente', 'Pagada', 'Vencida', 'Anulada'),
+    type: DataTypes.ENUM('Pendiente', 'Pagada', 'Vencida', 'Cancelada'),
     allowNull: false,
     defaultValue: 'Pendiente'
   },
   metodoPago: {
     type: DataTypes.ENUM('Efectivo', 'Transferencia', 'MercadoPago', 'Tarjeta'),
-    allowNull: true
+    allowNull: true,
+    field: 'metodo_pago'
   },
   numeroRecibo: {
     type: DataTypes.STRING(50),
     allowNull: true,
+    field: 'numero_recibo',
     unique: true
   },
   observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
-  },
-  mercadoPagoId: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    unique: true
-  },
-  linkPago: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  fechaEnvioRecordatorio: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  cantidadRecordatorios: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  periodo: {
-    type: DataTypes.STRING(20),
-    allowNull: false,
-    comment: 'Formato: YYYY-MM (ej: 2024-01)'
   }
 }, {
   tableName: 'cuotas',
   timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   indexes: [
     {
-      fields: ['socioId']
+      fields: ['socio_id']
     },
     {
       fields: ['estado']
     },
     {
-      fields: ['fechaVencimiento']
+      fields: ['fecha_vencimiento']
     },
     {
       fields: ['periodo']
     },
     {
       unique: true,
-      fields: ['socioId', 'periodo']
+      fields: ['socio_id', 'periodo']
     }
   ],
   hooks: {

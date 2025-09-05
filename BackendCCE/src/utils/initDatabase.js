@@ -139,7 +139,7 @@ const sampleSocios = [
     fechaNacimiento: '1975-12-05',
     telefono: '+54 11 3456-7012',
     email: 'roberto.diaz@email.com',
-    actividad: 'Socio',
+    actividad: 'Solo socio',
     esJugador: false
   },
   {
@@ -149,7 +149,7 @@ const sampleSocios = [
     fechaNacimiento: '1982-04-13',
     telefono: '+54 11 4567-8023',
     email: 'maria.vargas@email.com',
-    actividad: 'Socio',
+    actividad: 'Solo socio',
     esJugador: false
   },
   {
@@ -159,7 +159,7 @@ const sampleSocios = [
     fechaNacimiento: '1979-09-21',
     telefono: '+54 11 5678-9034',
     email: 'ana.rojas@email.com',
-    actividad: 'Socio',
+    actividad: 'Solo socio',
     esJugador: false
   }
 ];
@@ -175,7 +175,7 @@ async function generateSampleCuotas() {
     'Voley': 12000,
     'Karate': 18000,
     'Gimnasio': 20000,
-    'Socio': 8000
+    'Solo socio': 8000
   };
 
   // Generate cuotas for last 6 months
@@ -187,7 +187,7 @@ async function generateSampleCuotas() {
     const vencimiento = new Date(date.getFullYear(), date.getMonth(), 15).toISOString().split('T')[0];
     
     for (const socio of socios) {
-      const monto = montosPorActividad[socio.actividad] || montosPorActividad['Socio'];
+      const monto = montosPorActividad[socio.actividad] || montosPorActividad['Solo socio'];
       
       // Simulate different payment statuses
       let estado = 'Pendiente';
@@ -253,7 +253,7 @@ async function initializeDatabase() {
     console.log('✅ Database connection established');
     
     // Sync database (create tables)
-    await sequelize.sync({ force: false }); // Use force: true to recreate tables
+    await sequelize.sync({ force: true }); // Recreate tables with new schema
     console.log('✅ Database tables synchronized');
     
     // Check if data already exists

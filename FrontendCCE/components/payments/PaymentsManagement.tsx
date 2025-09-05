@@ -15,12 +15,8 @@ export default function PaymentsManagement() {
   const { 
     members, 
     selectedMembers, 
-    selectMember, 
-    deselectMember, 
-    selectAllMembers, 
-    deselectAllMembers,
-    remindersEnabled,
-    toggleReminders
+    toggleMemberSelection, 
+    clearSelectedMembers
   } = useAppStore()
   
 
@@ -39,11 +35,7 @@ export default function PaymentsManagement() {
 
   const handleSelectMember = (memberId: string) => {
     try {
-      if (selectedMembers.includes(memberId)) {
-        deselectMember(memberId)
-      } else {
-        selectMember(memberId)
-      }
+      toggleMemberSelection(memberId)
     } catch (error) {
       console.error('Error selecting member:', error)
     }
@@ -52,9 +44,14 @@ export default function PaymentsManagement() {
   const handleSelectAll = () => {
     try {
       if (selectedMembers.length === pendingMembers.length) {
-        deselectAllMembers()
+        clearSelectedMembers()
       } else {
-        selectAllMembers()
+        // Select all pending members
+        pendingMembers.forEach(member => {
+          if (!selectedMembers.includes(member.id)) {
+            toggleMemberSelection(member.id)
+          }
+        })
       }
     } catch (error) {
       console.error('Error selecting all members:', error)
@@ -86,24 +83,10 @@ export default function PaymentsManagement() {
           <p className="text-xs text-gray-600 dark:text-gray-400">Gestiona las cuotas pendientes y vencidas</p>
         </div>
         
-        {/* Reminders Toggle */}
+        {/* Placeholder for future features */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Bell size={14} className="text-accent" />
-            <span className="text-xs text-gray-600 dark:text-gray-400">Recordatorios</span>
-          </div>
-          <button
-            onClick={toggleReminders}
-            className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${
-              remindersEnabled ? 'bg-accent' : 'bg-gray-200 dark:bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                remindersEnabled ? 'translate-x-4' : 'translate-x-1'
-              }`}
-            />
-          </button>
+          <Bell size={14} className="text-accent" />
+          <span className="text-xs text-gray-600 dark:text-gray-400">Gestión de Pagos</span>
         </div>
       </div>
 

@@ -9,7 +9,7 @@ const schemas = {
     fechaNacimiento: Joi.date().iso().max('now').required(),
     telefono: Joi.string().pattern(/^[\+]?[0-9\s\-\(\)]{10,20}$/).required(),
     email: Joi.string().email().max(150).required(),
-    actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Socio').required(),
+    actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio').required(),
     esJugador: Joi.boolean().required()
   }),
 
@@ -20,7 +20,7 @@ const schemas = {
     fechaNacimiento: Joi.date().iso().max('now'),
     telefono: Joi.string().pattern(/^[\+]?[0-9\s\-\(\)]{10,20}$/),
     email: Joi.string().email().max(150),
-    actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Socio'),
+    actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
     esJugador: Joi.boolean(),
     estado: Joi.string().valid('Activo', 'Inactivo', 'Suspendido')
   }),
@@ -36,7 +36,7 @@ const schemas = {
   cuotaUpdate: Joi.object({
     monto: Joi.number().positive().precision(2),
     fechaVencimiento: Joi.date().iso(),
-    estado: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Anulada'),
+    estado: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Cancelada'),
     metodoPago: Joi.string().valid('Efectivo', 'Transferencia', 'MercadoPago', 'Tarjeta'),
     observaciones: Joi.string().max(500).allow('')
   }),
@@ -55,17 +55,17 @@ const schemas = {
 
   query: {
     socios: Joi.object({
-      actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Socio'),
+      actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
       estado: Joi.string().valid('Activo', 'Inactivo', 'Suspendido'),
-      estadoCuota: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Anulada'),
+      estadoCuota: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Cancelada'),
       page: Joi.number().integer().min(1).default(1),
       limit: Joi.number().integer().min(1).max(100).default(20),
       search: Joi.string().max(100).allow('')
     }),
     
     pagos: Joi.object({
-      estado: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Anulada'),
-      actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Socio'),
+      estado: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Cancelada'),
+      actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
       fechaDesde: Joi.date().iso(),
       fechaHasta: Joi.date().iso(),
       page: Joi.number().integer().min(1).default(1),
