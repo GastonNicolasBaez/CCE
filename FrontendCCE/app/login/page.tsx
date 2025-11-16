@@ -4,13 +4,17 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { LogIn, Loader2, Eye, EyeOff } from 'lucide-react'
+import { LogIn, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { validateEmail, validatePassword } from '@/lib/validation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [touched, setTouched] = useState({ email: false, password: false })
   const { login, isAuthenticated } = useAuth()
   const router = useRouter()
 
@@ -21,8 +25,55 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router])
 
+  // Validate email on change
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    if (touched.email) {
+      const validation = validateEmail(value)
+      setEmailError(validation.error || '')
+    }
+  }
+
+  // Validate password on change
+  const handlePasswordChange = (value: string) => {
+    setPassword(value)
+    if (touched.password) {
+      const validation = validatePassword(value)
+      setPasswordError(validation.error || '')
+    }
+  }
+
+  // Mark field as touched on blur
+  const handleBlur = (field: 'email' | 'password') => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+
+    if (field === 'email') {
+      const validation = validateEmail(email)
+      setEmailError(validation.error || '')
+    } else {
+      const validation = validatePassword(password)
+      setPasswordError(validation.error || '')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Mark all fields as touched
+    setTouched({ email: true, password: true })
+
+    // Validate all fields
+    const emailValidation = validateEmail(email)
+    const passwordValidation = validatePassword(password)
+
+    setEmailError(emailValidation.error || '')
+    setPasswordError(passwordValidation.error || '')
+
+    // Stop if validation fails
+    if (!emailValidation.isValid || !passwordValidation.isValid) {
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -77,13 +128,32 @@ export default function LoginPage() {
                 type="email"
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={() => handleBlur('email')}
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  emailError && touched.email
+                    ? 'border-red-500 dark:border-red-400 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+                } bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all`}
                 placeholder="tu@email.com"
                 disabled={isLoading}
+                aria-invalid={emailError && touched.email ? 'true' : 'false'}
+                aria-describedby={emailError && touched.email ? 'email-error' : undefined}
               />
+              {emailError && touched.email && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-1 mt-2 text-sm text-red-600 dark:text-red-400"
+                  id="email-error"
+                  role="alert"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{emailError}</span>
+                </motion.div>
+              )}
             </div>
 
             {/* Password Input */}
@@ -99,18 +169,26 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onBlur={() => handleBlur('password')}
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className={`w-full px-4 py-3 pr-12 rounded-lg border ${
+                    passwordError && touched.password
+                      ? 'border-red-500 dark:border-red-400 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary'
+                  } bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all`}
                   placeholder="••••••••"
                   disabled={isLoading}
+                  aria-invalid={passwordError && touched.password ? 'true' : 'false'}
+                  aria-describedby={passwordError && touched.password ? 'password-error' : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   disabled={isLoading}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -119,6 +197,18 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {passwordError && touched.password && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-1 mt-2 text-sm text-red-600 dark:text-red-400"
+                  id="password-error"
+                  role="alert"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{passwordError}</span>
+                </motion.div>
+              )}
             </div>
 
             {/* Submit Button */}
