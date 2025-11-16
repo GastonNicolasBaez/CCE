@@ -34,9 +34,15 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans`}>
+        {/* Skip to main content link for keyboard navigation */}
+        <a href="#main-content" className="skip-link">
+          Saltar al contenido principal
+        </a>
+
         <AuthProvider>
           {children}
         </AuthProvider>
+
         <Toaster
           position="top-right"
           toastOptions={{
@@ -49,6 +55,15 @@ export default function RootLayout({
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
             },
           }}
+        />
+
+        {/* Screen reader announcements region */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+          id="announcements"
         />
       </body>
     </html>

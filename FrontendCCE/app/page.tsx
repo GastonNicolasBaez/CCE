@@ -40,9 +40,12 @@ export default function Home() {
           <Header />
 
           <main
+            id="main-content"
             className={`h-full pt-16 sm:pt-20 transition-all duration-300 ${
               sidebarCollapsed ? 'ml-16 sm:ml-20' : 'ml-64'
             }`}
+            role="main"
+            aria-label="Contenido principal"
           >
             <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] p-3 sm:p-6 overflow-hidden">
               {renderContent()}
