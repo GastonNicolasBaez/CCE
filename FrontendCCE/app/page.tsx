@@ -8,6 +8,7 @@ import Dashboard from '../components/dashboard/Dashboard'
 import MembersTable from '../components/members/MembersTable'
 import PaymentsManagement from '../components/payments/PaymentsManagement'
 import RegistrationForm from '../components/registration/RegistrationForm'
+import Settings from '../components/settings/Settings'
 import DarkModeProvider from '../components/DarkModeProvider'
 import ProtectedRoute from '../components/auth/ProtectedRoute'
 
@@ -24,6 +25,8 @@ export default function Home() {
         return <PaymentsManagement />
       case 'registration':
         return <RegistrationForm />
+      case 'settings':
+        return <Settings />
       default:
         return <Dashboard />
     }

@@ -23,6 +23,7 @@ interface AuthContextType {
   logout: () => void
   refreshToken: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -214,6 +215,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      if (!token) throw new Error('No token available')
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to change password')
+      }
+
+      toast.success('Contraseña actualizada exitosamente')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al cambiar contraseña'
+      toast.error(errorMessage)
+      throw error
+    }
+  }
+
   const value = {
     user,
     token,
@@ -223,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshToken,
     updateProfile,
+    changePassword,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
