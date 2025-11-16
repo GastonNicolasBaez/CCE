@@ -185,6 +185,179 @@
 - ARIA roles on main navigation elements
 - id="main-content" on main content area
 
+### Phase 9: User Management System ✅
+**Backend (controllers/usuariosController.js):**
+- Full CRUD operations for user management
+- GET `/api/usuarios` - List all users (exclude password)
+- GET `/api/usuarios/:id` - Get user by ID
+- POST `/api/usuarios` - Create new user with validation
+- PUT `/api/usuarios/:id` - Update user (prevents self-role change)
+- DELETE `/api/usuarios/:id` - Soft delete user (prevents self-deletion)
+- PATCH `/api/usuarios/:id/toggle` - Toggle active status
+
+**Security & Validation:**
+- Admin-only access with `requireAdmin` middleware
+- Email uniqueness validation
+- Password minimum length (6 characters)
+- Prevent users from deleting/deactivating themselves
+- Prevent users from changing their own role
+- Password hashing for new users
+- Returns sanitized data (password excluded)
+
+**Frontend (components/users/UserManagement.tsx):**
+- Complete CRUD interface for administrators
+- User table with avatar, name, email, role, and status
+- Create modal with form validation
+- Edit modal for updating user data
+- Delete confirmation modal
+- Toggle active/inactive button
+- Password visibility toggle in forms
+- Role badges (Admin/Staff) with distinct colors
+- Status badges (Active/Inactive)
+- Loading states and error handling
+- Real-time notifications (success/error/info)
+- Prevents self-modification (can't edit/delete own account)
+
+**Settings Integration:**
+- User Management tab in Settings page (Admin-only)
+- Seamless integration with existing Settings UI
+- Only visible to admin users
+- Maintains consistent design and UX
+
+### Phase 10: UX Enhancements (Loading Skeletons & Micro-interactions) ✅
+**Loading Skeletons (components/ui/Skeleton.tsx):**
+- Reusable Skeleton component with variants:
+  - `text` - For text placeholders
+  - `circular` - For avatars
+  - `rectangular` - For cards and buttons
+- TableSkeleton - Animated rows with delayed entrance
+- CardSkeleton - For card-based layouts
+- DashboardSkeleton - Complete dashboard loading state
+- Shimmer animation for enhanced visual feedback
+- Pulse animation option
+
+**Dashboard Loading:**
+- DashboardSkeleton shown while fetching statistics
+- Animated metric cards skeleton (4 cards)
+- Chart placeholders skeleton (2 charts)
+- Staggered entrance animations (100ms delay per element)
+- Dark mode compatible
+
+**Members Table Loading:**
+- TableSkeleton with 8 rows shown during data fetch
+- Maintains header while loading
+- Smooth transition to actual data
+- Preserves table layout during loading
+
+**Micro-interactions:**
+- Enhanced button states:
+  - `hover:scale-105` on hover
+  - `active:scale-95` on click
+  - Focus rings on keyboard navigation
+  - Smooth 300ms transitions
+- Card hover effects:
+  - `hover:scale-[1.02]` slight lift
+  - `hover:shadow-2xl` enhanced shadow
+- Primary/Accent buttons:
+  - `hover:-translate-y-1` lift effect
+  - Enhanced shadows on hover
+  - Active state press effect
+  - Focus ring indicators
+- Shimmer animation in Tailwind config
+- All transitions respect `prefers-reduced-motion`
+
+**CSS Utilities (app/globals.css):**
+- `.button-hover` - Reusable hover effect class
+- `.card-hover` - Consistent card animations
+- Enhanced `.primary-button` and `.accent-button` with:
+  - Active state scaling
+  - Focus ring indicators
+  - Ring offset for better visibility
+
+**Tailwind Configuration:**
+- Added shimmer keyframe animation
+- `backgroundPosition` animation for loading states
+- 2-second infinite loop
+
+### Phase 11: Enhanced Form Validation ✅
+**Validation Utilities (lib/validation.ts):**
+- **Email Validation:**
+  - Regex pattern validation
+  - Max length check (255 chars)
+  - Required field validation
+
+- **Password Validation:**
+  - Configurable min length (default 6)
+  - Optional uppercase requirement
+  - Optional lowercase requirement
+  - Optional numbers requirement
+  - Optional special characters requirement
+
+- **Phone Validation (Argentina):**
+  - Format validation (+54 pattern)
+  - 8-13 digit validation
+  - Strips spaces, dashes, parentheses
+
+- **DNI Validation (Argentina):**
+  - 7-8 digit validation
+  - Numeric only
+  - Strips dots and spaces
+
+- **Name Validation:**
+  - Min 2 characters
+  - Max 100 characters
+  - Letters, accents, hyphens, apostrophes only
+  - Spanish character support (á, é, í, ó, ú, ñ)
+
+- **Amount/Currency Validation:**
+  - Numeric validation
+  - Min/max constraints
+  - Zero allowance option
+  - Proper number parsing
+
+- **Date Validation:**
+  - Past/future allowance options
+  - Min/max date constraints
+  - Invalid date detection
+
+- **Address Validation:**
+  - Min 5 characters
+  - Max 200 characters
+
+- **Multi-field Form Validation:**
+  - Generic form validator
+  - Returns consolidated errors object
+  - Type-safe with TypeScript generics
+
+- **Input Sanitization:**
+  - XSS prevention (strips <, >, &, ", ')
+  - HTML entity encoding
+  - Trim whitespace
+
+**Login Form Enhancements (app/login/page.tsx):**
+- Real-time email validation with visual feedback
+- Real-time password validation
+- Touch-based validation (errors only after blur)
+- Visual error indicators:
+  - Red borders for invalid fields
+  - Error icons (AlertCircle)
+  - Animated error messages
+- ARIA attributes for accessibility:
+  - `aria-invalid` on error state
+  - `aria-describedby` linking to error messages
+  - Role="alert" for error messages
+- Password visibility toggle with aria-label
+- Prevents form submission when validation fails
+- Smooth Framer Motion animations for errors
+
+**Form Validation Features:**
+- Client-side validation before API calls
+- Server-side validation in backend
+- Consistent error messages in Spanish
+- Touch-tracking to avoid premature errors
+- Real-time validation on change after first blur
+- Form-level validation on submit
+
 ---
 
 ## 📊 SYSTEM ARCHITECTURE
@@ -270,6 +443,14 @@
 
 ### Search (`/api/search`) 🔒 Protected
 - GET `/?q={query}&limit={limit}` - Global search
+
+### Users (`/api/usuarios`) 🔒 Admin Only
+- GET `/` - Get all users (password excluded)
+- GET `/:id` - Get user by ID
+- POST `/` - Create new user
+- PUT `/:id` - Update user
+- DELETE `/:id` - Delete user (soft delete)
+- PATCH `/:id/toggle` - Toggle active status
 
 ### System
 - GET `/health` - Health check
@@ -532,12 +713,17 @@ npx sequelize-cli seed:generate --name seeder-name
 2. **Member Portal**: Self-service portal for members to view/update info and pay online
 3. **Automated Cron Jobs**: Automatic monthly payment generation and renewal
 4. **Real-time Notifications**: WebSocket/SSE for live payment updates
-5. **User Management UI**: Complete admin interface for managing users (CRUD operations)
+5. ~~**User Management UI**: Complete admin interface for managing users (CRUD operations)~~ ✅ **COMPLETED**
 6. **Email Templates**: Rich HTML email templates for notifications
 7. **Advanced Reports**: Custom date range reports with charts
 8. **CI/CD Pipeline**: Automated testing and deployment workflows
 9. **Mobile App**: Native mobile app for members (React Native)
 10. **Backup System**: Automated database backup and restore
+11. **Activity Dashboard**: Specific dashboards per activity (Basketball, Volleyball, etc.)
+12. **Attendance Tracking**: Check-in/check-out system for gym and activities
+13. **Notifications Center**: In-app notification center for users
+14. **Two-Factor Authentication**: Enhanced security with 2FA
+15. **Advanced Analytics**: Retention rates, churn analysis, revenue forecasting
 
 ---
 
@@ -557,5 +743,5 @@ Copyright © 2025 Club Comandante Espora. All rights reserved.
 ---
 
 **Last Updated**: 2025-01-16
-**Version**: 2.0.0
-**Status**: Production Ready - Full Featured with Analytics, Export & Accessibility
+**Version**: 2.5.0
+**Status**: Production Ready - Full Featured System with User Management, Advanced UX, and Comprehensive Validation
