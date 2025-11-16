@@ -12,10 +12,12 @@ import {
   Loader2,
   DollarSign,
   TrendingUp,
-  X
+  X,
+  Download
 } from 'lucide-react'
 import { api, ApiCuota, SendPaymentLinksResponse, SendRemindersResponse } from '../../lib/api'
 import { getActivityLabel, formatCurrency } from '../../lib/utils'
+import { exportPaymentsToCSV } from '../../lib/export'
 
 export default function PaymentsManagement() {
   const [cuotas, setCuotas] = useState<ApiCuota[]>([])
@@ -257,6 +259,15 @@ export default function PaymentsManagement() {
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <button
+            onClick={() => exportPaymentsToCSV(cuotas)}
+            disabled={loading || cuotas.length === 0}
+            className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded-lg transition-colors"
+            title="Exportar todos los pagos a CSV"
+          >
+            <Download size={14} />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
+          <button
             onClick={handleSendReminders}
             disabled={actionLoading || loading}
             className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-xs rounded-lg transition-colors"
@@ -266,7 +277,7 @@ export default function PaymentsManagement() {
             ) : (
               <Bell size={14} />
             )}
-            <span className="hidden sm:inline">Enviar Recordatorios</span>
+            <span className="hidden sm:inline">Recordatorios</span>
           </button>
           <button
             onClick={handleSendPaymentLinks}

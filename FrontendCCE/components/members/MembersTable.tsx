@@ -3,23 +3,25 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore, Member } from '../../lib/store'
-import { 
-  Users, 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  CreditCard, 
-  Activity, 
-  ChevronDown, 
+import {
+  Users,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  CreditCard,
+  Activity,
+  ChevronDown,
   ChevronUp,
   UserCheck,
   UserX,
   Edit,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react'
 import { getActivityLabel, formatDate } from '../../lib/utils'
 import { useUpdateMember, useDeleteMember } from '../../lib/hooks'
+import { exportMembersToCSV } from '../../lib/export'
 import ConfirmationModal from '../ui/ConfirmationModal'
 import NotificationModal from '../ui/NotificationModal'
 
@@ -252,6 +254,14 @@ export default function MembersTable() {
               className="px-3 py-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
               Limpiar filtros
+            </button>
+            <button
+              onClick={() => exportMembersToCSV(filteredMembers)}
+              className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-colors"
+              title="Exportar a CSV"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">Exportar</span>
             </button>
           </div>
         </div>
