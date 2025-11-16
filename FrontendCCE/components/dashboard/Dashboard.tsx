@@ -1,9 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '../../lib/store'
 import { useLoadMembers } from '../../lib/hooks'
-import { Users, CreditCard, TrendingUp, UserPlus } from 'lucide-react'
+import { Users, CreditCard, TrendingUp, UserPlus, DollarSign } from 'lucide-react'
+import { api, PaymentStatistics } from '../../lib/api'
 import MetricCard from './MetricCard'
 import PaymentChart from './PaymentChart'
 import RecentRegistrations from './RecentRegistrations'
@@ -11,53 +13,68 @@ import RecentRegistrations from './RecentRegistrations'
 export default function Dashboard() {
   const { members, setCurrentPage } = useAppStore()
   const { isLoading, error } = useLoadMembers()
+  const [paymentStats, setPaymentStats] = useState<PaymentStatistics | null>(null)
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+
+  // Fetch payment statistics from backend
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoadingStats(true)
+        const response = await api.pagos.getStatistics()
+        if (response.success) {
+          setPaymentStats(response.data)
+        }
+      } catch (error) {
+        console.error('Error fetching payment statistics:', error)
+      } finally {
+        setIsLoadingStats(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
 
   // Calcular métricas - validar que members sea un array
   const membersArray = Array.isArray(members) ? members : []
   const totalMembers = membersArray.length
   const activeMembers = membersArray.filter(m => m.status === 'active').length
-  const pendingPayments = membersArray.filter(m => m.paymentStatus === 'pending').length
-  const overduePayments = membersArray.filter(m => m.paymentStatus === 'overdue').length
+
+  // Get payment metrics from backend stats
+  const pendingPayments = paymentStats?.general.estadisticas.find(e => e.estado === 'Pendiente')?.cantidad || 0
+  const overduePayments = paymentStats?.general.estadisticas.find(e => e.estado === 'Vencida')?.cantidad || 0
 
   const metrics: Array<{
     title: string
     value: number
     icon: React.ComponentType<{ size?: number | string; className?: string }>
     color: string
-    change: string
-    changeType: 'positive' | 'negative'
+    change?: string
+    changeType?: 'positive' | 'negative'
   }> = [
     {
       title: 'Total de Socios',
       value: totalMembers,
       icon: Users,
-      color: 'from-blue-500 to-blue-600',
-      change: '+12%',
-      changeType: 'positive'
+      color: 'from-blue-500 to-blue-600'
     },
     {
       title: 'Socios Activos',
       value: activeMembers,
       icon: TrendingUp,
-      color: 'from-green-500 to-green-600',
-      change: '+8%',
-      changeType: 'positive'
+      color: 'from-green-500 to-green-600'
     },
     {
       title: 'Cuotas Pendientes',
       value: pendingPayments,
       icon: CreditCard,
-      color: 'from-yellow-500 to-yellow-600',
-      change: '-5%',
-      changeType: 'negative'
+      color: 'from-yellow-500 to-yellow-600'
     },
     {
       title: 'Cuotas Vencidas',
       value: overduePayments,
       icon: CreditCard,
-      color: 'from-red-500 to-red-600',
-      change: '+2%',
-      changeType: 'negative'
+      color: 'from-red-500 to-red-600'
     }
   ]
 
