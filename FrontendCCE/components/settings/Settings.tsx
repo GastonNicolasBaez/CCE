@@ -18,6 +18,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
+import UserManagement from '../users/UserManagement'
 
 type SettingsTab = 'profile' | 'security' | 'notifications' | 'users'
 
@@ -415,18 +416,7 @@ export default function Settings() {
 
             {/* Users Tab (Admin only) */}
             {activeTab === 'users' && user?.rol === 'admin' && (
-              <div className="neumorphism-card p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Gestión de Usuarios
-                </h2>
-                <div className="p-8 text-center text-gray-600 dark:text-gray-400">
-                  <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">Gestión de Usuarios</p>
-                  <p className="text-sm">
-                    Funcionalidad en desarrollo para crear, editar y eliminar usuarios del sistema
-                  </p>
-                </div>
-              </div>
+              <UserManagement />
             )}
           </motion.div>
         </AnimatePresence>

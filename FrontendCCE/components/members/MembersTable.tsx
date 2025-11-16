@@ -24,9 +24,10 @@ import { useUpdateMember, useDeleteMember } from '../../lib/hooks'
 import { exportMembersToCSV } from '../../lib/export'
 import ConfirmationModal from '../ui/ConfirmationModal'
 import NotificationModal from '../ui/NotificationModal'
+import { TableSkeleton } from '../ui/Skeleton'
 
 export default function MembersTable() {
-  const { members } = useAppStore()
+  const { members, isLoading } = useAppStore()
   const { updateMemberData } = useUpdateMember()
   const { deleteMemberData } = useDeleteMember()
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
@@ -194,6 +195,22 @@ export default function MembersTable() {
   const handleCancelEdit = () => {
     setEditingMember(null)
     setEditForm({ name: '', email: '', phone: '', status: 'active' })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="glass-card glass-card-hover p-4 mb-4">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <Users size={20} className="text-blue-600" />
+            Socios y Jugadores
+          </h2>
+        </div>
+        <div className="glass-card glass-card-hover p-6 flex-1 overflow-auto">
+          <TableSkeleton rows={8} />
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -9,6 +9,7 @@ import { api, PaymentStatistics } from '../../lib/api'
 import MetricCard from './MetricCard'
 import PaymentChart from './PaymentChart'
 import RecentRegistrations from './RecentRegistrations'
+import { DashboardSkeleton } from '../ui/Skeleton'
 
 export default function Dashboard() {
   const { members, setCurrentPage } = useAppStore()
@@ -78,12 +79,8 @@ export default function Dashboard() {
     }
   ]
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    )
+  if (isLoading || isLoadingStats) {
+    return <DashboardSkeleton />
   }
 
   if (error) {

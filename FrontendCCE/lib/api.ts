@@ -138,6 +138,35 @@ export interface SendRemindersResponse {
   message: string
 }
 
+export interface ApiUser {
+  id: number
+  email: string
+  nombre: string
+  apellido: string
+  rol: 'admin' | 'staff'
+  activo: boolean
+  nombreCompleto: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateUserData {
+  email: string
+  password: string
+  nombre: string
+  apellido: string
+  rol: 'admin' | 'staff'
+  activo?: boolean
+}
+
+export interface UpdateUserData {
+  email?: string
+  nombre?: string
+  apellido?: string
+  rol?: 'admin' | 'staff'
+  activo?: boolean
+}
+
 class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message)
@@ -282,6 +311,49 @@ export const api = {
     sendReminders: async (): Promise<SendRemindersResponse> => {
       return await fetchApi('/api/pagos/programar-recordatorios', {
         method: 'POST',
+      })
+    },
+  },
+
+  usuarios: {
+    // Get all users (admin only)
+    getAll: async (): Promise<{ success: boolean; data: ApiUser[] }> => {
+      return await fetchApi('/api/usuarios')
+    },
+
+    // Get user by ID
+    getById: async (id: number): Promise<{ success: boolean; data: ApiUser }> => {
+      return await fetchApi(`/api/usuarios/${id}`)
+    },
+
+    // Create new user (admin only)
+    create: async (data: CreateUserData): Promise<{ success: boolean; data: ApiUser; message?: string }> => {
+      return await fetchApi('/api/usuarios', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    // Update user (admin only)
+    update: async (id: number, data: UpdateUserData): Promise<{ success: boolean; data: ApiUser; message?: string }> => {
+      return await fetchApi(`/api/usuarios/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    // Delete user (admin only)
+    delete: async (id: number): Promise<{ success: boolean; message?: string }> => {
+      return await fetchApi(`/api/usuarios/${id}`, {
+        method: 'DELETE',
+      })
+    },
+
+    // Toggle user active status (admin only)
+    toggleActive: async (id: number, activo: boolean): Promise<{ success: boolean; data: ApiUser }> => {
+      return await fetchApi(`/api/usuarios/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ activo }),
       })
     },
   },
