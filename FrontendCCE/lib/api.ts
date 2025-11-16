@@ -193,12 +193,12 @@ export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPag
 }
 
 // ✅ MAPEO CORREGIDO: Frontend → Backend
-export function transformFrontendMemberToApi(member: Omit<import('./store').Member, 'id'>): CreateMemberData {
+export function transformFrontendMemberToApi(member: Omit<import('./store').Member, 'id'> & { dni?: string; birthDate?: string }): CreateMemberData {
   // ✅ Mapeo correcto de actividades (Frontend → Backend)
   const activityMap: Record<string, string> = {
     'basketball': 'Basquet',
     'volleyball': 'Voley',
-    'karate': 'Karate', 
+    'karate': 'Karate',
     'gym': 'Gimnasio',
     'solo-socio': 'Solo socio' // ✅ CORREGIDO: "solo-socio" → "Solo socio"
   }
@@ -218,8 +218,8 @@ export function transformFrontendMemberToApi(member: Omit<import('./store').Memb
   return {
     nombre,
     apellido,
-    dni: '00000000', // Placeholder - should be collected from form
-    fechaNacimiento: '1990-01-01', // Placeholder - should be collected from form
+    dni: member.dni || '00000000', // Use real DNI from form or fallback
+    fechaNacimiento: member.birthDate || '1990-01-01', // Use real birth date from form or fallback
     telefono: member.phone,
     email: member.email,
     actividad: (activityMap[member.activity || 'solo-socio'] || 'Solo socio') as CreateMemberData['actividad'],

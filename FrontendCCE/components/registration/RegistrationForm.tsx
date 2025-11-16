@@ -44,7 +44,7 @@ export default function RegistrationForm() {
     let fieldsToValidate: (keyof RegistrationFormData)[] = []
     
     if (currentStep === 1) {
-      fieldsToValidate = ['name', 'email', 'phone', 'birthDate', 'address']
+      fieldsToValidate = ['name', 'email', 'phone', 'dni', 'birthDate', 'address']
     } else if (currentStep === 2 && membershipType === 'jugador') {
       fieldsToValidate = ['activity', 'emergencyContact']
     } else if (currentStep === 3 && membershipType === 'jugador') {
@@ -72,14 +72,16 @@ export default function RegistrationForm() {
         name: data.name,
         email: data.email,
         phone: data.phone,
+        dni: data.dni, // ✅ Real DNI from form
+        birthDate: data.birthDate, // ✅ Real birth date from form
         activity: membershipType === 'jugador' ? (data.activity as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio') : undefined,
         status: 'active' as const,
         paymentStatus: trialMonth ? ('paid' as const) : ('pending' as const),
         membershipType: membershipType as 'socio' | 'jugador',
         registrationDate: new Date().toISOString().split('T')[0],
         lastPaymentDate: trialMonth ? new Date().toISOString().split('T')[0] : undefined,
-        nextPaymentDate: trialMonth ? 
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
+        nextPaymentDate: trialMonth ?
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] :
           new Date().toISOString().split('T')[0]
       }
 
@@ -328,10 +330,25 @@ export default function RegistrationForm() {
                         </div>
 
                         <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">DNI *</label>
+                          <input
+                            {...register('dni')}
+                            type="text"
+                            maxLength={20}
+                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.dni ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
+                            placeholder="12345678"
+                          />
+                          {errors.dni && (
+                            <p className="text-red-500 text-xs mt-1">{errors.dni.message}</p>
+                          )}
+                        </div>
+
+                        <div>
                           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Nacimiento *</label>
                           <input
                             {...register('birthDate')}
                             type="date"
+                            max={new Date().toISOString().split('T')[0]}
                             className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
                           />
                           {errors.birthDate && (
