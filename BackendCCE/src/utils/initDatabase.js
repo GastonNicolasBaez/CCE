@@ -1,5 +1,50 @@
-const { sequelize, Socio, Cuota } = require('../models');
+const { sequelize, Socio, Cuota, Usuario } = require('../models');
 const config = require('../config');
+const bcrypt = require('bcryptjs');
+
+// Sample users for testing
+const sampleUsuarios = [
+  {
+    nombre: 'Admin',
+    apellido: 'Principal',
+    email: 'admin@cce.com',
+    password: 'admin123', // Will be hashed
+    rol: 'admin',
+    activo: true
+  },
+  {
+    nombre: 'Staff',
+    apellido: 'Miembro',
+    email: 'staff@cce.com',
+    password: 'staff123', // Will be hashed
+    rol: 'staff',
+    activo: true
+  },
+  {
+    nombre: 'Juan',
+    apellido: 'Administrador',
+    email: 'juan.admin@cce.com',
+    password: 'admin123',
+    rol: 'admin',
+    activo: true
+  },
+  {
+    nombre: 'María',
+    apellido: 'Staff',
+    email: 'maria.staff@cce.com',
+    password: 'staff123',
+    rol: 'staff',
+    activo: true
+  },
+  {
+    nombre: 'Pedro',
+    apellido: 'Inactivo',
+    email: 'pedro.inactivo@cce.com',
+    password: 'test123',
+    rol: 'staff',
+    activo: false
+  }
+];
 
 // Sample data for initial database population
 const sampleSocios = [
@@ -161,8 +206,70 @@ const sampleSocios = [
     email: 'ana.rojas@email.com',
     actividad: 'Solo socio',
     esJugador: false
+  },
+
+  // Inactive members (for testing different states)
+  {
+    nombre: 'Diego',
+    apellido: 'Inactivo Prueba',
+    dni: '78903210',
+    fechaNacimiento: '1990-03-10',
+    telefono: '+54 11 6789-0345',
+    email: 'diego.inactivo@email.com',
+    actividad: 'Basquet',
+    esJugador: true,
+    estado: 'Inactivo'
+  },
+  {
+    nombre: 'Laura',
+    apellido: 'Suspendida Test',
+    dni: '89012109',
+    fechaNacimiento: '1993-07-20',
+    telefono: '+54 11 7890-1456',
+    email: 'laura.suspendida@email.com',
+    actividad: 'Gimnasio',
+    esJugador: false,
+    estado: 'Suspendido'
+  },
+  {
+    nombre: 'Martín',
+    apellido: 'Inactivo Gimnasio',
+    dni: '90121098',
+    fechaNacimiento: '1988-11-05',
+    telefono: '+54 11 8901-2567',
+    email: 'martin.inactivo@email.com',
+    actividad: 'Gimnasio',
+    esJugador: false,
+    estado: 'Inactivo'
   }
 ];
+
+// Function to create sample users with hashed passwords
+async function createSampleUsers() {
+  console.log('👤 Creating sample users...');
+  const usersToCreate = [];
+
+  for (const userData of sampleUsuarios) {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    usersToCreate.push({
+      ...userData,
+      password: hashedPassword
+    });
+  }
+
+  const createdUsers = await Usuario.bulkCreate(usersToCreate);
+  console.log(`✅ Created ${createdUsers.length} sample users`);
+
+  // Display user credentials for testing
+  console.log('\n🔑 Test User Credentials:');
+  console.log('─'.repeat(60));
+  sampleUsuarios.forEach(user => {
+    console.log(`  ${user.rol.toUpperCase().padEnd(8)} | ${user.email.padEnd(30)} | ${user.password}`);
+  });
+  console.log('─'.repeat(60));
+
+  return createdUsers;
+}
 
 // Function to generate sample cuotas for existing socios
 async function generateSampleCuotas() {
@@ -246,61 +353,85 @@ async function generateSampleCuotas() {
 // Main initialization function
 async function initializeDatabase() {
   try {
-    console.log('🔧 Initializing database...');
-    
+    console.log('🔧 Initializing database for testing environment...');
+    console.log('═'.repeat(60));
+
     // Test connection
     await sequelize.authenticate();
     console.log('✅ Database connection established');
-    
+
     // Sync database (create tables)
-    await sequelize.sync({ force: true }); // Recreate tables with new schema
+    const force = process.argv.includes('--force');
+    await sequelize.sync({ force }); // Recreate tables if --force flag is used
     console.log('✅ Database tables synchronized');
-    
+
     // Check if data already exists
+    const existingUsersCount = await Usuario.count();
     const existingSociosCount = await Socio.count();
-    
-    if (existingSociosCount > 0) {
-      console.log(`ℹ️ Database already contains ${existingSociosCount} socios`);
-      
-      const answer = process.argv.includes('--force') ? 'yes' : 'no';
-      if (answer !== 'yes') {
-        console.log('💡 Use --force flag to recreate sample data');
-        console.log('✅ Database initialization completed');
+
+    if (existingUsersCount > 0 || existingSociosCount > 0) {
+      console.log(`ℹ️ Database contains: ${existingUsersCount} users, ${existingSociosCount} socios`);
+
+      if (!force) {
+        console.log('💡 Use --force flag to recreate all sample data');
+        console.log('✅ Database initialization completed (no changes)');
         return;
       }
-      
+
       // Clear existing data if force flag is used
-      await Cuota.destroy({ where: {} });
-      await Socio.destroy({ where: {} });
-      console.log('🗑️ Existing data cleared');
+      console.log('🗑️ Clearing existing data...');
+      await Cuota.destroy({ where: {}, force: true });
+      await Socio.destroy({ where: {}, force: true });
+      await Usuario.destroy({ where: {}, force: true });
+      console.log('✅ Existing data cleared');
     }
-    
-    // Create sample socios
-    console.log('👥 Creating sample socios...');
+
+    console.log('\n📝 Creating test data...');
+    console.log('─'.repeat(60));
+
+    // Create sample users (system users for login)
+    await createSampleUsers();
+
+    // Create sample socios (club members)
+    console.log('\n👥 Creating sample socios...');
     const createdSocios = await Socio.bulkCreate(sampleSocios);
     console.log(`✅ Created ${createdSocios.length} sample socios`);
-    
-    // Generate sample cuotas
-    console.log('💰 Generating sample cuotas...');
+
+    // Generate sample cuotas (payments)
+    console.log('\n💰 Generating sample cuotas...');
     const sampleCuotas = await generateSampleCuotas();
     const createdCuotas = await Cuota.bulkCreate(sampleCuotas);
     console.log(`✅ Created ${createdCuotas.length} sample cuotas`);
-    
+
     // Display statistics
     const stats = await generateStatistics();
     console.log('\n📊 Database Statistics:');
-    console.log(`  • Total Socios: ${stats.totalSocios}`);
-    console.log(`  • Active Socios: ${stats.activeSocios}`);
-    console.log(`  • Total Cuotas: ${stats.totalCuotas}`);
-    console.log(`  • Paid Cuotas: ${stats.paidCuotas}`);
-    console.log(`  • Pending Cuotas: ${stats.pendingCuotas}`);
-    console.log(`  • Overdue Cuotas: ${stats.overdueCuotas}`);
-    
-    console.log('\n✅ Database initialization completed successfully!');
-    
+    console.log('═'.repeat(60));
+    console.log(`  👥 Total Socios: ${stats.totalSocios}`);
+    console.log(`     ├─ Active: ${stats.activeSocios}`);
+    console.log(`     ├─ Inactive: ${stats.inactiveSocios}`);
+    console.log(`     └─ Suspended: ${stats.suspendedSocios}`);
+    console.log(`\n  💰 Total Cuotas: ${stats.totalCuotas}`);
+    console.log(`     ├─ Paid: ${stats.paidCuotas}`);
+    console.log(`     ├─ Pending: ${stats.pendingCuotas}`);
+    console.log(`     └─ Overdue: ${stats.overdueCuotas}`);
+    console.log(`\n  👤 Total Users: ${stats.totalUsers}`);
+    console.log(`     ├─ Admins: ${stats.adminUsers}`);
+    console.log(`     ├─ Staff: ${stats.staffUsers}`);
+    console.log(`     └─ Active: ${stats.activeUsers}`);
+    console.log('═'.repeat(60));
+
+    console.log('\n🎉 Test database initialized successfully!');
+    console.log('');
+    console.log('📋 Quick Start:');
+    console.log('  1. Start backend: cd BackendCCE && npm run dev');
+    console.log('  2. Start frontend: cd FrontendCCE && npm run dev');
+    console.log('  3. Login with: admin@cce.com / admin123');
+    console.log('');
+
   } catch (error) {
     console.error('❌ Error initializing database:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
@@ -308,18 +439,32 @@ async function initializeDatabase() {
 async function generateStatistics() {
   const totalSocios = await Socio.count();
   const activeSocios = await Socio.count({ where: { estado: 'Activo' } });
+  const inactiveSocios = await Socio.count({ where: { estado: 'Inactivo' } });
+  const suspendedSocios = await Socio.count({ where: { estado: 'Suspendido' } });
+
   const totalCuotas = await Cuota.count();
   const paidCuotas = await Cuota.count({ where: { estado: 'Pagada' } });
   const pendingCuotas = await Cuota.count({ where: { estado: 'Pendiente' } });
   const overdueCuotas = await Cuota.count({ where: { estado: 'Vencida' } });
-  
+
+  const totalUsers = await Usuario.count();
+  const adminUsers = await Usuario.count({ where: { rol: 'admin' } });
+  const staffUsers = await Usuario.count({ where: { rol: 'staff' } });
+  const activeUsers = await Usuario.count({ where: { activo: true } });
+
   return {
     totalSocios,
     activeSocios,
+    inactiveSocios,
+    suspendedSocios,
     totalCuotas,
     paidCuotas,
     pendingCuotas,
-    overdueCuotas
+    overdueCuotas,
+    totalUsers,
+    adminUsers,
+    staffUsers,
+    activeUsers
   };
 }
 
