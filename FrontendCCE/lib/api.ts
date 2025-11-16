@@ -37,11 +37,15 @@ class ApiError extends Error {
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`
-  
+
+  // Get auth token from localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+
   try {
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
       ...options,
@@ -51,6 +55,15 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     console.log('API Response for', endpoint, ':', data)
 
     if (!response.ok) {
+      // If unauthorized, clear auth data
+      if (response.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('user')
+        // Redirect to login
+        window.location.href = '/login'
+      }
+
       const errorMessage = data?.message || `API Error: ${response.statusText}`
       throw new ApiError(response.status, errorMessage)
     }

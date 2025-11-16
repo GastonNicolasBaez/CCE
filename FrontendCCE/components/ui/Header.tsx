@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../../lib/store'
-import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard } from 'lucide-react'
+import { useAuth } from '../../lib/auth'
+import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard, LogOut, Settings } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Header() {
-  const { 
-    sidebarCollapsed, 
+  const {
+    sidebarCollapsed,
     setSidebarCollapsed,
-    darkMode, 
+    darkMode,
     toggleDarkMode,
     setCurrentPage
   } = useAppStore()
+  const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
@@ -20,6 +22,11 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null)
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
+
+  const handleLogout = () => {
+    setMobileMenuOpen(false)
+    logout()
+  }
   
   const performGlobalSearch = (query: string) => {
     // TODO: Implement actual search functionality
@@ -180,8 +187,8 @@ export default function Header() {
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
                 <User size={16} className="text-white" />
               </div>
-              <span className="hidden md:block text-sm font-medium text-gray-700">
-                Administrador
+              <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {user?.nombre || 'Usuario'}
               </span>
             </button>
 
@@ -192,16 +199,32 @@ export default function Header() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-md border border-white/30 rounded-xl shadow-glass py-2"
+                  className="absolute right-0 top-full mt-2 w-56 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-white/30 dark:border-gray-700/30 rounded-xl shadow-glass py-2 z-50"
                 >
-                  <div className="px-4 py-2 border-b border-white/30">
-                    <p className="text-sm font-medium text-gray-700">Administrador</p>
-                    <p className="text-xs text-gray-500">admin@clubespora.com</p>
+                  <div className="px-4 py-3 border-b border-white/30 dark:border-gray-700/30">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {user?.nombreCompleto || `${user?.nombre} ${user?.apellido}`}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                    <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      {user?.rol === 'admin' ? 'Administrador' : 'Staff'}
+                    </span>
                   </div>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-white/50 transition-colors">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      setCurrentPage('settings')
+                    }}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <Settings size={16} />
                     Configuración
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-white/50 transition-colors">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <LogOut size={16} />
                     Cerrar Sesión
                   </button>
                 </motion.div>
