@@ -28,10 +28,38 @@ export default function Header() {
     logout()
   }
   
-  const performGlobalSearch = (query: string) => {
-    // TODO: Implement actual search functionality
-    console.log('Searching for:', query)
-    setGlobalSearchResults([])
+  const performGlobalSearch = async (query: string) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      if (!token) return
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.data.socios) {
+        const results = data.data.socios.map((socio: any) => ({
+          type: 'member',
+          id: socio.id.toString(),
+          name: socio.name,
+          email: socio.email,
+          phone: socio.phone,
+          activity: socio.activity
+        }))
+        setGlobalSearchResults(results)
+      } else {
+        setGlobalSearchResults([])
+      }
+    } catch (error) {
+      console.error('Search error:', error)
+      setGlobalSearchResults([])
+    }
   }
   
   const clearSearch = () => {
