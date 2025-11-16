@@ -28,6 +28,116 @@ export interface CreateMemberData {
   estado?: 'Activo' | 'Inactivo' | 'Suspendido' // ✅ Estados unificados
 }
 
+export interface ApiCuota {
+  id: number
+  socioId: number
+  periodo: string
+  monto: number
+  fechaVencimiento: string
+  fechaPago: string | null
+  estado: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+  metodoPago: 'Efectivo' | 'Transferencia' | 'MercadoPago' | 'Tarjeta' | null
+  numeroRecibo: string | null
+  observaciones: string | null
+  linkPago: string | null
+  mercadoPagoId: string | null
+  cantidadRecordatorios: number
+  fechaEnvioRecordatorio: string | null
+  socio?: ApiMember
+  estaVencida?: boolean
+  diasVencimiento?: number
+}
+
+export interface PaymentStatistics {
+  mesActual: {
+    periodo: string
+    estadisticas: Array<{
+      estado: string
+      cantidad: number
+      total: number
+    }>
+  }
+  general: {
+    estadisticas: Array<{
+      estado: string
+      cantidad: number
+      total: number
+    }>
+  }
+  metodosPago: Array<{
+    metodo: string
+    cantidad: number
+    total: number
+  }>
+  tendenciaMensual: Array<{
+    periodo: string
+    totalCuotas: number
+    cuotasPagadas: number
+    tasaCobranza: string
+    ingresoReal: number
+    ingresoEsperado: number
+  }>
+}
+
+export interface SendPaymentLinksResponse {
+  success: boolean
+  data: {
+    resultados: Array<{
+      socioId: number
+      cuotaId: number
+      nombreSocio: string
+      periodo: string
+      linkPago: string
+      email: {
+        success: boolean
+        messageId?: string
+        error?: string
+      } | null
+    }>
+    errores: Array<{
+      socioId: number
+      cuotaId?: number
+      error: string
+    }>
+    resumen: {
+      totalSocios: number
+      exitosos: number
+      conErrores: number
+      emailsEnviados: number
+    }
+  }
+  message: string
+}
+
+export interface SendRemindersResponse {
+  success: boolean
+  data: {
+    resultados: Array<{
+      cuotaId: number
+      socioId: number
+      nombreSocio: string
+      periodo: string
+      diasVencimiento: number
+      email: {
+        success: boolean
+        messageId?: string
+        error?: string
+      } | null
+    }>
+    errores: Array<{
+      cuotaId: number
+      error: string
+    }>
+    resumen: {
+      totalCuotasProcesadas: number
+      recordatoriosEnviados: number
+      errores: number
+      emailsEnviados: number
+    }
+  }
+  message: string
+}
+
 class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message)
@@ -134,14 +244,46 @@ export const api = {
   },
 
   pagos: {
-    getOverdue: (): Promise<ApiMember[]> => 
-      fetchApi('/api/pagos/vencidos'),
-    
-    processPayment: (socioId: number, monto: number): Promise<{ success: boolean; message?: string }> => 
-      fetchApi('/api/pagos/procesar', {
+    // Get all payments with optional filters
+    getAll: async (filters?: {
+      estado?: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+      actividad?: string
+      fechaDesde?: string
+      fechaHasta?: string
+      page?: number
+      limit?: number
+    }): Promise<{ success: boolean; data: ApiCuota[]; pagination?: any }> => {
+      const params = new URLSearchParams()
+      if (filters?.estado) params.append('estado', filters.estado)
+      if (filters?.actividad) params.append('actividad', filters.actividad)
+      if (filters?.fechaDesde) params.append('fechaDesde', filters.fechaDesde)
+      if (filters?.fechaHasta) params.append('fechaHasta', filters.fechaHasta)
+      if (filters?.page) params.append('page', filters.page.toString())
+      if (filters?.limit) params.append('limit', filters.limit.toString())
+
+      const queryString = params.toString()
+      return await fetchApi(`/api/pagos${queryString ? `?${queryString}` : ''}`)
+    },
+
+    // Get payment statistics
+    getStatistics: async (): Promise<{ success: boolean; data: PaymentStatistics }> => {
+      return await fetchApi('/api/pagos/estadisticas')
+    },
+
+    // Send payment links to selected members
+    sendPaymentLinks: async (sociosIds: number[], incluirEmail: boolean = true): Promise<SendPaymentLinksResponse> => {
+      return await fetchApi('/api/pagos/enviar-link', {
         method: 'POST',
-        body: JSON.stringify({ socioId, monto }),
-      }),
+        body: JSON.stringify({ sociosIds, incluirEmail }),
+      })
+    },
+
+    // Send payment reminders for overdue payments
+    sendReminders: async (): Promise<SendRemindersResponse> => {
+      return await fetchApi('/api/pagos/programar-recordatorios', {
+        method: 'POST',
+      })
+    },
   },
 }
 
