@@ -2,90 +2,58 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "🚀 Start All Services",
+      "label": "Backend: Dev Server",
       "type": "shell",
-      "command": "start-app.bat",
-      "windows": {
-        "command": "start-app.bat"
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/BackendCCE"
       },
-      "linux": {
-        "command": "./start-app.sh"
-      },
-      "osx": {
-        "command": "./start-app.sh"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "problemMatcher": [],
       "presentation": {
-        "echo": true,
         "reveal": "always",
-        "focus": false,
-        "panel": "new"
+        "panel": "dedicated",
+        "group": "dev-servers"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Frontend: Dev Server",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/FrontendCCE"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev-servers"
+      }
+    },
+    {
+      "label": "Backend: Initialize Test Database",
+      "type": "shell",
+      "command": "npm run test-env",
+      "options": {
+        "cwd": "${workspaceFolder}/BackendCCE"
       },
       "problemMatcher": []
     },
     {
-      "label": "Backend Only",
+      "label": "Backend: Verify Database",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
+      "command": "npm run verify",
       "options": {
         "cwd": "${workspaceFolder}/BackendCCE"
       },
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new",
-        "showReuseMessage": true,
-        "clear": false
-      },
+      "problemMatcher": []
     },
     {
-      "label": "Frontend Only", 
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
-      "options": {
-        "cwd": "${workspaceFolder}/FrontendCCE"
-      },
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new",
-        "showReuseMessage": true,
-        "clear": false
-      }
-    },
-    {
-      "label": "Stop All Services",
-      "type": "shell",
-      "command": "taskkill",
-      "args": ["/f", "/im", "node.exe"],
-      "windows": {
-        "command": "taskkill",
-        "args": ["/f", "/im", "node.exe"]
-      },
-      "linux": {
-        "command": "pkill",
-        "args": ["-f", "node"]
-      },
-      "osx": {
-        "command": "pkill", 
-        "args": ["-f", "node"]
-      },
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new"
-      }
+      "label": "Start Both Servers",
+      "dependsOn": ["Backend: Dev Server", "Frontend: Dev Server"],
+      "problemMatcher": []
     }
   ]
 }

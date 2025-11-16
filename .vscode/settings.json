@@ -1,16 +1,38 @@
 {
-  "terminal.integrated.defaultProfile.windows": "Command Prompt",
-  "terminal.integrated.defaultProfile.linux": "bash",
-  "terminal.integrated.defaultProfile.osx": "zsh",
-  "terminal.integrated.automationShell.windows": "cmd.exe",
-  "workbench.startupEditor": "none",
-  "extensions.ignoreRecommendations": false,
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.tabSize": 2,
+  "editor.detectIndentation": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/.cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/.cache": true,
+    "**/package-lock.json": true
+  },
+  "typescript.tsdk": "FrontendCCE/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "eslint.workingDirectories": [
+    "FrontendCCE",
+    "BackendCCE"
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^\"'`]*)(?:'|\"|`)"]
+  ],
   "files.associations": {
-    "*.env*": "properties"
+    "*.css": "tailwindcss"
   },
-  "emmet.includeLanguages": {
-    "javascript": "javascriptreact",
-    "typescript": "typescriptreact"
-  },
-  "terminal.integrated.cwd": "${workspaceFolder}"
+  "prettier.requireConfig": true,
+  "terminal.integrated.defaultProfile.linux": "bash"
 }

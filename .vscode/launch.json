@@ -2,47 +2,37 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "🚀 Launch Full Application",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/start-app.bat",
-      "console": "externalTerminal",
-      "preLaunchTask": "🚀 Start All Services"
-    },
-    {
       "name": "Debug Backend",
-      "type": "node", 
-      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/BackendCCE/src/server.js",
       "cwd": "${workspaceFolder}/BackendCCE",
       "env": {
         "NODE_ENV": "development"
       },
-      "console": "integratedTerminal",
-      "restart": true,
-      "runtimeArgs": ["--inspect"]
+      "console": "integratedTerminal"
     },
     {
-      "name": "Debug Frontend",
       "type": "node",
-      "request": "launch", 
-      "cwd": "${workspaceFolder}/FrontendCCE",
+      "request": "launch",
+      "name": "Debug Frontend (Next.js)",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"]
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/FrontendCCE",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
     }
   ],
   "compounds": [
     {
-      "name": "🔧 Debug Full Stack",
-      "configurations": [
-        "Debug Backend",
-        "Debug Frontend"
-      ],
-      "presentation": {
-        "hidden": false,
-        "group": "",
-        "order": 1
-      }
+      "name": "Debug Full Stack",
+      "configurations": ["Debug Backend", "Debug Frontend (Next.js)"],
+      "stopAll": true
     }
   ]
 }

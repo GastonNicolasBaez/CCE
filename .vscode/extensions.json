@@ -1,10 +1,16 @@
 {
   "recommendations": [
-    "bradlc.vscode-tailwindcss",
-    "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "ms-vscode.vscode-typescript-next",
-    "formulahendry.auto-run-command"
-  ],
-  "unwantedRecommendations": []
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "dsznajder.es7-react-js-snippets",
+    "christian-kohler.path-intellisense",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "rangav.vscode-thunder-client",
+    "alexcvzz.vscode-sqlite",
+    "formulahendry.auto-rename-tag",
+    "steoates.autoimport",
+    "wayou.vscode-todo-highlight"
+  ]
 }
