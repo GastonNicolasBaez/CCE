@@ -43,7 +43,6 @@ const schemas = {
 
   enviarLinkPago: Joi.object({
     sociosIds: Joi.array().items(Joi.number().integer().positive()).min(1).required(),
-    incluirSMS: Joi.boolean().default(false),
     incluirEmail: Joi.boolean().default(true)
   }),
 

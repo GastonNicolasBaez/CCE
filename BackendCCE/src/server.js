@@ -11,6 +11,7 @@ const { generalLimiter } = require('./middleware/rateLimiter');
 const cronService = require('./services/cronService');
 
 // Import routes
+const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');
 const pagosRoutes = require('./routes/pagos');
 
@@ -83,7 +84,24 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Club Comandante Espora API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      socios: '/api/socios',
+      pagos: '/api/pagos',
+      health: '/health'
+    },
+    documentation: 'https://github.com/GastonNicolasBaez/CCE'
+  });
+});
+
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/socios', sociosRoutes);
 app.use('/api/pagos', pagosRoutes);
 

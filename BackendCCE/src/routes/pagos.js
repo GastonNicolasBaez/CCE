@@ -3,38 +3,42 @@ const router = express.Router();
 const pagosController = require('../controllers/pagosController');
 const { validate, schemas } = require('../middleware/validation');
 const { paymentLimiter, webhookLimiter } = require('../middleware/rateLimiter');
+const { requireAuth } = require('../middleware/auth');
 
-// GET /api/pagos - Get payment status for all socios
-router.get('/', 
+// Protected routes (require authentication)
+router.get('/',
+  requireAuth,
   validate(schemas.query.pagos, 'query'),
   pagosController.obtenerEstadoPagos
 );
 
-// GET /api/pagos/estadisticas - Get payment statistics
-router.get('/estadisticas', pagosController.obtenerEstadisticasPagos);
+router.get('/estadisticas',
+  requireAuth,
+  pagosController.obtenerEstadisticasPagos
+);
 
-// POST /api/pagos/enviar-link - Send payment links to selected socios
 router.post('/enviar-link',
+  requireAuth,
   paymentLimiter,
   validate(schemas.enviarLinkPago, 'body'),
   pagosController.enviarLinkPago
 );
 
-// POST /api/pagos/webhook - MercadoPago webhook handler
+router.post('/programar-recordatorios',
+  requireAuth,
+  pagosController.programarRecordatorios
+);
+
+// Public routes (webhooks - no authentication required)
+// These are called by MercadoPago service
 router.post('/webhook',
   webhookLimiter,
   pagosController.confirmarPago
 );
 
-// Alternative webhook endpoint (some services expect /notifications)
 router.post('/notifications',
   webhookLimiter,
   pagosController.confirmarPago
-);
-
-// POST /api/pagos/programar-recordatorios - Setup/trigger payment reminders
-router.post('/programar-recordatorios',
-  pagosController.programarRecordatorios
 );
 
 module.exports = router;

@@ -17,9 +17,13 @@ module.exports = {
     dialect: 'postgres',
     protocol: 'postgres',
     dialectOptions: {
-      ssl: {
+      ssl: process.env.DB_SSL === 'false' ? false : {
         require: true,
-        rejectUnauthorized: false
+        // Only disable SSL verification if explicitly set in environment
+        // This is needed for some managed PostgreSQL services
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false' ? false : true,
+        // Optionally provide custom CA certificate
+        ca: process.env.DB_SSL_CA || undefined
       }
     },
     logging: false,

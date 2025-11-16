@@ -84,11 +84,7 @@ const pagosController = {
 
   // POST /pagos/enviar-link - Send payment links to selected socios
   enviarLinkPago: asyncHandler(async (req, res) => {
-    const { sociosIds, incluirSMS = false, incluirEmail = true } = req.body;
-
-    if (!incluirSMS && !incluirEmail) {
-      throw new ValidationError('Debe incluir al menos un método de envío (SMS o Email)');
-    }
+    const { sociosIds, incluirEmail = true } = req.body;
 
     const resultados = [];
     const errores = [];
@@ -143,8 +139,7 @@ const pagosController = {
               nombreSocio: socio.getNombreCompleto(),
               periodo: cuota.periodo,
               linkPago: mpResult.init_point,
-              email: null,
-              sms: null
+              email: null
             };
 
             // Send email if requested
@@ -159,22 +154,6 @@ const pagosController = {
                 envioResultados.email = {
                   success: false,
                   error: emailError.message
-                };
-              }
-            }
-
-            // Send SMS if requested
-            if (incluirSMS) {
-              try {
-                // SMS functionality removed
-                envioResultados.sms = {
-                  success: smsResult.success,
-                  sid: smsResult.sid
-                };
-              } catch (smsError) {
-                envioResultados.sms = {
-                  success: false,
-                  error: smsError.message
                 };
               }
             }
@@ -207,8 +186,7 @@ const pagosController = {
           totalSocios: sociosIds.length,
           exitosos: resultados.length,
           conErrores: errores.length,
-          emailsEnviados: resultados.filter(r => r.email?.success).length,
-          smsEnviados: resultados.filter(r => r.sms?.success).length
+          emailsEnviados: resultados.filter(r => r.email?.success).length
         }
       },
       message: `Proceso completado. ${resultados.length} links enviados, ${errores.length} errores.`
@@ -262,17 +240,11 @@ const pagosController = {
           mercadoPagoId: payment.id
         });
 
-        // Send confirmation email and SMS
+        // Send confirmation email
         try {
           await emailService.enviarConfirmacionPago(cuota.socio, cuota, payment);
         } catch (emailError) {
           console.error('Error sending confirmation email:', emailError);
-        }
-
-        try {
-          // SMS confirmation removed
-        } catch (smsError) {
-          console.error('Error sending confirmation SMS:', smsError);
         }
 
       } else if (webhookResult.isRejected) {
@@ -335,8 +307,7 @@ const pagosController = {
             nombreSocio: cuota.socio.getNombreCompleto(),
             periodo: cuota.periodo,
             diasVencimiento: cuota.diasVencimiento(),
-            email: null,
-            sms: null
+            email: null
           };
 
           // Send email reminder
@@ -350,20 +321,6 @@ const pagosController = {
             envioResultado.email = {
               success: false,
               error: emailError.message
-            };
-          }
-
-          // Send SMS reminder
-          try {
-            // SMS reminder removed
-            envioResultado.sms = {
-              success: smsResult.success,
-              sid: smsResult.sid
-            };
-          } catch (smsError) {
-            envioResultado.sms = {
-              success: false,
-              error: smsError.message
             };
           }
 
@@ -392,8 +349,7 @@ const pagosController = {
             totalCuotasProcesadas: cuotasVencidas.length,
             recordatoriosEnviados: resultados.length,
             errores: errores.length,
-            emailsEnviados: resultados.filter(r => r.email?.success).length,
-            smsEnviados: resultados.filter(r => r.sms?.success).length
+            emailsEnviados: resultados.filter(r => r.email?.success).length
           }
         },
         message: `Recordatorios procesados: ${resultados.length} enviados, ${errores.length} errores.`

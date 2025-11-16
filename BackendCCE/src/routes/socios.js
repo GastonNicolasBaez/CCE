@@ -2,9 +2,13 @@ const express = require('express');
 const router = express.Router();
 const sociosController = require('../controllers/sociosController');
 const { validate, schemas } = require('../middleware/validation');
+const { requireAuth } = require('../middleware/auth');
+
+// All routes require authentication
+router.use(requireAuth);
 
 // GET /api/socios - Get all socios with filtering and pagination
-router.get('/', 
+router.get('/',
   validate(schemas.query.socios, 'query'),
   sociosController.obtenerSocios
 );
@@ -13,32 +17,32 @@ router.get('/',
 router.get('/estadisticas', sociosController.obtenerEstadisticas);
 
 // GET /api/socios/:id - Get single socio by ID
-router.get('/:id', 
+router.get('/:id',
   validate(schemas.params.id, 'params'),
   sociosController.obtenerSocioPorId
 );
 
 // POST /api/socios - Create new socio
-router.post('/', 
+router.post('/',
   validate(schemas.socio, 'body'),
   sociosController.crearSocio
 );
 
 // PUT /api/socios/:id - Update socio
-router.put('/:id', 
+router.put('/:id',
   validate(schemas.params.id, 'params'),
   validate(schemas.socioUpdate, 'body'),
   sociosController.actualizarSocio
 );
 
 // DELETE /api/socios/:id - Delete socio
-router.delete('/:id', 
+router.delete('/:id',
   validate(schemas.params.id, 'params'),
   sociosController.eliminarSocio
 );
 
 // POST /api/socios/send-payment-email - Send payment email
-router.post('/send-payment-email', 
+router.post('/send-payment-email',
   sociosController.enviarEmailPago
 );
 

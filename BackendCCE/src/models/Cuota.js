@@ -67,6 +67,31 @@ const Cuota = sequelize.define('Cuota', {
   observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  linkPago: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'link_pago',
+    comment: 'Link de pago generado por MercadoPago'
+  },
+  mercadoPagoId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'mercado_pago_id',
+    comment: 'ID de la preferencia/pago de MercadoPago'
+  },
+  cantidadRecordatorios: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'cantidad_recordatorios',
+    comment: 'Cantidad de recordatorios enviados'
+  },
+  fechaEnvioRecordatorio: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'fecha_envio_recordatorio',
+    comment: 'Fecha del último recordatorio enviado'
   }
 }, {
   tableName: 'cuotas',
@@ -85,6 +110,9 @@ const Cuota = sequelize.define('Cuota', {
     },
     {
       fields: ['periodo']
+    },
+    {
+      fields: ['mercado_pago_id']
     },
     {
       unique: true,
