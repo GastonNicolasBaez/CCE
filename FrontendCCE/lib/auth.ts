@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const contextValue: AuthContextType = {
+  const contextValue: AuthContextType = useMemo(() => ({
     user,
     token,
     isLoading,
@@ -252,12 +252,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshToken,
     updateProfile,
     changePassword,
-  }
+  }), [user, token, isLoading, login, logout, refreshToken, updateProfile, changePassword])
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+  return React.createElement(
+    AuthContext.Provider,
+    { value: contextValue },
+    children
   )
 }
 
