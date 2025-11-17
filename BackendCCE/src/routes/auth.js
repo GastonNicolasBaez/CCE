@@ -46,7 +46,7 @@ const authSchemas = {
       'password.uppercase': 'Password must contain at least one uppercase letter',
       'password.lowercase': 'Password must contain at least one lowercase letter',
       'password.number': 'Password must contain at least one number',
-      'password.special': 'Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)'
+      'password.special': 'Password must contain at least one special character'
     }),
     rol: Joi.string().valid('admin', 'staff').default('staff')
   }),
@@ -73,7 +73,7 @@ const authSchemas = {
       'password.uppercase': 'Password must contain at least one uppercase letter',
       'password.lowercase': 'Password must contain at least one lowercase letter',
       'password.number': 'Password must contain at least one number',
-      'password.special': 'Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)'
+      'password.special': 'Password must contain at least one special character'
     })
   })
 };
