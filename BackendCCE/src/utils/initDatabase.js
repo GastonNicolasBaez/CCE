@@ -12,12 +12,15 @@ function getSampleUsuarios() {
     return [];
   }
 
-  // Use environment variables or throw error
-  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
-  const staffPassword = process.env.STAFF_PASSWORD || 'ChangeMe123!';
+  // Use environment variables with secure defaults
+  // Password requirements: min 12 chars, uppercase, lowercase, number, special char
+  const adminPassword = process.env.ADMIN_PASSWORD || 'AdminCCE2024!@';
+  const staffPassword = process.env.STAFF_PASSWORD || 'StaffCCE2024!@';
 
-  if (adminPassword === 'ChangeMe123!' || staffPassword === 'ChangeMe123!') {
+  if (adminPassword === 'AdminCCE2024!@' || staffPassword === 'StaffCCE2024!@') {
     console.warn('⚠️  WARNING: Using default test passwords. Set ADMIN_PASSWORD and STAFF_PASSWORD environment variables for security.');
+    console.warn('   Default admin password: AdminCCE2024!@');
+    console.warn('   Default staff password: StaffCCE2024!@');
   }
 
   return [
