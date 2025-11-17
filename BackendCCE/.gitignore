@@ -11,3 +11,8 @@ build/
 BackendCCE/node_modules/
 FrontendCCE/node_modules/
 FrontendCCE/.next/
+
+# Database files (SQLite)
+*.sqlite
+*.sqlite3
+*.db
