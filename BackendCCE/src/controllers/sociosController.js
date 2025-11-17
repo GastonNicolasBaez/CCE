@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { Socio, Cuota } = require('../models');
 const { asyncHandler, NotFoundError, ConflictError } = require('../middleware/errorHandler');
 const emailService = require('../services/emailService');
+const { sanitizeSearchTerm } = require('../utils/sanitization');
 
 const sociosController = {
   // GET /socios - Get all socios with filtering and pagination
@@ -28,11 +29,13 @@ const sociosController = {
     }
 
     if (search) {
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = sanitizeSearchTerm(search);
       whereConditions[Op.or] = [
-        { nombre: { [Op.like]: `%${search}%` } },
-        { apellido: { [Op.like]: `%${search}%` } },
-        { dni: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } }
+        { nombre: { [Op.like]: `%${sanitizedSearch}%` } },
+        { apellido: { [Op.like]: `%${sanitizedSearch}%` } },
+        { dni: { [Op.like]: `%${sanitizedSearch}%` } },
+        { email: { [Op.like]: `%${sanitizedSearch}%` } }
       ];
     }
 

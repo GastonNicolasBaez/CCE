@@ -196,8 +196,8 @@ const pagosController = {
   // POST /pagos/webhook - MercadoPago webhook handler
   confirmarPago: asyncHandler(async (req, res) => {
     try {
-      // Process webhook data
-      const webhookResult = await mercadoPagoService.procesarWebhook(req.body);
+      // Process webhook data with signature verification
+      const webhookResult = await mercadoPagoService.procesarWebhook(req.body, req.headers);
       
       if (webhookResult.type !== 'payment') {
         return res.status(200).json({ success: true, message: 'Webhook processed but not a payment' });

@@ -103,15 +103,65 @@ class MercadoPagoService {
     }
   }
 
-  async procesarWebhook(data) {
+  /**
+   * Verify webhook signature from MercadoPago
+   * @param {object} headers - Request headers containing signature
+   * @param {object} body - Request body
+   * @returns {boolean} - True if signature is valid
+   */
+  verifyWebhookSignature(headers, body) {
     try {
+      const crypto = require('crypto');
+      const signature = headers['x-signature'];
+      const requestId = headers['x-request-id'];
+
+      // If webhook secret is not configured, log warning but allow in development
+      if (!config.mercadoPago.webhookSecret) {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('Webhook secret not configured in production');
+        }
+        console.warn('⚠️ WARNING: MercadoPago webhook signature verification disabled (no secret configured)');
+        return true; // Allow in development without secret
+      }
+
+      if (!signature || !requestId) {
+        throw new Error('Missing webhook signature headers (x-signature or x-request-id)');
+      }
+
+      // Create HMAC with webhook secret
+      const hmac = crypto.createHmac('sha256', config.mercadoPago.webhookSecret);
+      hmac.update(requestId + JSON.stringify(body));
+      const expectedSignature = hmac.digest('hex');
+
+      // Compare signatures
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+
+      if (!isValid) {
+        throw new Error('Invalid webhook signature');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Webhook signature verification failed:', error.message);
+      throw error;
+    }
+  }
+
+  async procesarWebhook(data, headers = {}) {
+    try {
+      // Verify webhook signature first
+      this.verifyWebhookSignature(headers, data);
+
       if (!data.type || !data.data) {
         throw new Error('Invalid webhook data');
       }
 
       if (data.type === 'payment') {
         const paymentInfo = await this.verificarPago(data.data.id);
-        
+
         return {
           type: 'payment',
           payment: paymentInfo,

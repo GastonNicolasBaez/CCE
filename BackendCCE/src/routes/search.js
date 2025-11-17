@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const { Socio } = require('../models');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth } = require('../middleware/auth');
+const { sanitizeSearchTerm } = require('../utils/sanitization');
 
 /**
  * GET /api/search?q={query}&limit={limit}
@@ -22,7 +23,8 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  const searchTerm = q.trim();
+  // Sanitize search input to prevent SQL injection
+  const searchTerm = sanitizeSearchTerm(q);
   const searchLimit = Math.min(parseInt(limit, 10) || 10, 50); // Max 50 results
 
   // Search in socios (members)

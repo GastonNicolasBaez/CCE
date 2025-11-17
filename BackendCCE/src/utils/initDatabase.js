@@ -2,49 +2,69 @@ const { sequelize, Socio, Cuota, Usuario } = require('../models');
 const config = require('../config');
 const bcrypt = require('bcryptjs');
 
-// Sample users for testing
-const sampleUsuarios = [
-  {
-    nombre: 'Admin',
-    apellido: 'Principal',
-    email: 'admin@cce.com',
-    password: 'admin123', // Will be hashed
-    rol: 'admin',
-    activo: true
-  },
-  {
-    nombre: 'Staff',
-    apellido: 'Miembro',
-    email: 'staff@cce.com',
-    password: 'staff123', // Will be hashed
-    rol: 'staff',
-    activo: true
-  },
-  {
-    nombre: 'Juan',
-    apellido: 'Administrador',
-    email: 'juan.admin@cce.com',
-    password: 'admin123',
-    rol: 'admin',
-    activo: true
-  },
-  {
-    nombre: 'María',
-    apellido: 'Staff',
-    email: 'maria.staff@cce.com',
-    password: 'staff123',
-    rol: 'staff',
-    activo: true
-  },
-  {
-    nombre: 'Pedro',
-    apellido: 'Inactivo',
-    email: 'pedro.inactivo@cce.com',
-    password: 'test123',
-    rol: 'staff',
-    activo: false
+// Get test credentials from environment variables
+// SECURITY: Never hardcode passwords. Use environment variables.
+function getSampleUsuarios() {
+  // Only create test users in development environment
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️  WARNING: Test users are not created in production environment');
+    console.warn('   Create admin user manually or use ADMIN_PASSWORD environment variable');
+    return [];
   }
-];
+
+  // Use environment variables or throw error
+  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
+  const staffPassword = process.env.STAFF_PASSWORD || 'ChangeMe123!';
+
+  if (adminPassword === 'ChangeMe123!' || staffPassword === 'ChangeMe123!') {
+    console.warn('⚠️  WARNING: Using default test passwords. Set ADMIN_PASSWORD and STAFF_PASSWORD environment variables for security.');
+  }
+
+  return [
+    {
+      nombre: 'Admin',
+      apellido: 'Principal',
+      email: process.env.ADMIN_EMAIL || 'admin@cce.com',
+      password: adminPassword, // Will be hashed
+      rol: 'admin',
+      activo: true
+    },
+    {
+      nombre: 'Staff',
+      apellido: 'Miembro',
+      email: process.env.STAFF_EMAIL || 'staff@cce.com',
+      password: staffPassword, // Will be hashed
+      rol: 'staff',
+      activo: true
+    },
+    {
+      nombre: 'Juan',
+      apellido: 'Administrador',
+      email: 'juan.admin@cce.com',
+      password: adminPassword,
+      rol: 'admin',
+      activo: true
+    },
+    {
+      nombre: 'María',
+      apellido: 'Staff',
+      email: 'maria.staff@cce.com',
+      password: staffPassword,
+      rol: 'staff',
+      activo: true
+    },
+    {
+      nombre: 'Pedro',
+      apellido: 'Inactivo',
+      email: 'pedro.inactivo@cce.com',
+      password: staffPassword,
+      rol: 'staff',
+      activo: false
+    }
+  ];
+}
+
+const sampleUsuarios = getSampleUsuarios();
 
 // Sample data for initial database population
 const sampleSocios = [
@@ -250,7 +270,8 @@ async function createSampleUsers() {
   const usersToCreate = [];
 
   for (const userData of sampleUsuarios) {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    // Use 12 rounds for better security (increased from 10)
+    const hashedPassword = await bcrypt.hash(userData.password, 12);
     usersToCreate.push({
       ...userData,
       password: hashedPassword

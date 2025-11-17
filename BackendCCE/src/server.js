@@ -39,9 +39,15 @@ app.use(helmet({
 // CORS configuration
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
+    // In production, reject requests with no origin (security best practice)
+    // In development, allow for testing with curl/Postman
+    if (!origin) {
+      if (config.server.env === 'production') {
+        return callback(new Error('Origin header required'), false);
+      }
+      return callback(null, true); // Allow in development only
+    }
+
     const allowedOrigins = [
       config.server.frontendUrl,
       'http://localhost:3000',
@@ -49,7 +55,7 @@ app.use(cors({
       'https://frontend-cce-git-main-gastonnicolasbaezs-projects.vercel.app',
       'https://frontend-cce.vercel.app' // URL más corta si está disponible
     ];
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
