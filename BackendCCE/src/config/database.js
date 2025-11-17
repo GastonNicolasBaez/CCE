@@ -31,7 +31,9 @@ if (process.env.NODE_ENV === 'development') {
     dialectOptions: {
       ssl: process.env.NODE_ENV === 'production' ? {
         require: true,
-        rejectUnauthorized: false
+        // Only disable SSL validation if explicitly set in environment
+        // For self-signed certificates or Railway, set DB_SSL_REJECT_UNAUTHORIZED=false
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
       } : false
     },
     logging: false, // Disable logging in production

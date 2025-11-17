@@ -96,8 +96,10 @@ const Cuota = sequelize.define('Cuota', {
 }, {
   tableName: 'cuotas',
   timestamps: true,
+  paranoid: true,  // Enable soft deletes
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',  // Soft delete timestamp
   indexes: [
     {
       fields: ['socio_id']

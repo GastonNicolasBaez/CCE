@@ -98,12 +98,41 @@ const authController = {
       throw new UnauthorizedError('Account is deactivated. Contact administrator.');
     }
 
+    // Check if account is locked
+    if (usuario.isLocked()) {
+      const minutesLeft = Math.ceil((usuario.locked_until - new Date()) / 60000);
+      throw new UnauthorizedError(
+        `Account is locked due to too many failed login attempts. Try again in ${minutesLeft} minutes.`
+      );
+    }
+
     // Verify password
     const isValidPassword = await usuario.verificarPassword(password);
 
     if (!isValidPassword) {
-      throw new UnauthorizedError('Invalid email or password');
+      // Increment failed attempts and potentially lock account
+      await usuario.incrementFailedAttempts();
+
+      // Check if account is now locked
+      if (usuario.isLocked()) {
+        throw new UnauthorizedError(
+          'Too many failed login attempts. Account locked for 30 minutes.'
+        );
+      }
+
+      // Show generic error and remaining attempts
+      const remainingAttempts = 5 - usuario.failed_login_attempts;
+      throw new UnauthorizedError(
+        `Invalid email or password. ${remainingAttempts} attempts remaining.`
+      );
     }
+
+    // Successful login - reset failed attempts
+    await usuario.resetFailedAttempts();
+
+    // Update last login info
+    const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+    await usuario.updateLastLogin(ipAddress);
 
     // Generate tokens
     const token = generateToken(usuario.id);

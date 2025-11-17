@@ -21,7 +21,9 @@ class EmailService {
         secure: config.email.secure,
         auth: config.email.auth,
         tls: {
-          rejectUnauthorized: false
+          // Only disable TLS validation if explicitly set in environment
+          // For self-signed certificates, set EMAIL_TLS_REJECT_UNAUTHORIZED=false
+          rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED !== 'false'
         }
       });
 

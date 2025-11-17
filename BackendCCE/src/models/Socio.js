@@ -85,8 +85,10 @@ const Socio = sequelize.define('Socio', {
 }, {
   tableName: 'socios',
   timestamps: true,
+  paranoid: true,  // Enable soft deletes
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',  // Soft delete timestamp
   indexes: [
     {
       unique: true,

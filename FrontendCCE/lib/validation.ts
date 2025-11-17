@@ -29,7 +29,8 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
 }
 
 /**
- * Password validation
+ * Password validation with strong security requirements
+ * Default requirements: 12+ chars, uppercase, lowercase, number, special char
  */
 export function validatePassword(password: string, options: {
   minLength?: number
@@ -39,11 +40,11 @@ export function validatePassword(password: string, options: {
   requireSpecialChars?: boolean
 } = {}): { isValid: boolean; error?: string } {
   const {
-    minLength = 6,
-    requireUppercase = false,
-    requireLowercase = false,
-    requireNumbers = false,
-    requireSpecialChars = false
+    minLength = 12,  // Increased from 6 to 12 for better security
+    requireUppercase = true,  // Now required by default
+    requireLowercase = true,  // Now required by default
+    requireNumbers = true,    // Now required by default
+    requireSpecialChars = true  // Now required by default
   } = options
 
   if (!password || password.trim() === '') {
@@ -55,22 +56,78 @@ export function validatePassword(password: string, options: {
   }
 
   if (requireUppercase && !/[A-Z]/.test(password)) {
-    return { isValid: false, error: 'La contraseña debe contener al menos una mayúscula' }
+    return { isValid: false, error: 'La contraseña debe contener al menos una mayúscula (A-Z)' }
   }
 
   if (requireLowercase && !/[a-z]/.test(password)) {
-    return { isValid: false, error: 'La contraseña debe contener al menos una minúscula' }
+    return { isValid: false, error: 'La contraseña debe contener al menos una minúscula (a-z)' }
   }
 
   if (requireNumbers && !/\d/.test(password)) {
-    return { isValid: false, error: 'La contraseña debe contener al menos un número' }
+    return { isValid: false, error: 'La contraseña debe contener al menos un número (0-9)' }
   }
 
   if (requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-    return { isValid: false, error: 'La contraseña debe contener al menos un carácter especial' }
+    return { isValid: false, error: 'La contraseña debe contener al menos un carácter especial (!@#$%^&*...)' }
   }
 
   return { isValid: true }
+}
+
+/**
+ * Calculate password strength
+ * Returns a score from 0-100
+ */
+export function getPasswordStrength(password: string): {
+  score: number;
+  level: 'very-weak' | 'weak' | 'medium' | 'strong' | 'very-strong';
+  feedback: string[];
+} {
+  let score = 0
+  const feedback: string[] = []
+
+  if (!password) {
+    return { score: 0, level: 'very-weak', feedback: ['Ingresa una contraseña'] }
+  }
+
+  // Length score (max 40 points)
+  if (password.length >= 12) score += 20
+  if (password.length >= 16) score += 10
+  if (password.length >= 20) score += 10
+  else if (password.length < 12) feedback.push('Usa al menos 12 caracteres')
+
+  // Character variety (max 40 points)
+  if (/[a-z]/.test(password)) score += 10
+  else feedback.push('Agrega letras minúsculas')
+
+  if (/[A-Z]/.test(password)) score += 10
+  else feedback.push('Agrega letras mayúsculas')
+
+  if (/\d/.test(password)) score += 10
+  else feedback.push('Agrega números')
+
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 10
+  else feedback.push('Agrega caracteres especiales')
+
+  // Complexity bonus (max 20 points)
+  const hasNoRepeats = !/(.)(\1{2,})/.test(password) // No 3+ repeated chars
+  const hasNoSequence = !/(?:abc|bcd|cde|123|234|345|456|567|678|789|890)/i.test(password)
+
+  if (hasNoRepeats) score += 10
+  else feedback.push('Evita caracteres repetidos')
+
+  if (hasNoSequence) score += 10
+  else feedback.push('Evita secuencias comunes')
+
+  // Determine level
+  let level: 'very-weak' | 'weak' | 'medium' | 'strong' | 'very-strong'
+  if (score < 30) level = 'very-weak'
+  else if (score < 50) level = 'weak'
+  else if (score < 70) level = 'medium'
+  else if (score < 90) level = 'strong'
+  else level = 'very-strong'
+
+  return { score, level, feedback }
 }
 
 /**
@@ -259,16 +316,78 @@ export function validateForm<T extends Record<string, unknown>>(
 }
 
 /**
- * Sanitize input (remove potentially dangerous characters)
+ * Sanitize input to prevent XSS attacks
+ * Note: React already escapes content by default, but this provides additional protection
+ * for cases where dangerouslySetInnerHTML might be used or data is sent to backend
  */
 export function sanitizeInput(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
   return input
     .trim()
-    .replace(/[<>]/g, '') // Remove < and > to prevent XSS
+    // Remove null bytes
+    .replace(/\0/g, '')
+    // Remove control characters except newline and tab
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // HTML escape dangerous characters
     .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;')
+}
+
+/**
+ * Sanitize HTML content - strips all HTML tags
+ * Use this for user input that should never contain HTML
+ */
+export function stripHTML(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    .replace(/<[^>]*>/g, '')  // Remove HTML tags
+    .replace(/&nbsp;/gi, ' ') // Replace &nbsp; with space
+    .replace(/&[a-z]+;/gi, '') // Remove HTML entities
+    .trim()
+}
+
+/**
+ * Sanitize for SQL-like patterns (additional layer of defense)
+ * Backend should be primary defense, but this helps prevent injection attempts
+ */
+export function sanitizeSQLPatterns(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    .replace(/'/g, "''")  // Escape single quotes
+    .replace(/;/g, '')    // Remove semicolons
+    .replace(/--/g, '')   // Remove SQL comments
+    .replace(/\/\*/g, '') // Remove multi-line comment start
+    .replace(/\*\//g, '') // Remove multi-line comment end
+    .replace(/xp_/gi, '') // Remove SQL Server extended procedures
+    .replace(/exec(\s|\+)+(s|x)p\w+/gi, '') // Remove exec statements
+}
+
+/**
+ * Sanitize filename to prevent directory traversal attacks
+ */
+export function sanitizeFilename(filename: string): string {
+  if (!filename || typeof filename !== 'string') {
+    return ''
+  }
+
+  return filename
+    .replace(/[^a-zA-Z0-9.-]/g, '_')  // Only allow alphanumeric, dots, and dashes
+    .replace(/\.{2,}/g, '.')          // Prevent directory traversal (..)
+    .replace(/^\.+/, '')              // Remove leading dots
+    .substring(0, 255)                // Limit length
 }
 
 /**
