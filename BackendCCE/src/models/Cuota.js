@@ -1,6 +1,10 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
+/**
+ * Modelo Cuota - Representa cuotas/pagos mensuales de socios
+ * MULTI-TENANT: Cada cuota pertenece a un tenant específico
+ */
 const Cuota = sequelize.define('Cuota', {
   id: {
     type: DataTypes.INTEGER,
@@ -8,6 +12,21 @@ const Cuota = sequelize.define('Cuota', {
     autoIncrement: true,
     allowNull: false
   },
+
+  // MULTI-TENANT: Relación con tenant
+  tenantId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'tenant_id',
+    references: {
+      model: 'tenants',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    comment: 'Tenant this cuota belongs to'
+  },
+
   socioId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -75,20 +94,30 @@ const Cuota = sequelize.define('Cuota', {
   updatedAt: 'updated_at',
   indexes: [
     {
-      fields: ['socio_id']
+      fields: ['tenant_id'],
+      name: 'cuotas_tenant_id_idx'
     },
     {
-      fields: ['estado']
+      fields: ['socio_id'],
+      name: 'cuotas_socio_id_idx'
     },
     {
-      fields: ['fecha_vencimiento']
+      fields: ['estado'],
+      name: 'cuotas_estado_idx'
     },
     {
-      fields: ['periodo']
+      fields: ['fecha_vencimiento'],
+      name: 'cuotas_fecha_vencimiento_idx'
     },
     {
+      fields: ['periodo'],
+      name: 'cuotas_periodo_idx'
+    },
+    {
+      // Multi-tenant: único por socio y periodo dentro del tenant
       unique: true,
-      fields: ['socio_id', 'periodo']
+      fields: ['tenant_id', 'socio_id', 'periodo'],
+      name: 'cuotas_tenant_socio_periodo_unique'
     }
   ],
   hooks: {

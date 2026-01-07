@@ -1,6 +1,10 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
+/**
+ * Modelo Socio - Representa miembros/socios del club
+ * MULTI-TENANT: Cada socio pertenece a un tenant específico
+ */
 const Socio = sequelize.define('Socio', {
   id: {
     type: DataTypes.INTEGER,
@@ -8,6 +12,21 @@ const Socio = sequelize.define('Socio', {
     autoIncrement: true,
     allowNull: false
   },
+
+  // MULTI-TENANT: Relación con tenant
+  tenantId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'tenant_id',
+    references: {
+      model: 'tenants',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    comment: 'Tenant this socio belongs to'
+  },
+
   nombre: {
     type: DataTypes.STRING(100),
     allowNull: false,
@@ -89,18 +108,28 @@ const Socio = sequelize.define('Socio', {
   updatedAt: 'updated_at',
   indexes: [
     {
+      // Multi-tenant: DNI único por tenant
       unique: true,
-      fields: ['dni']
+      fields: ['tenant_id', 'dni'],
+      name: 'socios_tenant_dni_unique'
     },
     {
+      // Multi-tenant: Email único por tenant
       unique: true,
-      fields: ['email']
+      fields: ['tenant_id', 'email'],
+      name: 'socios_tenant_email_unique'
     },
     {
-      fields: ['actividad']
+      fields: ['tenant_id'],
+      name: 'socios_tenant_id_idx'
     },
     {
-      fields: ['estado']
+      fields: ['actividad'],
+      name: 'socios_actividad_idx'
+    },
+    {
+      fields: ['estado'],
+      name: 'socios_estado_idx'
     }
   ]
 });
