@@ -47,6 +47,76 @@ const schemas = {
     incluirEmail: Joi.boolean().default(true)
   }),
 
+  // Authentication schemas
+  register: Joi.object({
+    // Tenant data
+    clubName: Joi.string().min(3).max(100).required()
+      .messages({
+        'string.min': 'El nombre del club debe tener al menos 3 caracteres',
+        'string.max': 'El nombre del club no puede exceder 100 caracteres',
+        'any.required': 'El nombre del club es requerido'
+      }),
+    slug: Joi.string().min(3).max(50).pattern(/^[a-z0-9-]+$/).required()
+      .messages({
+        'string.min': 'El slug debe tener al menos 3 caracteres',
+        'string.max': 'El slug no puede exceder 50 caracteres',
+        'string.pattern.base': 'El slug solo puede contener letras minúsculas, números y guiones',
+        'any.required': 'El slug es requerido'
+      }),
+    phone: Joi.string().pattern(/^[\+]?[0-9\s\-\(\)]{10,20}$/).allow('').optional()
+      .messages({
+        'string.pattern.base': 'El teléfono debe tener un formato válido'
+      }),
+
+    // Admin user data
+    adminName: Joi.string().min(2).max(100).required()
+      .messages({
+        'string.min': 'El nombre debe tener al menos 2 caracteres',
+        'string.max': 'El nombre no puede exceder 100 caracteres',
+        'any.required': 'El nombre del administrador es requerido'
+      }),
+    adminLastName: Joi.string().min(2).max(100).required()
+      .messages({
+        'string.min': 'El apellido debe tener al menos 2 caracteres',
+        'string.max': 'El apellido no puede exceder 100 caracteres',
+        'any.required': 'El apellido del administrador es requerido'
+      }),
+    adminEmail: Joi.string().email().max(150).required()
+      .messages({
+        'string.email': 'Debe proporcionar un email válido',
+        'string.max': 'El email no puede exceder 150 caracteres',
+        'any.required': 'El email del administrador es requerido'
+      }),
+    password: Joi.string().min(8).max(100).required()
+      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .messages({
+        'string.min': 'La contraseña debe tener al menos 8 caracteres',
+        'string.max': 'La contraseña no puede exceder 100 caracteres',
+        'string.pattern.base': 'La contraseña debe contener al menos una mayúscula, una minúscula y un número',
+        'any.required': 'La contraseña es requerida'
+      })
+  }),
+
+  login: Joi.object({
+    email: Joi.string().email().max(150).required()
+      .messages({
+        'string.email': 'Debe proporcionar un email válido',
+        'string.max': 'El email no puede exceder 150 caracteres',
+        'any.required': 'El email es requerido'
+      }),
+    password: Joi.string().min(1).required()
+      .messages({
+        'any.required': 'La contraseña es requerida'
+      })
+  }),
+
+  verifyToken: Joi.object({
+    token: Joi.string().required()
+      .messages({
+        'any.required': 'El token es requerido'
+      })
+  }),
+
   params: {
     id: Joi.object({
       id: Joi.number().integer().positive().required()

@@ -11,6 +11,7 @@ const { generalLimiter } = require('./middleware/rateLimiter');
 const cronService = require('./services/cronService');
 
 // Import routes
+const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');
 const pagosRoutes = require('./routes/pagos');
 
@@ -55,7 +56,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Tenant-Slug']
 }));
 
 // Request logging
@@ -84,6 +85,10 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
+// Authentication routes (multi-tenant)
+app.use('/api/auth', authRoutes);
+
+// Resource routes (will need tenant scoping in future updates)
 app.use('/api/socios', sociosRoutes);
 app.use('/api/pagos', pagosRoutes);
 
