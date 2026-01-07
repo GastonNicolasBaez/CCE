@@ -147,15 +147,19 @@ const optionalAuth = async (req, res, next) => {
  *   })
  */
 const requireAdmin = (req, res, next) => {
-  if (!req.user) {
-    throw new UnauthorizedError('Autenticación requerida');
-  }
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError('Autenticación requerida');
+    }
 
-  if (!req.user.isAdmin) {
-    throw new ForbiddenError('Acceso denegado. Se requieren permisos de administrador.');
-  }
+    if (!req.user.isAdmin) {
+      throw new ForbiddenError('Acceso denegado. Se requieren permisos de administrador.');
+    }
 
-  next();
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -168,15 +172,19 @@ const requireAdmin = (req, res, next) => {
  */
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
-    if (!req.user) {
-      throw new UnauthorizedError('Autenticación requerida');
-    }
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Autenticación requerida');
+      }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      throw new ForbiddenError(`Acceso denegado. Roles permitidos: ${allowedRoles.join(', ')}`);
-    }
+      if (!allowedRoles.includes(req.user.role)) {
+        throw new ForbiddenError(`Acceso denegado. Roles permitidos: ${allowedRoles.join(', ')}`);
+      }
 
-    next();
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 };
 

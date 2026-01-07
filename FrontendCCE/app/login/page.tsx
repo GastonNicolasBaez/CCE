@@ -14,19 +14,20 @@ export default function LoginPage() {
   const [tenantSlug, setTenantSlug] = useState<string | null>(null)
 
   useEffect(() => {
-    // Check if already authenticated
-    if (auth.isAuthenticated()) {
-      router.push('/dashboard')
-      return
-    }
-
-    // Get tenant slug from subdomain
+    // Get tenant slug from subdomain first
     const slug = getTenantSlugFromSubdomain()
     setTenantSlug(slug)
 
-    // If no tenant, redirect to main page
+    // If no tenant, redirect to main page (highest priority)
     if (!slug) {
       router.push('/')
+      return
+    }
+
+    // Check if already authenticated (only if tenant exists)
+    if (auth.isAuthenticated()) {
+      router.push('/dashboard')
+      return
     }
   }, [router])
 

@@ -39,7 +39,8 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
+    // Static allowed origins
     const allowedOrigins = [
       config.server.frontendUrl,
       'http://localhost:3000',
@@ -47,12 +48,30 @@ app.use(cors({
       'https://frontend-cce-git-main-gastonnicolasbaezs-projects.vercel.app',
       'https://frontend-cce.vercel.app' // URL más corta si está disponible
     ];
-    
+
+    // Dynamic patterns for multi-tenant subdomains
+    const allowedPatterns = [
+      // Local development subdomains: espora.localhost:3000, demo.localhost:3000
+      /^http:\/\/[\w-]+\.localhost(?::3000)?$/,
+      // Production subdomains: espora.zeclogic.net.ar, demo.zeclogic.net.ar
+      /^https?:\/\/[\w-]+\.zeclogic\.net\.ar$/,
+      // Vercel preview/production deployments
+      /^https:\/\/[\w-]+\.vercel\.app$/
+    ];
+
+    // Check static origins
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+
+    // Check dynamic patterns
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    // Reject unknown origins
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

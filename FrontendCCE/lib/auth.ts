@@ -62,11 +62,16 @@ const USER_KEY = 'cce_user'
 const TENANT_KEY = 'cce_tenant'
 
 /**
- * Save JWT token to localStorage
+ * Save JWT token to localStorage and cookie
+ * Cookie is needed for Next.js middleware authentication
  */
 export function saveToken(token: string): void {
   if (typeof window !== 'undefined') {
+    // Save to localStorage for client-side access
     localStorage.setItem(TOKEN_KEY, token)
+
+    // Save to cookie for middleware access (24 hours)
+    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`
   }
 }
 
@@ -81,13 +86,17 @@ export function getToken(): string | null {
 }
 
 /**
- * Remove JWT token from localStorage
+ * Remove JWT token from localStorage and cookie
  */
 export function removeToken(): void {
   if (typeof window !== 'undefined') {
+    // Remove from localStorage
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     localStorage.removeItem(TENANT_KEY)
+
+    // Remove cookie by setting it to expire immediately
+    document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`
   }
 }
 

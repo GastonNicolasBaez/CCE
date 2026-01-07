@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Tenant, Usuario } = require('../models');
+const { Tenant, Usuario, sequelize } = require('../models');
 const { asyncHandler, ValidationError, UnauthorizedError, ConflictError, NotFoundError } = require('../middleware/errorHandler');
 const config = require('../config');
 
@@ -46,38 +46,54 @@ const authController = {
       throw new ConflictError('Este email ya está registrado.');
     }
 
-    // 3. Create tenant
-    const tenant = await Tenant.create({
-      slug: slug.toLowerCase().trim(),
-      name: clubName,
-      status: 'trial', // 14 days trial
-      plan: 'free',
-      maxMembers: 50,
-      adminEmail: adminEmail.toLowerCase(),
-      adminName: `${adminName} ${adminLastName}`,
-      phone: phone || null,
-      settings: {},
-      metadata: {
-        registeredAt: new Date(),
-        source: 'web'
-      }
-    });
+    // 3 & 4. Create tenant and admin user in a transaction
+    // This ensures atomicity - if user creation fails, tenant creation is rolled back
+    const transaction = await sequelize.transaction();
 
-    console.log(`✅ Tenant created: ${tenant.slug} (ID: ${tenant.id})`);
+    let tenant, adminUser;
 
-    // 4. Create admin user for this tenant
-    const adminUser = await Usuario.create({
-      tenantId: tenant.id,
-      nombre: adminName,
-      apellido: adminLastName,
-      email: adminEmail.toLowerCase(),
-      password: password, // Will be hashed by model hook
-      rol: 'admin',
-      status: 'active',
-      activo: true
-    });
+    try {
+      // 3. Create tenant
+      tenant = await Tenant.create({
+        slug: slug.toLowerCase().trim(),
+        name: clubName,
+        status: 'trial', // 14 days trial
+        plan: 'free',
+        maxMembers: 50,
+        adminEmail: adminEmail.toLowerCase(),
+        adminName: `${adminName} ${adminLastName}`,
+        phone: phone || null,
+        settings: {},
+        metadata: {
+          registeredAt: new Date(),
+          source: 'web'
+        }
+      }, { transaction });
 
-    console.log(`✅ Admin user created: ${adminUser.email} for tenant ${tenant.slug}`);
+      console.log(`✅ Tenant created: ${tenant.slug} (ID: ${tenant.id})`);
+
+      // 4. Create admin user for this tenant
+      adminUser = await Usuario.create({
+        tenantId: tenant.id,
+        nombre: adminName,
+        apellido: adminLastName,
+        email: adminEmail.toLowerCase(),
+        password: password, // Will be hashed by model hook
+        rol: 'admin',
+        status: 'active',
+        activo: true
+      }, { transaction });
+
+      console.log(`✅ Admin user created: ${adminUser.email} for tenant ${tenant.slug}`);
+
+      // Commit transaction - both operations succeeded
+      await transaction.commit();
+    } catch (error) {
+      // Rollback transaction on any error
+      await transaction.rollback();
+      console.error('❌ Transaction rolled back:', error.message);
+      throw error;
+    }
 
     // 5. Generate JWT token
     const token = jwt.sign(
