@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { User, Tenant } from './auth'
+import { auth as authService } from './auth'
 
 export interface Member {
   id: string
@@ -31,21 +33,31 @@ interface AppState {
   currentPage: string
   sidebarCollapsed: boolean
   darkMode: boolean
-  
+
+  // Autenticación
+  user: User | null
+  tenant: Tenant | null
+  isAuthenticated: boolean
+
   // Miembros
   members: Member[]
   selectedMembers: string[]
   isLoading: boolean
   error: string | null
-  
+
   // Recordatorios de pago
   paymentReminders: PaymentReminder[]
-  
+
   // Acciones
   setCurrentPage: (page: string) => void
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleDarkMode: () => void
-  
+
+  // Acciones de autenticación
+  setAuth: (user: User, tenant: Tenant) => void
+  clearAuth: () => void
+  initAuth: () => void
+
   // Acciones de miembros
   setMembers: (members: Member[]) => void
   addMember: (member: Omit<Member, 'id'>) => void
@@ -55,7 +67,7 @@ interface AppState {
   clearSelectedMembers: () => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
-  
+
   // Acciones de recordatorios
   addPaymentReminder: (reminder: Omit<PaymentReminder, 'id'>) => void
   markReminderAsSent: (id: string) => void
@@ -69,16 +81,31 @@ export const useAppStore = create<AppState>()(
       currentPage: 'dashboard',
       sidebarCollapsed: false,
       darkMode: false,
+      user: null,
+      tenant: null,
+      isAuthenticated: false,
       members: [],
       selectedMembers: [],
       isLoading: false,
       error: null,
       paymentReminders: [],
-      
+
       // Acciones de la aplicación
       setCurrentPage: (page) => set({ currentPage: page }),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
+
+      // Acciones de autenticación
+      setAuth: (user, tenant) => set({ user, tenant, isAuthenticated: true }),
+      clearAuth: () => set({ user: null, tenant: null, isAuthenticated: false }),
+      initAuth: () => {
+        // Initialize auth from localStorage on app start
+        const user = authService.getUser()
+        const tenant = authService.getTenant()
+        const isAuthenticated = authService.isAuthenticated()
+
+        set({ user, tenant, isAuthenticated })
+      },
       
       // Acciones de miembros
       setMembers: (members) => set({ members }),
