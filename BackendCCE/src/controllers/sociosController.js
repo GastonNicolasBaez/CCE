@@ -17,12 +17,14 @@ const sociosController = {
       } = req.query;
 
     // Build where conditions
-    const whereConditions = {};
-    
+    const whereConditions = {
+      tenantId: req.tenant.id // CRITICAL: Filter by tenant
+    };
+
     if (actividad) {
       whereConditions.actividad = actividad;
     }
-    
+
     if (estado) {
       whereConditions.estado = estado;
     }
@@ -118,7 +120,11 @@ const sociosController = {
   obtenerSocioPorId: asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const socio = await Socio.findByPk(id, {
+    const socio = await Socio.findOne({
+      where: {
+        id,
+        tenantId: req.tenant.id // CRITICAL: Verify socio belongs to tenant
+      },
       include: [{
         model: Cuota,
         as: 'cuotas',
@@ -156,17 +162,36 @@ const sociosController = {
   crearSocio: asyncHandler(async (req, res) => {
     const socioData = req.body;
 
-    // Check if DNI already exists
-    const existingSocio = await Socio.findOne({ where: { dni: socioData.dni } });
+    // CRITICAL: Check tenant member limit
+    const hasReachedLimit = await req.tenant.hasReachedMemberLimit();
+    if (hasReachedLimit) {
+      throw new ConflictError(`Has alcanzado el límite de ${req.tenant.maxMembers} miembros para tu plan ${req.tenant.plan}. Actualiza tu plan para agregar más miembros.`);
+    }
+
+    // Check if DNI already exists within tenant
+    const existingSocio = await Socio.findOne({
+      where: {
+        dni: socioData.dni,
+        tenantId: req.tenant.id
+      }
+    });
     if (existingSocio) {
       throw new ConflictError('Ya existe un socio con este DNI');
     }
 
-    // Check if email already exists
-    const existingEmail = await Socio.findOne({ where: { email: socioData.email } });
+    // Check if email already exists within tenant
+    const existingEmail = await Socio.findOne({
+      where: {
+        email: socioData.email,
+        tenantId: req.tenant.id
+      }
+    });
     if (existingEmail) {
       throw new ConflictError('Ya existe un socio con este email');
     }
+
+    // Add tenant ID to socio data
+    socioData.tenantId = req.tenant.id;
 
     const socio = await Socio.create(socioData);
 
@@ -186,22 +211,37 @@ const sociosController = {
     const { id } = req.params;
     const updateData = req.body;
 
-    const socio = await Socio.findByPk(id);
+    const socio = await Socio.findOne({
+      where: {
+        id,
+        tenantId: req.tenant.id // CRITICAL: Verify socio belongs to tenant
+      }
+    });
     if (!socio) {
       throw new NotFoundError('Socio no encontrado');
     }
 
-    // Check for DNI conflicts (if DNI is being updated)
+    // Check for DNI conflicts within tenant (if DNI is being updated)
     if (updateData.dni && updateData.dni !== socio.dni) {
-      const existingSocio = await Socio.findOne({ where: { dni: updateData.dni } });
+      const existingSocio = await Socio.findOne({
+        where: {
+          dni: updateData.dni,
+          tenantId: req.tenant.id
+        }
+      });
       if (existingSocio) {
         throw new ConflictError('Ya existe un socio con este DNI');
       }
     }
 
-    // Check for email conflicts (if email is being updated)
+    // Check for email conflicts within tenant (if email is being updated)
     if (updateData.email && updateData.email !== socio.email) {
-      const existingEmail = await Socio.findOne({ where: { email: updateData.email } });
+      const existingEmail = await Socio.findOne({
+        where: {
+          email: updateData.email,
+          tenantId: req.tenant.id
+        }
+      });
       if (existingEmail) {
         throw new ConflictError('Ya existe un socio con este email');
       }
@@ -226,7 +266,11 @@ const sociosController = {
     const { id } = req.params;
     const { force } = req.query; // Add force parameter from query string
 
-    const socio = await Socio.findByPk(id, {
+    const socio = await Socio.findOne({
+      where: {
+        id,
+        tenantId: req.tenant.id // CRITICAL: Verify socio belongs to tenant
+      },
       include: [{
         model: Cuota,
         as: 'cuotas'
@@ -255,7 +299,8 @@ const sociosController = {
     if (force === 'true' && cuotasPendientes.length > 0) {
       await Cuota.destroy({
         where: {
-          socioId: id
+          socioId: id,
+          tenantId: req.tenant.id // CRITICAL: Only delete cuotas from this tenant
         }
       });
     }
@@ -272,34 +317,37 @@ const sociosController = {
 
   // GET /socios/estadisticas - Get general statistics
   obtenerEstadisticas: asyncHandler(async (req, res) => {
-    // Get total counts
-    const totalSocios = await Socio.count();
-    const sociosActivos = await Socio.count({ where: { estado: 'Activo' } });
-    const sociosInactivos = await Socio.count({ where: { estado: 'Inactivo' } });
-    const sociosSuspendidos = await Socio.count({ where: { estado: 'Suspendido' } });
+    const tenantId = req.tenant.id;
 
-    // Get counts by activity
+    // Get total counts (filtered by tenant)
+    const totalSocios = await Socio.count({ where: { tenantId } });
+    const sociosActivos = await Socio.count({ where: { estado: 'Activo', tenantId } });
+    const sociosInactivos = await Socio.count({ where: { estado: 'Inactivo', tenantId } });
+    const sociosSuspendidos = await Socio.count({ where: { estado: 'Suspendido', tenantId } });
+
+    // Get counts by activity (filtered by tenant)
     const porActividad = await Socio.findAll({
       attributes: [
         'actividad',
         [Socio.sequelize.fn('COUNT', Socio.sequelize.col('id')), 'cantidad']
       ],
+      where: { tenantId },
       group: ['actividad']
     });
 
-    // Get payment statistics
-    const totalCuotas = await Cuota.count();
-    const cuotasPagadas = await Cuota.count({ where: { estado: 'Pagada' } });
-    const cuotasPendientes = await Cuota.count({ where: { estado: 'Pendiente' } });
-    const cuotasVencidas = await Cuota.count({ where: { estado: 'Vencida' } });
+    // Get payment statistics (filtered by tenant)
+    const totalCuotas = await Cuota.count({ where: { tenantId } });
+    const cuotasPagadas = await Cuota.count({ where: { estado: 'Pagada', tenantId } });
+    const cuotasPendientes = await Cuota.count({ where: { estado: 'Pendiente', tenantId } });
+    const cuotasVencidas = await Cuota.count({ where: { estado: 'Vencida', tenantId } });
 
-    // Get monthly revenue
+    // Get monthly revenue (filtered by tenant)
     const ingresosMensuales = await Cuota.findAll({
       attributes: [
         'periodo',
         [Cuota.sequelize.fn('SUM', Cuota.sequelize.col('monto')), 'total']
       ],
-      where: { estado: 'Pagada' },
+      where: { estado: 'Pagada', tenantId },
       group: ['periodo'],
       order: [['periodo', 'DESC']],
       limit: 12

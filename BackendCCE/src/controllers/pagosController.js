@@ -17,7 +17,9 @@ const pagosController = {
     } = req.query;
 
     // Build where conditions for cuotas
-    const cuotaWhere = {};
+    const cuotaWhere = {
+      tenantId: req.tenant.id // CRITICAL: Filter by tenant
+    };
     if (estado) {
       cuotaWhere.estado = estado;
     }
@@ -96,13 +98,18 @@ const pagosController = {
     // Process each socio
     for (const socioId of sociosIds) {
       try {
-        // Get socio with pending cuotas
-        const socio = await Socio.findByPk(socioId, {
+        // Get socio with pending cuotas (filtered by tenant)
+        const socio = await Socio.findOne({
+          where: {
+            id: socioId,
+            tenantId: req.tenant.id // CRITICAL: Verify socio belongs to tenant
+          },
           include: [{
             model: Cuota,
             as: 'cuotas',
             where: {
-              estado: { [Op.in]: ['Pendiente', 'Vencida'] }
+              estado: { [Op.in]: ['Pendiente', 'Vencida'] },
+              tenantId: req.tenant.id // CRITICAL: Filter cuotas by tenant
             },
             required: false,
             order: [['fechaVencimiento', 'ASC']]
@@ -238,8 +245,11 @@ const pagosController = {
       }
 
       const cuotaId = parseInt(referenceMatch[1]);
-      
-      // Find the cuota
+
+      // Find the cuota (with tenant verification for security)
+      // NOTE: Webhooks are typically unauthenticated, but MercadoPago validates them
+      // The cuota query here doesn't filter by tenant because webhooks don't have tenant context
+      // The external_reference already ensures we're processing the correct tenant's payment
       const cuota = await Cuota.findByPk(cuotaId, {
         include: [{
           model: Socio,
@@ -294,26 +304,30 @@ const pagosController = {
     // The actual cron job setup is in a separate service
     
     try {
-      // Find overdue cuotas
+      // Find overdue cuotas (filtered by tenant)
       const today = new Date().toISOString().split('T')[0];
-      
+
       const cuotasVencidas = await Cuota.findAll({
         where: {
+          tenantId: req.tenant.id, // CRITICAL: Filter by tenant
           fechaVencimiento: { [Op.lt]: today },
           estado: { [Op.in]: ['Pendiente', 'Vencida'] },
           [Op.or]: [
             { fechaEnvioRecordatorio: null },
-            { 
-              fechaEnvioRecordatorio: { 
+            {
+              fechaEnvioRecordatorio: {
                 [Op.lt]: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
-              } 
+              }
             }
           ]
         },
         include: [{
           model: Socio,
           as: 'socio',
-          where: { estado: 'Activo' },
+          where: {
+            estado: 'Activo',
+            tenantId: req.tenant.id // CRITICAL: Filter socio by tenant
+          },
           required: true
         }],
         limit: 50 // Process in batches
@@ -407,9 +421,11 @@ const pagosController = {
 
   // GET /pagos/estadisticas - Get payment statistics
   obtenerEstadisticasPagos: asyncHandler(async (req, res) => {
-    // Current month statistics
+    const tenantId = req.tenant.id;
+
+    // Current month statistics (filtered by tenant)
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-    
+
     const estadisticasMes = await Cuota.findAll({
       attributes: [
         'estado',
@@ -417,22 +433,24 @@ const pagosController = {
         [Cuota.sequelize.fn('SUM', Cuota.sequelize.col('monto')), 'total']
       ],
       where: {
-        periodo: currentMonth
+        periodo: currentMonth,
+        tenantId
       },
       group: ['estado']
     });
 
-    // Overall statistics
+    // Overall statistics (filtered by tenant)
     const estadisticasGenerales = await Cuota.findAll({
       attributes: [
         'estado',
         [Cuota.sequelize.fn('COUNT', Cuota.sequelize.col('id')), 'cantidad'],
         [Cuota.sequelize.fn('SUM', Cuota.sequelize.col('monto')), 'total']
       ],
+      where: { tenantId },
       group: ['estado']
     });
 
-    // Payment methods statistics
+    // Payment methods statistics (filtered by tenant)
     const metodosPago = await Cuota.findAll({
       attributes: [
         'metodoPago',
@@ -441,28 +459,30 @@ const pagosController = {
       ],
       where: {
         estado: 'Pagada',
-        metodoPago: { [Op.ne]: null }
+        metodoPago: { [Op.ne]: null },
+        tenantId
       },
       group: ['metodoPago']
     });
 
-    // Monthly trend (last 12 months)
+    // Monthly trend (last 12 months) (filtered by tenant)
     const tendenciaMensual = await Cuota.findAll({
       attributes: [
         'periodo',
         [Cuota.sequelize.fn('COUNT', Cuota.sequelize.col('id')), 'totalCuotas'],
         [
-          Cuota.sequelize.fn('COUNT', 
+          Cuota.sequelize.fn('COUNT',
             Cuota.sequelize.literal("CASE WHEN estado = 'Pagada' THEN 1 END")
           ), 'cuotasPagadas'
         ],
         [
-          Cuota.sequelize.fn('SUM', 
+          Cuota.sequelize.fn('SUM',
             Cuota.sequelize.literal("CASE WHEN estado = 'Pagada' THEN monto ELSE 0 END")
           ), 'ingresoReal'
         ],
         [Cuota.sequelize.fn('SUM', Cuota.sequelize.col('monto')), 'ingresoEsperado']
       ],
+      where: { tenantId },
       group: ['periodo'],
       order: [['periodo', 'DESC']],
       limit: 12
