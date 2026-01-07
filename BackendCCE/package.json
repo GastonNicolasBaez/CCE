@@ -17,7 +17,11 @@
     "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:seed": "sequelize-cli db:seed:all",
     "db:seed:undo": "sequelize-cli db:seed:undo:all",
-    "migrate:auto": "node scripts/auto-migrate.js"
+    "migrate:auto": "node scripts/auto-migrate.js",
+    "test:setup": "node scripts/check-setup.js",
+    "test:backend": "node scripts/test-backend.js",
+    "test:auth": "node scripts/test-auth.js",
+    "test:local": "npm run test:setup && npm run test:backend && npm run test:auth"
   },
   "keywords": [
     "express",

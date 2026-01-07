@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { Tenant, Usuario, sequelize } = require('../models');
 const { asyncHandler, ValidationError, UnauthorizedError, ConflictError, NotFoundError } = require('../middleware/errorHandler');
 const config = require('../config');
+const logger = require('../utils/logger');
 
 /**
  * Auth Controller - Multi-Tenant Authentication
@@ -70,7 +71,7 @@ const authController = {
         }
       }, { transaction });
 
-      console.log(`✅ Tenant created: ${tenant.slug} (ID: ${tenant.id})`);
+      logger.success(`Tenant created: ${tenant.slug} (ID: ${tenant.id})`);
 
       // 4. Create admin user for this tenant
       adminUser = await Usuario.create({
@@ -84,14 +85,14 @@ const authController = {
         activo: true
       }, { transaction });
 
-      console.log(`✅ Admin user created: ${adminUser.email} for tenant ${tenant.slug}`);
+      logger.success(`Admin user created: ${adminUser.email} for tenant ${tenant.slug}`);
 
       // Commit transaction - both operations succeeded
       await transaction.commit();
     } catch (error) {
       // Rollback transaction on any error
       await transaction.rollback();
-      console.error('❌ Transaction rolled back:', error.message);
+      logger.error('Transaction rolled back:', error.message);
       throw error;
     }
 
@@ -180,7 +181,7 @@ const authController = {
       { expiresIn: config.jwt.expiresIn }
     );
 
-    console.log(`✅ User logged in: ${user.email} (tenant: ${tenant.slug})`);
+    logger.success(`User logged in: ${user.email} (tenant: ${tenant.slug})`);
 
     // 7. Return success response
     res.json({
@@ -210,7 +211,7 @@ const authController = {
     // In JWT, logout is handled client-side by removing the token
     // We can add token blacklisting here in the future if needed
 
-    console.log(`✅ User logged out: ${req.user?.email}`);
+    logger.info(`User logged out: ${req.user?.email}`);
 
     res.json({
       success: true,

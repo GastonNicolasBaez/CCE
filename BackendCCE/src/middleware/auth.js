@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { Usuario } = require('../models');
 const { UnauthorizedError, ForbiddenError } = require('./errorHandler');
 const config = require('../config');
+const logger = require('../utils/logger');
 
 /**
  * Authentication Middleware - JWT Verification
@@ -58,8 +59,8 @@ const authenticate = async (req, res, next) => {
     // 4. CRITICAL: Verify token's tenantId matches the resolved tenant
     // This prevents users from accessing other tenants' data
     if (req.tenant && user.tenantId !== req.tenant.id) {
-      console.error(
-        `⚠️  SECURITY: Tenant mismatch! Token tenant: ${user.tenantId}, Subdomain tenant: ${req.tenant.id}`
+      logger.security(
+        `Tenant mismatch! Token tenant: ${user.tenantId}, Subdomain tenant: ${req.tenant.id}`
       );
       throw new ForbiddenError('No tienes permiso para acceder a este tenant.');
     }
@@ -128,7 +129,7 @@ const optionalAuth = async (req, res, next) => {
       }
     } catch (error) {
       // Invalid token, but that's ok for optional auth
-      console.log('Optional auth: Invalid token, continuing without user');
+      logger.debug('Optional auth: Invalid token, continuing without user');
     }
 
     next();

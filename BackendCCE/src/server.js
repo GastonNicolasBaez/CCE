@@ -9,6 +9,7 @@ const { sequelize } = require('./models');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const cronService = require('./services/cronService');
+const logger = require('./utils/logger');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -23,15 +24,54 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet({
+  // Content Security Policy
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
     },
   },
-  crossOriginEmbedderPolicy: false
+
+  // X-DNS-Prefetch-Control
+  dnsPrefetchControl: { allow: false },
+
+  // X-Frame-Options
+  frameguard: { action: 'deny' },
+
+  // Hide X-Powered-By header
+  hidePoweredBy: true,
+
+  // Strict-Transport-Security (HSTS)
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+
+  // X-Content-Type-Options
+  noSniff: true,
+
+  // Referrer-Policy
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+
+  // X-XSS-Protection
+  xssFilter: true,
+
+  // Cross-Origin-Embedder-Policy
+  crossOriginEmbedderPolicy: false,
+
+  // Cross-Origin-Opener-Policy
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+
+  // Cross-Origin-Resource-Policy
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 // CORS configuration
@@ -93,14 +133,40 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(generalLimiter);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Server is running',
+app.get('/health', async (req, res) => {
+  const healthCheck = {
+    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     environment: config.server.env,
-    version: '1.0.0'
-  });
+    version: '1.0.0',
+    status: 'healthy',
+    services: {
+      server: 'up',
+      database: 'unknown'
+    }
+  };
+
+  try {
+    // Check database connection
+    await sequelize.authenticate();
+    healthCheck.services.database = 'up';
+
+    res.status(200).json({
+      success: true,
+      message: 'Server is healthy',
+      ...healthCheck
+    });
+  } catch (error) {
+    healthCheck.status = 'unhealthy';
+    healthCheck.services.database = 'down';
+    healthCheck.error = error.message;
+
+    res.status(503).json({
+      success: false,
+      message: 'Server is unhealthy',
+      ...healthCheck
+    });
+  }
 });
 
 // API routes
@@ -122,92 +188,92 @@ const startServer = async () => {
   try {
     // Test database connection
     await sequelize.authenticate();
-    console.log('✅ Database connection established successfully');
+    logger.success('Database connection established successfully');
 
     // IMPORTANTE: NO usamos sync() porque ahora usamos migraciones
     // Las tablas se crean con: npm run db:migrate
-    console.log('ℹ️  Using migration-based database schema');
-    console.log('ℹ️  Run "npm run db:migrate" to create/update tables');
+    logger.info('Using migration-based database schema');
+    logger.info('Run "npm run db:migrate" to create/update tables');
 
     // Verificar que las tablas principales existan
     try {
       const { Socio } = require('./models');
       await Socio.findOne({ limit: 1 });
-      console.log('✅ Database tables verified');
+      logger.success('Database tables verified');
     } catch (error) {
-      console.warn('⚠️  Database tables may not exist.');
-      console.warn('⚠️  Please run migrations: npm run db:migrate');
-      console.warn('   Error details:', error.message);
+      logger.warn('Database tables may not exist.');
+      logger.warn('Please run migrations: npm run db:migrate');
+      logger.warn('Error details:', error.message);
     }
 
     // Start server
     const PORT = config.server.port;
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 Environment: ${config.server.env}`);
-      console.log(`📱 Frontend URL: ${config.server.frontendUrl}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      
+      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`🌐 Environment: ${config.server.env}`);
+      logger.info(`📱 Frontend URL: ${config.server.frontendUrl}`);
+      logger.info(`📊 Health check: http://localhost:${PORT}/health`);
+
       // Log service status
-      console.log('\n📋 Services Status:');
+      logger.info('\n📋 Services Status:');
       const dbType = config.server.env === 'development' ? 'SQLite' : 'PostgreSQL (Railway)';
-      console.log(`  • Database: ✅ Connected (${dbType})`);
-      console.log(`  • Email: ${config.email.auth.user ? '✅' : '⚠️'} ${config.email.auth.user ? 'Configured' : 'Not configured'}`);
-      console.log(`  • MercadoPago: ${config.mercadoPago.accessToken ? '✅' : '⚠️'} ${config.mercadoPago.accessToken ? 'Configured' : 'Not configured'}`);
+      logger.info(`  • Database: ✅ Connected (${dbType})`);
+      logger.info(`  • Email: ${config.email.auth.user ? '✅' : '⚠️'} ${config.email.auth.user ? 'Configured' : 'Not configured'}`);
+      logger.info(`  • MercadoPago: ${config.mercadoPago.accessToken ? '✅' : '⚠️'} ${config.mercadoPago.accessToken ? 'Configured' : 'Not configured'}`);
       
       // Initialize cron service
       if (config.server.env === 'production' || config.server.env === 'development') {
         cronService.init();
-        console.log(`  • Cron Jobs: ✅ Initialized`);
+        logger.info(`  • Cron Jobs: ✅ Initialized`);
       }
 
-      console.log('\n🔧 Database Migration Commands:');
-      console.log('  • Create tables: npm run db:migrate');
-      console.log('  • Rollback: npm run db:migrate:undo');
-      console.log('  • Seed data: npm run db:seed');
+      logger.info('\n🔧 Database Migration Commands:');
+      logger.info('  • Create tables: npm run db:migrate');
+      logger.info('  • Rollback: npm run db:migrate:undo');
+      logger.info('  • Seed data: npm run db:seed');
     });
   } catch (error) {
-    console.error('❌ Unable to start server:', error);
+    logger.error('Unable to start server:', error);
     process.exit(1);
   }
 };
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('🛑 SIGTERM received, shutting down gracefully');
+  logger.info('🛑 SIGTERM received, shutting down gracefully');
   try {
     cronService.stop();
     await sequelize.close();
-    console.log('✅ Database connection closed');
+    logger.success('Database connection closed');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during shutdown:', error);
+    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 });
 
 process.on('SIGINT', async () => {
-  console.log('🛑 SIGINT received, shutting down gracefully');
+  logger.info('🛑 SIGINT received, shutting down gracefully');
   try {
     cronService.stop();
     await sequelize.close();
-    console.log('✅ Database connection closed');
+    logger.success('Database connection closed');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during shutdown:', error);
+    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 

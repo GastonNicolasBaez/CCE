@@ -4,6 +4,7 @@ const authController = require('../controllers/authController');
 const { validate, schemas } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
 const { resolveTenant, optionalTenantResolver } = require('../middleware/tenantResolver');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 /**
  * Auth Routes - Multi-Tenant Authentication
@@ -24,6 +25,7 @@ const { resolveTenant, optionalTenantResolver } = require('../middleware/tenantR
 // Register a new club (tenant) with admin user
 // Public endpoint - no tenant or authentication required
 router.post('/register',
+  authLimiter, // Prevent registration spam
   validate(schemas.register, 'body'),
   authController.register
 );
@@ -32,6 +34,7 @@ router.post('/register',
 // Login user within a tenant
 // Requires tenant resolution (from subdomain/header/query)
 router.post('/login',
+  authLimiter, // Prevent brute force attacks
   resolveTenant, // Resolve tenant first
   validate(schemas.login, 'body'),
   authController.login
