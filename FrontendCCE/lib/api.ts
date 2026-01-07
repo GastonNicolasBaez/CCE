@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { getToken, getTenantSlugFromSubdomain } from './auth'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export interface ApiMember {
   id: number
@@ -37,20 +39,46 @@ class ApiError extends Error {
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`
-  
+
+  // Get JWT token and tenant slug
+  const token = getToken()
+  const tenantSlug = getTenantSlugFromSubdomain()
+
+  // Build headers with authentication
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers as Record<string, string>,
+  }
+
+  // Add JWT token if available
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  // Add tenant slug if available
+  if (tenantSlug) {
+    headers['X-Tenant-Slug'] = tenantSlug
+  }
+
   try {
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers,
     })
 
     const data = await response.json()
     console.log('API Response for', endpoint, ':', data)
 
     if (!response.ok) {
+      // Handle 401 Unauthorized - redirect to login
+      if (response.status === 401 && typeof window !== 'undefined') {
+        // Clear invalid token
+        localStorage.removeItem('cce_auth_token')
+        // Redirect to login
+        window.location.href = '/login'
+        return
+      }
+
       const errorMessage = data?.message || `API Error: ${response.statusText}`
       throw new ApiError(response.status, errorMessage)
     }

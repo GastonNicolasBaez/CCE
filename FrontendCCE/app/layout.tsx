@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
+import { AuthInitializer } from '@/components/AuthInitializer'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -33,8 +34,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans`}>
+        <AuthInitializer />
         {children}
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
