@@ -10,8 +10,10 @@ const { errorHandler, notFoundHandler } = require('../src/middleware/errorHandle
 const { generalLimiter } = require('../src/middleware/rateLimiter');
 
 // Import routes
+const authRoutes = require('../src/routes/auth');
 const sociosRoutes = require('../src/routes/socios');
 const pagosRoutes = require('../src/routes/pagos');
+const actividadesRoutes = require('../src/routes/actividades');
 
 // Create Express app
 const app = express();
@@ -120,18 +122,22 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Club Comandante Espora API',
+    message: 'Club Comandante Espora API - Multi-tenant System',
     version: '1.0.0',
     endpoints: {
       health: '/health',
+      auth: '/api/auth',
       socios: '/api/socios',
+      actividades: '/api/actividades',
       pagos: '/api/pagos'
     }
   });
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/socios', sociosRoutes);
+app.use('/api/actividades', actividadesRoutes);
 app.use('/api/pagos', pagosRoutes);
 
 // 404 handler

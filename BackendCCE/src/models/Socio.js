@@ -85,17 +85,52 @@ const Socio = sequelize.define('Socio', {
     field: 'fecha_ingreso',
     defaultValue: DataTypes.NOW
   },
-  actividad: {
-    type: DataTypes.ENUM('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
-    allowNull: false,
-    defaultValue: 'Solo socio'
-  },
+  // DEPRECATED: Use Actividades relationship instead
+  // This field will be renamed to actividad_legacy by migration
+  // actividad: {
+  //   type: DataTypes.ENUM('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
+  //   allowNull: false,
+  //   defaultValue: 'Solo socio'
+  // },
+
   esJugador: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     field: 'es_jugador',
     defaultValue: false
   },
+
+  // Tutor fields (required for minors < 18)
+  tutorNombre: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    field: 'tutor_nombre',
+    comment: 'Full name of parent/guardian (required for minors < 18)'
+  },
+
+  tutorTelefono: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    field: 'tutor_telefono',
+    comment: 'Phone number of parent/guardian (required for minors < 18)'
+  },
+
+  // Payment exemption fields
+  exentoCuota: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'exento_cuota',
+    comment: 'Permanent exemption - never generate quotas for this socio'
+  },
+
+  mesGraciaHasta: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'mes_gracia_hasta',
+    comment: 'Temporary grace period - do not generate quotas until this date'
+  },
+
   estado: {
     type: DataTypes.ENUM('Activo', 'Inactivo', 'Suspendido'),
     allowNull: false,
@@ -124,12 +159,20 @@ const Socio = sequelize.define('Socio', {
       name: 'socios_tenant_id_idx'
     },
     {
-      fields: ['actividad'],
-      name: 'socios_actividad_idx'
-    },
-    {
       fields: ['estado'],
       name: 'socios_estado_idx'
+    },
+    {
+      fields: ['exento_cuota'],
+      name: 'socios_exento_cuota_idx'
+    },
+    {
+      fields: ['mes_gracia_hasta'],
+      name: 'socios_mes_gracia_hasta_idx'
+    },
+    {
+      fields: ['tutor_nombre'],
+      name: 'socios_tutor_nombre_idx'
     }
   ]
 });
@@ -143,23 +186,79 @@ Socio.prototype.getEdad = function() {
   if (!this.fechaNacimiento) {
     return null;
   }
-  
+
   const today = new Date();
   const birthDate = new Date(this.fechaNacimiento);
-  
+
   // Validate that birthDate is a valid date
   if (isNaN(birthDate.getTime())) {
     return null;
   }
-  
+
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
-  
+
   return age;
+};
+
+/**
+ * Check if socio is a minor (< 18 years old)
+ * @returns {boolean}
+ */
+Socio.prototype.esMenor = function() {
+  const edad = this.getEdad();
+  return edad !== null && edad < 18;
+};
+
+/**
+ * Get all actividades for this socio
+ * Requires the Actividades association to be loaded via include
+ * @returns {Promise<Array>}
+ */
+Socio.prototype.getActividades = async function() {
+  const Actividad = sequelize.models.Actividad;
+
+  if (!Actividad) {
+    throw new Error('Actividad model not loaded');
+  }
+
+  return await this.getActividades();
+};
+
+/**
+ * Check if socio is exempt from quotas (permanent or temporary)
+ * @returns {boolean}
+ */
+Socio.prototype.isExento = function() {
+  // Permanent exemption
+  if (this.exentoCuota === true) {
+    return true;
+  }
+
+  // Temporary grace period
+  if (this.mesGraciaHasta) {
+    const today = new Date();
+    const graciaHasta = new Date(this.mesGraciaHasta);
+    return today <= graciaHasta;
+  }
+
+  return false;
+};
+
+/**
+ * Validate that tutor fields are provided if socio is a minor
+ * @throws {Error} if minor and tutor fields are missing
+ */
+Socio.prototype.validateTutorFields = function() {
+  if (this.esMenor()) {
+    if (!this.tutorNombre || !this.tutorTelefono) {
+      throw new Error('Los datos del tutor son obligatorios para menores de 18 años');
+    }
+  }
 };
 
 module.exports = Socio;

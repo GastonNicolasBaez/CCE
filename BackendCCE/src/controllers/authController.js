@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Tenant, Usuario, sequelize } = require('../models');
+const { Tenant, Usuario, TenantConfiguracion, sequelize } = require('../models');
 const { asyncHandler, ValidationError, UnauthorizedError, ConflictError, NotFoundError } = require('../middleware/errorHandler');
 const config = require('../config');
 const logger = require('../utils/logger');
@@ -87,7 +87,23 @@ const authController = {
 
       logger.success(`Admin user created: ${adminUser.email} for tenant ${tenant.slug}`);
 
-      // Commit transaction - both operations succeeded
+      // 5. Create default configuration for this tenant
+      const configuracion = await TenantConfiguracion.create({
+        tenantId: tenant.id,
+        tipoCuota: 'por_actividad',
+        montoBase: 0,
+        multipleActividadesStrategy: 'sumar',
+        descuentoActividades: 0,
+        diaVencimiento: 10,
+        recordatorioDiasAntes: 2,
+        descuentoMenores: 0,
+        generarAutomaticamente: true,
+        enviarRecordatorios: true
+      }, { transaction });
+
+      logger.success(`Default configuration created for tenant ${tenant.slug}`);
+
+      // Commit transaction - all operations succeeded
       await transaction.commit();
     } catch (error) {
       // Rollback transaction on any error

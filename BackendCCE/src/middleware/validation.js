@@ -41,6 +41,31 @@ const schemas = {
     observaciones: Joi.string().max(500).allow('')
   }),
 
+  // Actividad schemas
+  actividad: Joi.object({
+    nombre: Joi.string().min(2).max(100).required()
+      .messages({
+        'string.min': 'El nombre de la actividad debe tener al menos 2 caracteres',
+        'string.max': 'El nombre de la actividad no puede exceder 100 caracteres',
+        'any.required': 'El nombre de la actividad es requerido'
+      }),
+    monto: Joi.number().min(0).precision(2).required()
+      .messages({
+        'number.min': 'El monto debe ser mayor o igual a 0',
+        'any.required': 'El monto es requerido'
+      }),
+    descripcion: Joi.string().max(500).allow('').optional(),
+    orden: Joi.number().integer().min(0).default(0)
+  }),
+
+  actividadUpdate: Joi.object({
+    nombre: Joi.string().min(2).max(100),
+    monto: Joi.number().min(0).precision(2),
+    descripcion: Joi.string().max(500).allow('').optional(),
+    orden: Joi.number().integer().min(0),
+    activa: Joi.boolean()
+  }),
+
   enviarLinkPago: Joi.object({
     sociosIds: Joi.array().items(Joi.number().integer().positive()).min(1).required(),
     incluirSMS: Joi.boolean().default(false),
@@ -132,7 +157,7 @@ const schemas = {
       limit: Joi.number().integer().min(1).max(100).default(20),
       search: Joi.string().max(100).allow('')
     }),
-    
+
     pagos: Joi.object({
       estado: Joi.string().valid('Pendiente', 'Pagada', 'Vencida', 'Cancelada'),
       actividad: Joi.string().valid('Basquet', 'Voley', 'Karate', 'Gimnasio', 'Solo socio'),
@@ -140,6 +165,15 @@ const schemas = {
       fechaHasta: Joi.date().iso(),
       page: Joi.number().integer().min(1).default(1),
       limit: Joi.number().integer().min(1).max(100).default(20)
+    }),
+
+    actividades: Joi.object({
+      activa: Joi.string().valid('true', 'false', 'all').default('true'),
+      search: Joi.string().max(100).allow(''),
+      page: Joi.number().integer().min(1).default(1),
+      limit: Joi.number().integer().min(1).max(100).default(100),
+      orderBy: Joi.string().valid('orden', 'nombre', 'monto', 'created_at').default('orden'),
+      orderDir: Joi.string().valid('ASC', 'DESC').default('ASC')
     })
   }
 };
