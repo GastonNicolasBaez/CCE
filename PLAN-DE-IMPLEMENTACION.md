@@ -17,22 +17,21 @@
 
 ---
 
-## 🔴 FASE 1: CORRECCIONES CRÍTICAS (1-2 días)
+## 🔴 FASE 1: CORRECCIONES CRÍTICAS (1-2 días) ✅ COMPLETADA
 
 ### 1.1 Seguridad y Base de Datos
 
 **Prioridad:** 🔴 CRÍTICA
 
-- [ ] **Verificar constraints de BD** (30 min)
-  - Ejecutar query SQL para verificar constraints de `socios` table
+- [x] **Verificar constraints de BD** (30 min) ✅
+  - Creado script `BackendCCE/scripts/verify-constraints.js`
+  - Ejecutar: `node scripts/verify-constraints.js` para verificar
   - Confirmar que DNI y email tienen índices compuestos con `tenant_id`
-  - Si no existen, crear migración para corregir
-  - Archivo: Nueva migración `20260109000001-fix-socio-unique-constraints.js`
 
-- [ ] **Proteger rutas mal ordenadas** (15 min)
-  - Reordenar rutas en `BackendCCE/src/routes/socios.js`
-  - Mover `/estadisticas` y `/send-payment-email` ANTES de `/:id`
-  - Agregar middleware `authenticate` a `/send-payment-email`
+- [x] **Proteger rutas mal ordenadas** (15 min) ✅
+  - Reordenadas rutas en `BackendCCE/src/routes/socios.js`
+  - Movido `/estadisticas` y `/send-payment-email` ANTES de `/:id`
+  - Middleware `authenticate` ya aplicado a todas las rutas
 
 - [ ] **Verificar aislamiento multi-tenant** (30 min)
   - Test manual: Crear 2 tenants, intentar acceder datos de uno con token del otro
@@ -42,101 +41,240 @@
 
 **Prioridad:** 🔴 CRÍTICA
 
-- [ ] **Implementar logout** (30 min)
-  - Frontend: Agregar botón "Cerrar Sesión" en `Header.tsx`
-  - Llamar a `auth.logout()` cuando se hace click
-  - Limpiar localStorage y cookie
-  - Redirigir a `/login`
-  - Archivos: `FrontendCCE/components/ui/Header.tsx`, `FrontendCCE/lib/auth.ts`
+- [x] **Implementar logout** (30 min) ✅
+  - Frontend: Botón "Cerrar Sesión" agregado en `Header.tsx`
+  - Llama a `auth.logout()` con estado de loading
+  - Limpia localStorage y cookie
+  - Redirige automáticamente a `/login`
+  - Archivos: `FrontendCCE/components/ui/Header.tsx`
 
 ---
 
-## 🟠 FASE 2: MODELO DE DATOS - SOCIOS Y CUOTAS (2-3 días)
+## 🟠 FASE 2: MODELO DE DATOS - ACTIVIDADES DINÁMICAS Y SOCIOS (3-4 días)
 
-### 2.1 Actualizar Modelo Socio
+### 2.1 Sistema de Actividades Dinámicas
+
+**Prioridad:** 🔴 CRÍTICA - Esta es la base del sistema de cuotas
+
+#### **DECISIÓN DE ARQUITECTURA:**
+Las actividades ya NO serán un ENUM fijo, sino **tablas dinámicas** que cada club puede gestionar.
+Esto permite que cada club cree sus propias actividades con precios personalizados.
+
+- [ ] **Crear tabla `actividades`** (1 hora)
+  - Migración: `BackendCCE/migrations/20260109000001-create-actividades-table.js`
+  - Campos:
+    - `id` SERIAL PRIMARY KEY
+    - `tenant_id` INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE
+    - `nombre` VARCHAR(100) NOT NULL (ej: "Basquet", "Yoga", "Natación")
+    - `monto` DECIMAL(10,2) NOT NULL (precio mensual)
+    - `activa` BOOLEAN DEFAULT true (si está disponible para seleccionar)
+    - `orden` INTEGER DEFAULT 0 (para ordenar en UI)
+    - `descripcion` TEXT nullable
+    - `created_at`, `updated_at` TIMESTAMP
+  - Índices:
+    - UNIQUE (tenant_id, nombre) - No duplicar nombres por tenant
+    - INDEX (tenant_id, activa) - Para filtrar activas
+  - **IMPORTANTE:** Al cambiar el monto de una actividad, solo afecta a cuotas futuras
+
+- [ ] **Crear tabla pivot `socio_actividades`** (30 min)
+  - Migración: `BackendCCE/migrations/20260109000002-create-socio-actividades-table.js`
+  - Relación muchos-a-muchos entre socios y actividades
+  - Campos:
+    - `id` SERIAL PRIMARY KEY
+    - `socio_id` INTEGER NOT NULL REFERENCES socios(id) ON DELETE CASCADE
+    - `actividad_id` INTEGER NOT NULL REFERENCES actividades(id) ON DELETE CASCADE
+    - `fecha_inicio` DATE DEFAULT NOW()
+    - `created_at` TIMESTAMP
+  - Índices:
+    - UNIQUE (socio_id, actividad_id) - Un socio no puede tener la misma actividad duplicada
+    - INDEX (socio_id) - Para buscar actividades de un socio
+    - INDEX (actividad_id) - Para buscar socios de una actividad
+
+- [ ] **Deprecar columna ENUM `actividad` de tabla socios** (1 hora)
+  - Migración: `BackendCCE/migrations/20260109000003-deprecate-actividad-enum.js`
+  - Renombrar columna: `actividad` → `actividad_legacy` (mantener datos históricos)
+  - Migrar datos existentes a la nueva tabla pivot (si hay datos)
+  - Agregar comentario: "DEPRECATED - Use socio_actividades table"
+  - **NO eliminar** la columna aún (para rollback)
+
+- [ ] **Modelo Actividad** (1 hora)
+  - Archivo: `BackendCCE/src/models/Actividad.js`
+  - Campos: id, tenantId, nombre, monto, activa, orden, descripcion
+  - Relaciones:
+    - `belongsTo(Tenant)`
+    - `belongsToMany(Socio, through: 'socio_actividades')`
+  - Métodos:
+    - `isActiva()` - Verifica si está activa
+    - `getSociosCount()` - Cuenta socios con esta actividad
+  - Validaciones:
+    - nombre: required, min 2, max 100
+    - monto: required, > 0
+    - tenantId: required
+
+- [ ] **Actualizar Modelo Socio** (30 min)
+  - Archivo: `BackendCCE/src/models/Socio.js`
+  - Agregar relación: `belongsToMany(Actividad, through: 'socio_actividades')`
+  - Agregar método: `getActividades()` - Retorna array de actividades del socio
+  - Agregar método: `getMontoTotal(configuracion)` - Calcula monto según actividades
+
+### 2.2 Campos Adicionales para Socios
 
 **Prioridad:** 🟠 ALTA
 
 - [ ] **Agregar campos para menores de edad** (1 hora)
-  - Backend: Migración para agregar campos
+  - Migración: `BackendCCE/migrations/20260109000004-add-tutor-fields-to-socios.js`
+  - Campos:
     - `tutor_nombre` VARCHAR(200) nullable
     - `tutor_telefono` VARCHAR(20) nullable
   - Modelo: Actualizar `BackendCCE/src/models/Socio.js`
-  - Validación: Obligatorios si `edad < 18` (calculado desde fecha_nacimiento)
+  - Validación: Obligatorios si `getEdad() < 18`
+  - Frontend: Mostrar campos condicionalmente
 
-- [ ] **Cambiar actividad de ENUM a ARRAY** (2 horas)
-  - Migración: Cambiar columna `actividad` a `actividades` JSONB o ARRAY
-  - Modelo: Actualizar campo
-  - Backend: Actualizar validaciones en `sociosController.js`
-  - Frontend: Actualizar formulario para selección múltiple (checkboxes)
-  - Archivos afectados:
-    - `BackendCCE/migrations/20260109000002-change-actividad-to-array.js`
-    - `BackendCCE/src/models/Socio.js`
-    - `FrontendCCE/components/registration/RegistrationForm.tsx`
+- [ ] **Agregar campos para exención de cuota y mes de gracia** (1 hora)
+  - Migración: `BackendCCE/migrations/20260109000005-add-exencion-fields-to-socios.js`
+  - Campos:
+    - `exento_cuota` BOOLEAN DEFAULT false (jugador exento permanente)
+    - `mes_gracia_hasta` DATE nullable (mes de gracia temporal)
+  - Lógica: Si `exento_cuota=true` → NO se generan cuotas NUNCA
+  - Lógica: Si `mes_gracia_hasta` vigente → NO se generan cuotas hasta esa fecha
+  - UI: Checkboxes en formulario de socio con tooltip explicativo
 
-- [ ] **Agregar campos para exención de cuota** (1 hora)
-  - Migración: Agregar campos
-    - `exento_cuota` BOOLEAN default false
-    - `mes_gracia_hasta` DATE nullable
-  - Modelo: Actualizar validaciones
-  - UI: Checkboxes en formulario de socio
-
-### 2.2 Sistema de Configuración de Cuotas
+### 2.3 Endpoints CRUD de Actividades
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Crear tabla de configuración de tenant** (2 horas)
-  - Migración: `tenant_configuracion` table
-    - `tenant_id` (FK a tenants)
-    - `tipo_cuota` ENUM('unica', 'por_actividad') default 'unica'
-    - `monto_base` DECIMAL(10,2) default 0
-    - `montos_por_actividad` JSONB nullable
-    - `dia_vencimiento` INTEGER default 10 (día del mes)
-    - `multiple_actividades_strategy` ENUM('sumar', 'maximo') default 'sumar'
-    - `recordatorio_dias_antes` INTEGER default 2
-    - Timestamps
-  - Modelo: Crear `BackendCCE/src/models/TenantConfiguracion.js`
-  - Relación: Tenant hasOne TenantConfiguracion
+- [ ] **Controller de Actividades** (2 horas)
+  - Archivo: `BackendCCE/src/controllers/actividadesController.js`
+  - Funciones:
+    - `obtenerActividades()` - GET /api/actividades (filtrar por tenant, solo activas por defecto)
+    - `obtenerActividadPorId()` - GET /api/actividades/:id
+    - `crearActividad()` - POST /api/actividades (validar nombre único por tenant)
+    - `actualizarActividad()` - PUT /api/actividades/:id (cambio de monto NO afecta cuotas pasadas)
+    - `eliminarActividad()` - DELETE /api/actividades/:id (soft delete: marcar activa=false)
+  - Validaciones:
+    - Verificar que actividad pertenece al tenant del usuario
+    - No permitir eliminar si hay socios activos con esa actividad (warning)
+    - Monto debe ser > 0
+
+- [ ] **Rutas de Actividades** (30 min)
+  - Archivo: `BackendCCE/src/routes/actividades.js`
+  - Middleware: `resolveTenant` + `authenticate` en todas las rutas
+  - Rutas:
+    ```
+    GET    /api/actividades           - Listar
+    GET    /api/actividades/:id       - Obtener una
+    POST   /api/actividades           - Crear
+    PUT    /api/actividades/:id       - Actualizar
+    DELETE /api/actividades/:id       - Desactivar (soft delete)
+    ```
+
+- [ ] **Validación con JOI** (30 min)
+  - Archivo: `BackendCCE/src/middleware/validation.js`
+  - Agregar schemas:
+    - `schemas.actividad` - Para crear/actualizar
+    - `schemas.query.actividades` - Para filtros
+
+### 2.4 Sistema de Configuración de Cuotas
+
+**Prioridad:** 🟠 ALTA
+
+- [ ] **Crear tabla `tenant_configuracion`** (2 horas)
+  - Migración: `BackendCCE/migrations/20260109000006-create-tenant-configuracion.js`
+  - Campos:
+    - `id` SERIAL PRIMARY KEY
+    - `tenant_id` INTEGER NOT NULL UNIQUE REFERENCES tenants(id)
+    - `tipo_cuota` VARCHAR(20) DEFAULT 'por_actividad' ('unica' o 'por_actividad')
+    - `monto_base` DECIMAL(10,2) DEFAULT 0 (solo si tipo_cuota='unica')
+    - `multiple_actividades_strategy` VARCHAR(20) DEFAULT 'sumar' ('sumar', 'maximo', 'descuento')
+    - `descuento_actividades` DECIMAL(5,2) DEFAULT 0 (% si strategy='descuento')
+    - `dia_vencimiento` INTEGER DEFAULT 10 (día del mes, 1-28)
+    - `recordatorio_dias_antes` INTEGER DEFAULT 2
+    - `descuento_menores` DECIMAL(5,2) DEFAULT 0 (% para < 18 años)
+    - `generar_automaticamente` BOOLEAN DEFAULT true
+    - `enviar_recordatorios` BOOLEAN DEFAULT true
+    - `created_at`, `updated_at` TIMESTAMP
+  - **NOTA:** Los montos YA NO están aquí, están en la tabla `actividades`
+
+- [ ] **Modelo TenantConfiguracion** (1 hora)
+  - Archivo: `BackendCCE/src/models/TenantConfiguracion.js`
+  - Relación: `belongsTo(Tenant)`
+  - Validaciones:
+    - tipo_cuota: 'unica' o 'por_actividad'
+    - dia_vencimiento: entre 1 y 28
+    - descuentos: entre 0 y 100
+  - Métodos:
+    - `calcularMontoCuota(socio)` - Calcula monto según configuración y actividades del socio
 
 - [ ] **Valores por defecto al crear tenant** (30 min)
-  - Hook: En `authController.register`, crear configuración con defaults
-  - Default: tipo_cuota='unica', monto_base=5000, dia_vencimiento=10
+  - Hook: En `authController.register`, crear configuración automáticamente
+  - Defaults:
+    - tipo_cuota: 'por_actividad'
+    - dia_vencimiento: 10
+    - recordatorio_dias_antes: 2
+    - multiple_actividades_strategy: 'sumar'
+    - generar_automaticamente: true
 
-### 2.3 Generación Automática de Cuotas
+### 2.5 Servicio de Generación Automática de Cuotas
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Lógica de generación de cuotas** (3 horas)
-  - Función: `generarCuotaMensual(socio, periodo)` en `BackendCCE/src/services/cuotaService.js`
-  - Lógica:
-    1. Verificar si socio está activo
-    2. Verificar si `exento_cuota = false`
-    3. Verificar si `mes_gracia_hasta` ya pasó o es null
-    4. Obtener configuración del tenant
-    5. Calcular monto según tipo_cuota:
-       - Si 'unica': usar monto_base
-       - Si 'por_actividad': sumar o tomar máximo según strategy
-    6. Calcular fecha_vencimiento: `dia_vencimiento` del mes actual
-    7. Crear cuota con estado 'Pendiente'
-  - Retornar cuota creada o null si no aplica
+- [ ] **Servicio de cálculo y generación** (4 horas)
+  - Archivo: `BackendCCE/src/services/cuotaService.js`
+
+  - **Función: `calcularMontoCuota(socio, configuracion)`**
+    - 1. Verificar si `socio.exentoCuota === true` → retornar 0
+    - 2. Verificar si `socio.mesGraciaHasta` vigente → retornar 0
+    - 3. Obtener actividades del socio (include Actividad)
+    - 4. Si `configuracion.tipoCuota === 'unica'`:
+      - Retornar `configuracion.montoBase`
+    - 5. Si `configuracion.tipoCuota === 'por_actividad'`:
+      - Si NO tiene actividades → retornar 0
+      - Si tiene 1 actividad → retornar `actividad.monto`
+      - Si tiene múltiples:
+        - `strategy='sumar'`: sumar todos los montos
+        - `strategy='maximo'`: retornar el monto más alto
+        - `strategy='descuento'`: monto principal + adicionales con descuento%
+    - 6. Si `socio.getEdad() < 18` y `configuracion.descuentoMenores > 0`:
+      - Aplicar descuento: `monto * (1 - descuento/100)`
+    - 7. Retornar monto redondeado
+
+  - **Función: `generarCuotaMensual(socio, periodo, configuracion)`**
+    - 1. Verificar si socio está activo
+    - 2. Calcular monto con `calcularMontoCuota()`
+    - 3. Si monto === 0, no crear cuota
+    - 4. Calcular fecha_vencimiento: `dia_vencimiento` del mes de periodo
+    - 5. Crear cuota:
+      ```javascript
+      {
+        tenantId, socioId, periodo, monto,
+        fechaVencimiento, estado: 'Pendiente'
+      }
+      ```
+    - 6. Retornar cuota creada
+
+  - **Función: `generarCuotasMasivas(tenantId, periodo)`**
+    - Para generación mensual automática por tenant
 
 - [ ] **Cron job de generación mensual** (2 horas)
-  - Actualizar `BackendCCE/src/services/cronService.js`
-  - Schedule: 1ro de cada mes a las 00:00 (ya existe esqueleto)
+  - Actualizar: `BackendCCE/src/services/cronService.js`
+  - Schedule: 1ro de cada mes a las 00:00
   - Lógica:
-    1. Obtener todos los tenants activos
+    1. Obtener todos los tenants con `configuracion.generarAutomaticamente === true`
     2. Por cada tenant:
-       - Obtener socios activos del tenant
-       - Por cada socio: llamar a `generarCuotaMensual()`
-    3. Log de cuántas cuotas se generaron
-    4. Enviar email al admin con resumen (opcional)
+       - Obtener configuración
+       - Obtener socios activos
+       - Por cada socio: `generarCuotaMensual()`
+       - Log: cuántas cuotas generadas
+    3. Enviar email al admin con resumen (opcional)
+  - Usar transacciones para rollback si falla
 
 - [ ] **Generar cuota al registrar socio** (1 hora)
   - En `sociosController.create()`
-  - Después de crear socio exitosamente:
-    - Calcular mes siguiente: `new Date().getMonth() + 1`
-    - Llamar a `generarCuotaMensual(socio, periodo)`
-  - Solo si NO tiene mes de gracia activo
+  - Después de crear socio Y asignar actividades:
+    - Obtener configuración del tenant
+    - Calcular periodo: mes siguiente
+    - Llamar `generarCuotaMensual(socio, periodo, configuracion)`
+  - Solo generar si NO tiene mes_gracia_hasta activo
 
 ---
 
