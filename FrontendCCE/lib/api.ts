@@ -290,7 +290,8 @@ export function transformFrontendMemberToApi(member: Omit<import('./store').Memb
     fechaNacimiento: '1990-01-01', // Placeholder - should be collected from form
     telefono: member.phone,
     email: member.email,
-    actividad: (activityMap[member.activity || 'solo-socio'] || 'Solo socio') as CreateMemberData['actividad'],
+    // Note: actividades field removed - this function is for backward compatibility only
+    // New registration form should use CreateMemberData directly with actividades array
     esJugador: member.membershipType === 'jugador',
     estado: statusMap[member.status] || 'Activo'
   }

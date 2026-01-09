@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useAppStore } from './store'
-import { api, transformApiMemberToFrontend, transformFrontendMemberToApi } from './api'
+import { api, transformApiMemberToFrontend, transformFrontendMemberToApi, ApiActividad, CreateMemberData } from './api'
 
 export function useLoadMembers() {
   const { setMembers, setLoading, setError, isLoading, error } = useAppStore()
@@ -10,19 +10,19 @@ export function useLoadMembers() {
       setLoading(true)
       setError(null)
       const apiMembers = await api.socios.getAll()
-      
+
       // Validar que la respuesta sea un array
       if (!Array.isArray(apiMembers)) {
         console.warn('API response is not an array:', apiMembers)
         setMembers([])
         return
       }
-      
+
       const frontendMembers = apiMembers.map(transformApiMemberToFrontend)
       setMembers(frontendMembers)
     } catch (err) {
       let errorMessage = 'Error al cargar los miembros'
-      
+
       if (err instanceof Error) {
         if (err.message.includes('Network error') || err.message.includes('fetch')) {
           errorMessage = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose.'
@@ -30,7 +30,7 @@ export function useLoadMembers() {
           errorMessage = err.message
         }
       }
-      
+
       setError(errorMessage)
       console.error('Error loading members:', err)
       // En caso de error, establecer array vacío en lugar de dejar undefined
@@ -45,6 +45,56 @@ export function useLoadMembers() {
   }, [loadMembers])
 
   return { loadMembers, isLoading, error }
+}
+
+export function useLoadActividades() {
+  const [actividades, setActividades] = useState<ApiActividad[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadActividades = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await api.actividades.getAll()
+
+      // Validar que la respuesta sea un array
+      if (!Array.isArray(data)) {
+        console.warn('Activities API response is not an array:', data)
+        setActividades([])
+        return
+      }
+
+      // Filtrar solo actividades activas y ordenar
+      const actividadesActivas = data
+        .filter(act => act.activa === true)
+        .sort((a, b) => a.orden - b.orden)
+
+      setActividades(actividadesActivas)
+    } catch (err) {
+      let errorMessage = 'Error al cargar las actividades'
+
+      if (err instanceof Error) {
+        if (err.message.includes('Network error') || err.message.includes('fetch')) {
+          errorMessage = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose.'
+        } else {
+          errorMessage = err.message
+        }
+      }
+
+      setError(errorMessage)
+      console.error('Error loading actividades:', err)
+      setActividades([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadActividades()
+  }, [loadActividades])
+
+  return { actividades, isLoading, error, loadActividades }
 }
 
 export function useCreateMember() {

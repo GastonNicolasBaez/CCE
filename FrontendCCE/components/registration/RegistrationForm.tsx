@@ -1,132 +1,133 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import React, { useState, useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  User, 
-  Mail, 
-  Activity, 
-  Heart, 
+import { motion } from 'framer-motion'
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  CreditCard,
+  Activity,
   CheckCircle,
-  ArrowLeft,
-  ArrowRight
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
 import { registrationSchema, type RegistrationFormData } from '../../lib/validations'
-import { useCreateMember } from '../../lib/hooks'
+import { useCreateMember, useLoadActividades } from '../../lib/hooks'
 
 export default function RegistrationForm() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [membershipType, setMembershipType] = useState<'socio' | 'jugador' | ''>('')
-  const [trialMonth, setTrialMonth] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { createMember } = useCreateMember()
+  const { actividades, isLoading: loadingActividades, error: actividadesError } = useLoadActividades()
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-    trigger,
-    watch
+    watch,
+    control,
+    setValue
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    mode: 'onChange'
+    mode: 'onChange',
+    defaultValues: {
+      exentoCuota: false,
+      esJugador: false,
+      actividades: []
+    }
   })
 
-  const getMaxSteps = () => {
-    return membershipType === 'jugador' ? 4 : 3
-  }
+  // Watch fechaNacimiento to calculate age and show/hide tutor fields
+  const fechaNacimiento = watch('fechaNacimiento')
+  const [age, setAge] = useState<number | null>(null)
+  const [isMinor, setIsMinor] = useState(false)
 
-  const nextStep = async () => {
-    let fieldsToValidate: (keyof RegistrationFormData)[] = []
-    
-    if (currentStep === 1) {
-      fieldsToValidate = ['name', 'email', 'phone', 'birthDate', 'address']
-    } else if (currentStep === 2 && membershipType === 'jugador') {
-      fieldsToValidate = ['activity', 'emergencyContact']
-    } else if (currentStep === 3 && membershipType === 'jugador') {
-      fieldsToValidate = ['medicalInfo']
+  useEffect(() => {
+    if (fechaNacimiento) {
+      const birthDate = new Date(fechaNacimiento)
+      const today = new Date()
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--
+      }
+      setAge(calculatedAge)
+      setIsMinor(calculatedAge < 18)
+    } else {
+      setAge(null)
+      setIsMinor(false)
     }
-
-    const isValid = await trigger(fieldsToValidate)
-    if (isValid && currentStep < getMaxSteps()) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
+  }, [fechaNacimiento])
 
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true)
+    setSubmitError(null)
+
     try {
-      // Transformar los datos del formulario al formato esperado por el store
+      console.log('Submitting registration:', data)
+
+      // Transform form data to API format
       const memberData = {
-        id: Date.now().toString(), // Temporal, se generará en el backend
-        name: data.name,
+        id: Date.now().toString(), // Temporary ID
+        name: `${data.nombre} ${data.apellido}`,
         email: data.email,
-        phone: data.phone,
-        activity: membershipType === 'jugador' ? (data.activity as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio') : undefined,
+        phone: data.telefono,
         status: 'active' as const,
-        paymentStatus: trialMonth ? ('paid' as const) : ('pending' as const),
-        membershipType: membershipType as 'socio' | 'jugador',
+        paymentStatus: data.exentoCuota ? ('paid' as const) : ('pending' as const),
+        membershipType: data.esJugador ? ('jugador' as const) : ('socio' as const),
         registrationDate: new Date().toISOString().split('T')[0],
-        lastPaymentDate: trialMonth ? new Date().toISOString().split('T')[0] : undefined,
-        nextPaymentDate: trialMonth ? 
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 
+        nextPaymentDate: data.exentoCuota ?
+          undefined :
           new Date().toISOString().split('T')[0]
       }
 
       const success = await createMember(memberData)
+
       if (success) {
-        console.log('Member created successfully:', { ...data, membershipType, trialMonth })
+        console.log('Member created successfully')
         setSubmitted(true)
+        reset()
       } else {
         throw new Error('Failed to create member')
       }
     } catch (error) {
       console.error('Error submitting form:', error)
-      alert('Error al registrar el miembro. Por favor intenta nuevamente.')
+      setSubmitError(error instanceof Error ? error.message : 'Error al registrar el miembro')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Success screen
   if (submitted) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="h-full flex items-center justify-center"
+        className="h-full flex items-center justify-center p-4"
       >
         <div className="neumorphism-card p-8 max-w-md text-center">
           <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-            ¡Inscripción Enviada!
+            ¡Registro Exitoso!
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {trialMonth 
-              ? 'Tu período de prueba de 30 días ha comenzado. Te contactaremos pronto.'
-              : 'Recibirás un email con los datos de pago en los próximos minutos.'
-            }
+            El socio ha sido registrado correctamente en el sistema.
           </p>
           <button
             onClick={() => {
               setSubmitted(false)
-              setCurrentStep(1)
-              setMembershipType('')
-              setTrialMonth(false)
               reset()
             }}
             className="primary-button"
           >
-            Nueva Inscripción
+            Nuevo Registro
           </button>
         </div>
       </motion.div>
@@ -134,445 +135,382 @@ export default function RegistrationForm() {
   }
 
   return (
-    <div className="h-full flex flex-col max-w-7xl mx-auto">
-      {/* Header compacto */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-4 flex-shrink-0"
-      >
-        <h1 className="text-xl font-bold text-orange-500 dark:text-orange-400 mb-1">
-          Inscripción al Club Comandante Espora
-        </h1>
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          Complete el formulario para unirse a nuestra comunidad deportiva
-        </p>
-      </motion.div>
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-4xl mx-auto p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl font-bold text-orange-500 dark:text-orange-400 mb-2">
+            Registro de Nuevo Socio
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Complete los datos del nuevo socio para registrarlo en el sistema
+          </p>
+        </motion.div>
 
-      {/* Layout usando grid más compacto */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Sidebar con progreso - más estrecho */}
-        <div className="lg:col-span-3 xl:col-span-2">
-          <div className="neumorphism-card p-3 h-fit">
-            <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-3">
-              Progreso
-            </h3>
-            
-            {/* Steps compactos verticales */}
-            <div className="space-y-3">
-              {Array.from({ length: getMaxSteps() }, (_, i) => i + 1).map((step) => {
-                const stepLabels = [
-                  'Datos Personales',
-                  membershipType === 'jugador' ? 'Actividad/Emergencia' : 'Confirmación',
-                  membershipType === 'jugador' ? 'Info. Médica' : '',
-                  membershipType === 'jugador' ? 'Confirmación' : ''
-                ].filter(Boolean)
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Personal Information Section */}
+          <div className="neumorphism-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <User size={20} className="text-primary" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Información Personal
+              </h3>
+            </div>
 
-                return (
-                  <div key={step} className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${
-                      step <= currentStep 
-                        ? 'bg-primary text-white' 
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {step < currentStep ? '✓' : step}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium ${
-                        step <= currentStep 
-                          ? 'text-primary dark:text-blue-400' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {stepLabels[step - 1]}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  {...register('nombre')}
+                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    errors.nombre ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                  }`}
+                  placeholder="Juan"
+                />
+                {errors.nombre && (
+                  <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>
+                )}
+              </div>
+
+              {/* Apellido */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Apellido <span className="text-red-500">*</span>
+                </label>
+                <input
+                  {...register('apellido')}
+                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    errors.apellido ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                  }`}
+                  placeholder="Pérez"
+                />
+                {errors.apellido && (
+                  <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>
+                )}
+              </div>
+
+              {/* DNI */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  DNI <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    {...register('dni')}
+                    className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                      errors.dni ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                    }`}
+                    placeholder="12345678"
+                  />
+                </div>
+                {errors.dni && (
+                  <p className="text-red-500 text-xs mt-1">{errors.dni.message}</p>
+                )}
+              </div>
+
+              {/* Fecha de Nacimiento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Fecha de Nacimiento <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    {...register('fechaNacimiento')}
+                    type="date"
+                    className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                      errors.fechaNacimiento ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                    }`}
+                  />
+                </div>
+                {errors.fechaNacimiento && (
+                  <p className="text-red-500 text-xs mt-1">{errors.fechaNacimiento.message}</p>
+                )}
+                {age !== null && (
+                  <p className="text-xs text-gray-500 mt-1">Edad: {age} años</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    {...register('email')}
+                    type="email"
+                    className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                      errors.email ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                    }`}
+                    placeholder="juan.perez@email.com"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Teléfono */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Teléfono <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    {...register('telefono')}
+                    type="tel"
+                    className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                      errors.telefono ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                    }`}
+                    placeholder="+54 9 11 1234-5678"
+                  />
+                </div>
+                {errors.telefono && (
+                  <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Área principal del formulario */}
-        <div className="lg:col-span-9 xl:col-span-10 flex flex-col min-h-0">
-          <div className="neumorphism-card p-4 flex-1 min-h-0 overflow-hidden">
-            <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
-              {/* Contenido del formulario con scroll interno */}
-              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-                
-                {/* Step 1: Personal Information */}
-                <AnimatePresence mode="wait">
-                  {currentStep === 1 && (
-                    <motion.div
-                      key="step1"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <User size={16} className="text-primary" />
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                          Información Personal
-                        </h3>
-                      </div>
-                      
-                      {/* Membership Type Selection */}
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Membresía *</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div 
-                            className={`border rounded-lg p-2 cursor-pointer transition-all ${
-                              membershipType === 'socio' 
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                            }`}
-                            onClick={() => setMembershipType('socio')}
-                          >
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="membershipType"
-                                value="socio"
-                                checked={membershipType === 'socio'}
-                                onChange={() => setMembershipType('socio')}
-                                className="text-blue-600"
-                              />
-                              <div>
-                                <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200">Socio</h4>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">Instalaciones</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div 
-                            className={`border rounded-lg p-2 cursor-pointer transition-all ${
-                              membershipType === 'jugador' 
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                            }`}
-                            onClick={() => setMembershipType('jugador')}
-                          >
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="membershipType"
-                                value="jugador"
-                                checked={membershipType === 'jugador'}
-                                onChange={() => setMembershipType('jugador')}
-                                className="text-blue-600"
-                              />
-                              <div>
-                                <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200">Jugador</h4>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">Deportes</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Trial Month Option */}
-                      <div className="p-2 border border-yellow-200 dark:border-yellow-700 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={trialMonth}
-                            onChange={(e) => setTrialMonth(e.target.checked)}
-                            className="w-3 h-3 text-yellow-600"
-                          />
-                          <div>
-                            <span className="text-xs font-semibold text-yellow-800 dark:text-yellow-200">Mes de Prueba</span>
-                            <span className="text-xs text-yellow-700 dark:text-yellow-300 ml-1">- 30 días sin pago</span>
-                          </div>
-                        </label>
-                      </div>
-                      
-                      {/* Personal Info Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo *</label>
-                          <input
-                            {...register('name')}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Tu nombre completo"
-                          />
-                          {errors.name && (
-                            <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
-                          <input
-                            {...register('email')}
-                            type="email"
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="tu@email.com"
-                          />
-                          {errors.email && (
-                            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono *</label>
-                          <input
-                            {...register('phone')}
-                            type="tel"
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.phone ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="+54 9 11 1234-5678"
-                          />
-                          {errors.phone && (
-                            <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Nacimiento *</label>
-                          <input
-                            {...register('birthDate')}
-                            type="date"
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                          />
-                          {errors.birthDate && (
-                            <p className="text-red-500 text-xs mt-1">{errors.birthDate.message}</p>
-                          )}
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-3">
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección *</label>
-                          <input
-                            {...register('address')}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.address ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Calle, número, ciudad, provincia"
-                          />
-                          {errors.address && (
-                            <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 2: Activity and Emergency Contact (Only for players) */}
-                  {currentStep === 2 && membershipType === 'jugador' && (
-                    <motion.div
-                      key="step2"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Activity size={16} className="text-accent" />
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                          Actividad y Contacto de Emergencia
-                        </h3>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Actividad Principal *</label>
-                          <select
-                            {...register('activity')}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.activity ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                          >
-                            <option value="">Selecciona una actividad</option>
-                            <option value="basketball">Básquet</option>
-                            <option value="volleyball">Vóley</option>
-                            <option value="karate">Karate</option>
-                            <option value="gym">Gimnasio</option>
-                            <option value="solo-socio">Solo Socio</option>
-                          </select>
-                          {errors.activity && (
-                            <p className="text-red-500 text-xs mt-1">{errors.activity.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Contacto de Emergencia *</label>
-                          <input
-                            {...register('emergencyContact.name')}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.name ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Nombre del contacto"
-                          />
-                          {errors.emergencyContact?.name && (
-                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.name.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono Emergencia *</label>
-                          <input
-                            {...register('emergencyContact.phone')}
-                            type="tel"
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.phone ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="+54 9 11 1234-5678"
-                          />
-                          {errors.emergencyContact?.phone && (
-                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.phone.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Relación</label>
-                          <input
-                            {...register('emergencyContact.relationship')}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.emergencyContact?.relationship ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Ej: Padre, Madre, Hermano"
-                          />
-                          {errors.emergencyContact?.relationship && (
-                            <p className="text-red-500 text-xs mt-1">{errors.emergencyContact.relationship.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 3: Medical Info (Only for players) */}
-                  {currentStep === 3 && membershipType === 'jugador' && (
-                    <motion.div
-                      key="step3"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Heart size={16} className="text-red-500" />
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                          Información Médica
-                        </h3>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">¿Tienes alguna condición médica?</label>
-                          <textarea
-                            {...register('medicalInfo.conditions')}
-                            rows={3}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none ${errors.medicalInfo?.conditions ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Describe cualquier condición médica relevante o escribe 'Ninguna'"
-                          />
-                          {errors.medicalInfo?.conditions && (
-                            <p className="text-red-500 text-xs mt-1">{errors.medicalInfo.conditions.message}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">¿Tomas algún medicamento?</label>
-                          <textarea
-                            {...register('medicalInfo.medications')}
-                            rows={2}
-                            className={`w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none ${errors.medicalInfo?.medications ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'}`}
-                            placeholder="Lista medicamentos actuales o escribe 'Ninguno'"
-                          />
-                          {errors.medicalInfo?.medications && (
-                            <p className="text-red-500 text-xs mt-1">{errors.medicalInfo.medications.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Final Step: Confirmation */}
-                  {((currentStep === 2 && membershipType === 'socio') || 
-                    (currentStep === 4 && membershipType === 'jugador')) && (
-                    <motion.div
-                      key="final"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <CheckCircle size={16} className="text-green-500" />
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                          Confirmación
-                        </h3>
-                      </div>
-                      
-                      <div className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                        <label className="flex items-start gap-2 cursor-pointer">
-                          <input
-                            {...register('terms')}
-                            type="checkbox"
-                            className="mt-0.5 w-3 h-3 text-blue-600"
-                          />
-                          <span className="text-xs text-gray-700 dark:text-gray-300">
-                            Acepto los <span className="text-blue-600 underline">términos y condiciones</span> del club
-                          </span>
-                        </label>
-                        {errors.terms && (
-                          <p className="text-red-500 text-xs mt-1">{errors.terms.message}</p>
-                        )}
-                      </div>
-
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-200 mb-2">Resumen de Inscripción</h4>
-                        <div className="space-y-1 text-xs text-blue-700 dark:text-blue-300">
-                          <p><strong>Tipo:</strong> {membershipType === 'socio' ? 'Socio' : 'Jugador'}</p>
-                          <p><strong>Modalidad:</strong> {trialMonth ? 'Mes de prueba (30 días)' : 'Inscripción completa'}</p>
-                          {membershipType === 'jugador' && watch('activity') && (
-                            <p><strong>Actividad:</strong> {watch('activity')}</p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+          {/* Tutor Information (conditional - only for minors) */}
+          {isMinor && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="neumorphism-card p-6 border-2 border-yellow-200 dark:border-yellow-700"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle size={20} className="text-yellow-600" />
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  Información del Tutor (Menor de 18 años)
+                </h3>
               </div>
 
-              {/* Botones de navegación compactos */}
-              <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
-                {currentStep > 1 ? (
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="flex items-center gap-1 px-3 py-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                  >
-                    <ArrowLeft size={12} />
-                    Anterior
-                  </button>
-                ) : (
-                  <div></div>
-                )}
-
-                {currentStep < getMaxSteps() ? (
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    disabled={currentStep === 1 && !membershipType}
-                    className={`flex items-center gap-1 px-4 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                      currentStep === 1 && !membershipType ? 'opacity-50 cursor-not-allowed' : ''
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tutor Nombre */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre del Tutor <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register('tutorNombre')}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                      errors.tutorNombre ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
                     }`}
-                  >
-                    Siguiente
-                    <ArrowRight size={12} />
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex items-center gap-1 px-4 py-2 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Mail size={12} />
-                        {trialMonth ? 'Completar' : 'Enviar'}
-                      </>
-                    )}
-                  </button>
+                    placeholder="Nombre completo del tutor"
+                  />
+                  {errors.tutorNombre && (
+                    <p className="text-red-500 text-xs mt-1">{errors.tutorNombre.message}</p>
+                  )}
+                </div>
+
+                {/* Tutor Teléfono */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Teléfono del Tutor <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      {...register('tutorTelefono')}
+                      type="tel"
+                      className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                        errors.tutorTelefono ? 'border-red-300' : 'border-gray-200 dark:border-gray-600'
+                      }`}
+                      placeholder="+54 9 11 1234-5678"
+                    />
+                  </div>
+                  {errors.tutorTelefono && (
+                    <p className="text-red-500 text-xs mt-1">{errors.tutorTelefono.message}</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Activities Section */}
+          <div className="neumorphism-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity size={20} className="text-accent" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Actividades
+              </h3>
+            </div>
+
+            {loadingActividades ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 size={32} className="animate-spin text-gray-400" />
+              </div>
+            ) : actividadesError ? (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{actividadesError}</p>
+              </div>
+            ) : actividades.length === 0 ? (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                  No hay actividades disponibles. Por favor, configure actividades en el sistema.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Seleccione las actividades en las que participará el socio (puede seleccionar múltiples):
+                </p>
+                <Controller
+                  name="actividades"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {actividades.map((actividad) => (
+                        <label
+                          key={actividad.id}
+                          className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            field.value?.includes(actividad.id)
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={field.value?.includes(actividad.id) || false}
+                            onChange={(e) => {
+                              const currentValue = field.value || []
+                              if (e.target.checked) {
+                                field.onChange([...currentValue, actividad.id])
+                              } else {
+                                field.onChange(currentValue.filter((id) => id !== actividad.id))
+                              }
+                            }}
+                            className="mt-0.5 w-4 h-4 text-blue-600"
+                          />
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                              {actividad.nombre}
+                            </h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              ${typeof actividad.monto === 'number' ? actividad.monto.toFixed(2) : actividad.monto} / mes
+                            </p>
+                            {actividad.descripcion && (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                {actividad.descripcion}
+                              </p>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                />
+                {errors.actividades && (
+                  <p className="text-red-500 text-xs mt-1">{errors.actividades.message}</p>
                 )}
               </div>
-            </form>
+            )}
           </div>
-        </div>
+
+          {/* Exemption Section */}
+          <div className="neumorphism-card p-6">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              Configuración de Cuotas
+            </h3>
+
+            <div className="space-y-4">
+              {/* Exento de Cuota */}
+              <div className="flex items-start gap-3">
+                <input
+                  {...register('exentoCuota')}
+                  type="checkbox"
+                  className="mt-1 w-4 h-4 text-blue-600"
+                />
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Exento de Cuota (Permanente)
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    El socio no deberá pagar cuotas mensuales
+                  </p>
+                </div>
+              </div>
+
+              {/* Mes de Gracia */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Mes de Gracia Hasta (Opcional)
+                </label>
+                <input
+                  {...register('mesGraciaHasta')}
+                  type="date"
+                  className="w-full md:w-64 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  El socio estará exento de pagar cuotas hasta esta fecha
+                </p>
+              </div>
+
+              {/* Es Jugador */}
+              <div className="flex items-start gap-3">
+                <input
+                  {...register('esJugador')}
+                  type="checkbox"
+                  className="mt-1 w-4 h-4 text-blue-600"
+                />
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Es Jugador
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    El socio participa activamente en actividades deportivas
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Error */}
+          {submitError && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => reset()}
+              className="px-6 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              Limpiar Formulario
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Registrando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={16} />
+                  Registrar Socio
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
