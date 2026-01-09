@@ -3,38 +3,19 @@ require('dotenv').config();
 
 let sequelize;
 
-// En desarrollo, usar SQLite
-if (process.env.NODE_ENV === 'development') {
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: './database.sqlite',
-    logging: console.log,
-    define: {
-      timestamps: true,
-      underscored: false,
-      createdAt: 'createdAt',
-      updatedAt: 'updatedAt'
-    }
-  });
-  console.log('✅ Using SQLite for development');
-} else {
-  // En producción, usar PostgreSQL de Railway
-  if (!process.env.DATABASE_URL) {
-    console.error('ERROR: DATABASE_URL environment variable is not set');
-    console.error('Please configure DATABASE_URL in your Railway environment variables');
-    process.exit(1);
-  }
-
+// Check if running in production with DATABASE_URL
+if (process.env.DATABASE_URL) {
+  // Production: Use DATABASE_URL from Railway/Vercel
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     protocol: 'postgres',
     dialectOptions: {
-      ssl: process.env.NODE_ENV === 'production' ? {
+      ssl: {
         require: true,
         rejectUnauthorized: false
-      } : false
+      }
     },
-    logging: false, // Disable logging in production
+    logging: false,
     define: {
       timestamps: true,
       underscored: false,
@@ -48,7 +29,38 @@ if (process.env.NODE_ENV === 'development') {
       idle: 10000
     }
   });
-  console.log('✅ Using PostgreSQL for production (Railway)');
+  console.log('✅ Using PostgreSQL (Production)');
+} else {
+  // Development: Use local PostgreSQL with individual credentials
+  const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'cce_multitenant',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    dialect: 'postgres',
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+    define: {
+      timestamps: true,
+      underscored: false,
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt'
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
+  };
+
+  sequelize = new Sequelize(
+    dbConfig.database,
+    dbConfig.username,
+    dbConfig.password,
+    dbConfig
+  );
+  console.log('✅ Using PostgreSQL (Development)');
 }
 
 module.exports = sequelize;
