@@ -21,27 +21,60 @@ const medicalInfoSchema = z.object({
   medications: z.string().min(1, 'La información sobre medicamentos es requerida')
 })
 
-// ✅ SCHEMA DE REGISTRO CORREGIDO
+// ✅ SCHEMA DE REGISTRO ACTUALIZADO PARA BACKEND MULTI-TENANT
 export const registrationSchema = z.object({
-  // Personal Information
-  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  // Personal Information - Backend expects nombre/apellido separate
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+  dni: z.string()
+    .min(7, 'El DNI debe tener al menos 7 dígitos')
+    .max(20, 'El DNI no puede tener más de 20 dígitos')
+    .regex(/^\d+$/, 'El DNI debe contener solo números'),
   email: z.string().email('Ingresa un email válido'),
-  phone: z.string().min(8, 'El teléfono debe tener al menos 8 dígitos'),
-  birthDate: z.string().min(1, 'La fecha de nacimiento es requerida'),
-  address: z.string().min(5, 'La dirección debe tener al menos 5 caracteres'),
-  dni: z.string().min(7, 'El DNI debe tener al menos 7 dígitos').max(20, 'El DNI no puede tener más de 20 dígitos'),
-  
-  // ✅ Actividades corregidas - usa las 5 actividades del club
-  activity: z.enum(FRONTEND_ACTIVITIES).optional(),
-  
-  // Optional fields for players
-  emergencyContact: emergencyContactSchema.optional(),
-  medicalInfo: medicalInfoSchema.optional(),
-  
-  // Terms and conditions
-  terms: z.boolean().refine(val => val === true, {
-    message: 'Debes aceptar los términos y condiciones'
-  })
+  telefono: z.string().min(8, 'El teléfono debe tener al menos 8 dígitos'),
+  fechaNacimiento: z.string().min(1, 'La fecha de nacimiento es requerida'),
+
+  // Actividades - array of activity IDs (multiple selection)
+  actividades: z.array(z.number()).min(0, 'Selecciona al menos una actividad').optional(),
+
+  // Tutor fields (required if age < 18, validated conditionally in form)
+  tutorNombre: z.string().optional(),
+  tutorTelefono: z.string().optional(),
+
+  // Exemption fields
+  exentoCuota: z.boolean().default(false),
+  mesGraciaHasta: z.string().optional(), // Date string or undefined
+
+  // For backward compatibility (optional)
+  esJugador: z.boolean().default(false)
+})
+.superRefine((data, ctx) => {
+  // Calculate age from fechaNacimiento
+  const birthDate = new Date(data.fechaNacimiento)
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+
+  // If minor, tutor fields are required
+  if (age < 18) {
+    if (!data.tutorNombre || data.tutorNombre.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El nombre del tutor es obligatorio para menores de 18 años',
+        path: ['tutorNombre']
+      })
+    }
+    if (!data.tutorTelefono || data.tutorTelefono.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El teléfono del tutor es obligatorio para menores de 18 años',
+        path: ['tutorTelefono']
+      })
+    }
+  }
 })
 
 // Type inference from schema
