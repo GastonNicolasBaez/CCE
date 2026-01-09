@@ -216,7 +216,8 @@ const startServer = async () => {
 
       // Log service status
       logger.info('\n📋 Services Status:');
-      const dbType = config.server.env === 'development' ? 'SQLite' : 'PostgreSQL (Railway)';
+      const dbDialect = sequelize.options.dialect;
+      const dbType = dbDialect === 'postgres' ? 'PostgreSQL' : dbDialect.toUpperCase();
       logger.info(`  • Database: ✅ Connected (${dbType})`);
       logger.info(`  • Email: ${config.email.auth.user ? '✅' : '⚠️'} ${config.email.auth.user ? 'Configured' : 'Not configured'}`);
       logger.info(`  • MercadoPago: ${config.mercadoPago.accessToken ? '✅' : '⚠️'} ${config.mercadoPago.accessToken ? 'Configured' : 'Not configured'}`);
