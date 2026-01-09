@@ -58,57 +58,82 @@ module.exports = {
 
       console.log('✅ Made tenant_id NOT NULL');
 
-      // 4. Drop old unique constraint (socio_id + periodo)
-      try {
-        // Try different possible constraint names
-        await queryInterface.removeConstraint('cuotas', 'cuotas_socio_id_periodo_key', { transaction });
-      } catch (error) {
-        try {
-          await queryInterface.removeIndex('cuotas', 'cuotas_socio_id_periodo_key', { transaction });
-        } catch (error2) {
-          console.log('ℹ️  No existing socio+periodo constraint to remove (ok)');
+      // 4. Check and drop old unique constraint if exists
+      const [constraints] = await queryInterface.sequelize.query(`
+        SELECT constraint_name
+        FROM information_schema.table_constraints
+        WHERE table_name = 'cuotas'
+        AND constraint_type = 'UNIQUE'
+        AND constraint_name LIKE '%socio%periodo%'
+      `, { transaction });
+
+      if (constraints.length > 0) {
+        await queryInterface.removeConstraint('cuotas', constraints[0].constraint_name, { transaction });
+        console.log(`✅ Removed old constraint: ${constraints[0].constraint_name}`);
+      } else {
+        console.log('ℹ️  No existing socio+periodo constraint to remove (ok)');
+      }
+
+      // Also check for any indexes with this name
+      const [indexes] = await queryInterface.sequelize.query(`
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename = 'cuotas'
+        AND indexname LIKE '%socio%periodo%'
+      `, { transaction });
+
+      if (indexes.length > 0) {
+        await queryInterface.removeIndex('cuotas', indexes[0].indexname, { transaction });
+        console.log(`✅ Removed old index: ${indexes[0].indexname}`);
+      }
+
+      // 5. Create new indexes (check if they don't exist first)
+      const indexesToCreate = [
+        { name: 'cuotas_tenant_id_idx', fields: ['tenant_id'] },
+        { name: 'cuotas_socio_id_idx', fields: ['socio_id'] },
+        { name: 'cuotas_estado_idx', fields: ['estado'] },
+        { name: 'cuotas_fecha_vencimiento_idx', fields: ['fecha_vencimiento'] },
+        { name: 'cuotas_periodo_idx', fields: ['periodo'] }
+      ];
+
+      for (const idx of indexesToCreate) {
+        const [existing] = await queryInterface.sequelize.query(`
+          SELECT indexname
+          FROM pg_indexes
+          WHERE tablename = 'cuotas'
+          AND indexname = '${idx.name}'
+        `, { transaction });
+
+        if (existing.length === 0) {
+          await queryInterface.addIndex('cuotas', idx.fields, {
+            name: idx.name,
+            transaction
+          });
+          console.log(`✅ Created index: ${idx.name}`);
+        } else {
+          console.log(`ℹ️  Index ${idx.name} already exists (skipped)`);
         }
       }
 
-      console.log('✅ Removed old unique constraint');
-
-      // 5. Create new indexes
-      await queryInterface.addIndex('cuotas', ['tenant_id'], {
-        name: 'cuotas_tenant_id_idx',
-        transaction
-      });
-
-      await queryInterface.addIndex('cuotas', ['socio_id'], {
-        name: 'cuotas_socio_id_idx',
-        transaction
-      });
-
-      await queryInterface.addIndex('cuotas', ['estado'], {
-        name: 'cuotas_estado_idx',
-        transaction
-      });
-
-      await queryInterface.addIndex('cuotas', ['fecha_vencimiento'], {
-        name: 'cuotas_fecha_vencimiento_idx',
-        transaction
-      });
-
-      await queryInterface.addIndex('cuotas', ['periodo'], {
-        name: 'cuotas_periodo_idx',
-        transaction
-      });
-
-      console.log('✅ Created new indexes');
-
       // 6. Create composite unique constraint (tenant_id + socio_id + periodo)
-      await queryInterface.addConstraint('cuotas', {
-        fields: ['tenant_id', 'socio_id', 'periodo'],
-        type: 'unique',
-        name: 'cuotas_tenant_socio_periodo_unique',
-        transaction
-      });
+      const [existingConstraint] = await queryInterface.sequelize.query(`
+        SELECT constraint_name
+        FROM information_schema.table_constraints
+        WHERE table_name = 'cuotas'
+        AND constraint_name = 'cuotas_tenant_socio_periodo_unique'
+      `, { transaction });
 
-      console.log('✅ Created tenant+socio+periodo unique constraint');
+      if (existingConstraint.length === 0) {
+        await queryInterface.addConstraint('cuotas', {
+          fields: ['tenant_id', 'socio_id', 'periodo'],
+          type: 'unique',
+          name: 'cuotas_tenant_socio_periodo_unique',
+          transaction
+        });
+        console.log('✅ Created tenant+socio+periodo unique constraint');
+      } else {
+        console.log('ℹ️  Unique constraint already exists (skipped)');
+      }
 
       await transaction.commit();
       console.log('✅ Migration completed successfully');
