@@ -1,7 +1,8 @@
 const { Op } = require('sequelize');
-const { Socio, Cuota } = require('../models');
+const { Socio, Cuota, Actividad, TenantConfiguracion } = require('../models');
 const { asyncHandler, NotFoundError, ConflictError } = require('../middleware/errorHandler');
 const emailService = require('../services/emailService');
+const cuotaService = require('../services/cuotaService');
 
 const sociosController = {
   // GET /socios - Get all socios with filtering and pagination
@@ -161,6 +162,7 @@ const sociosController = {
   // POST /socios - Create new socio
   crearSocio: asyncHandler(async (req, res) => {
     const socioData = req.body;
+    const { actividades: actividadesIds } = req.body; // Array of actividad IDs
 
     // CRITICAL: Check tenant member limit
     const hasReachedLimit = await req.tenant.hasReachedMemberLimit();
@@ -193,7 +195,65 @@ const sociosController = {
     // Add tenant ID to socio data
     socioData.tenantId = req.tenant.id;
 
+    // Remove actividades from socioData (will be added via association)
+    delete socioData.actividades;
+
     const socio = await Socio.create(socioData);
+
+    // Assign actividades to socio (if provided)
+    if (actividadesIds && Array.isArray(actividadesIds) && actividadesIds.length > 0) {
+      // Verify all activities belong to this tenant
+      const actividades = await Actividad.findAll({
+        where: {
+          id: actividadesIds,
+          tenantId: req.tenant.id,
+          activa: true
+        }
+      });
+
+      if (actividades.length !== actividadesIds.length) {
+        throw new NotFoundError('Una o más actividades no son válidas para este club');
+      }
+
+      // Associate actividades with socio
+      await socio.setActividades(actividades);
+    }
+
+    // Generate initial quota (if not in grace period)
+    try {
+      // Get tenant configuration
+      const configuracion = await TenantConfiguracion.getOrCreateDefault(req.tenant.id);
+
+      // Check if socio should have a quota generated
+      if (!socio.exentoCuota && !socio.mesGraciaHasta) {
+        // Load actividades for calculation
+        await socio.reload({
+          include: [{ model: Actividad, as: 'actividades' }]
+        });
+
+        // Generate quota for current month
+        const currentPeriodo = cuotaService.getCurrentPeriodo();
+        const cuota = await cuotaService.generarCuotaMensual(
+          socio,
+          currentPeriodo,
+          configuracion
+        );
+
+        if (cuota) {
+          console.log(`✅ Cuota inicial generada para socio ${socio.id}: $${cuota.monto} (${currentPeriodo})`);
+        }
+      } else {
+        console.log(`ℹ️  No se genera cuota inicial para socio ${socio.id} (exento o en gracia)`);
+      }
+    } catch (cuotaError) {
+      // Don't fail the socio creation if quota generation fails
+      console.error('⚠️  Error generando cuota inicial:', cuotaError.message);
+    }
+
+    // Reload socio with actividades for response
+    await socio.reload({
+      include: [{ model: Actividad, as: 'actividades' }]
+    });
 
     const socioResponse = socio.toJSON();
     socioResponse.nombreCompleto = socio.getNombreCompleto();

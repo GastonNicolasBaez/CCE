@@ -1,7 +1,8 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
-const { Socio, Cuota } = require('../models');
+const { Socio, Cuota, Tenant, TenantConfiguracion } = require('../models');
 const emailService = require('./emailService');
+const cuotaService = require('./cuotaService');
 
 class CronService {
   constructor() {
@@ -192,82 +193,103 @@ class CronService {
   async generateMonthlyQuotas() {
     try {
       const currentDate = new Date();
-      const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM format
-      
-      // Calculate due date (15th of current month)
-      const dueDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 15)
-        .toISOString().split('T')[0];
+      const currentPeriodo = cuotaService.getCurrentPeriodo(currentDate);
 
-      console.log(`📅 Generating quotas for period: ${currentMonth}`);
+      console.log(`\n📅 ===== GENERACIÓN AUTOMÁTICA DE CUOTAS MENSUALES =====`);
+      console.log(`   Periodo: ${currentPeriodo}`);
+      console.log(`   Fecha: ${currentDate.toLocaleString('es-AR')}\n`);
 
-      // Get all active socios
-      const sociosActivos = await Socio.findAll({
-        where: { estado: 'Activo' }
+      // 1. Get all tenants with automatic generation enabled
+      const configuraciones = await TenantConfiguracion.findAll({
+        where: {
+          generarAutomaticamente: true
+        },
+        include: [
+          {
+            model: Tenant,
+            as: 'tenant',
+            where: { status: 'active' },
+            required: true
+          }
+        ]
       });
 
-      if (sociosActivos.length === 0) {
-        console.log('📭 No active members found for quota generation');
-        return { generated: 0, errors: 0, skipped: 0 };
+      if (configuraciones.length === 0) {
+        console.log('📭 No hay tenants con generación automática habilitada');
+        return {
+          totalTenants: 0,
+          totalGenerated: 0,
+          totalExentos: 0,
+          totalErrors: 0,
+          tenants: []
+        };
       }
 
-      let generated = 0;
-      let errors = 0;
-      let skipped = 0;
+      console.log(`✅ Encontrados ${configuraciones.length} tenants con generación automática\n`);
 
-      // Define quota amounts by activity
-      const montosPorActividad = {
-        'Basquet': 15000,
-        'Voley': 12000,
-        'Karate': 18000,
-        'Gimnasio': 20000,
-        'Socio': 8000
+      // 2. Generate quotas for each tenant
+      const summary = {
+        totalTenants: configuraciones.length,
+        totalGenerated: 0,
+        totalExentos: 0,
+        totalErrors: 0,
+        totalMontoTotal: 0,
+        tenants: []
       };
 
-      for (const socio of sociosActivos) {
+      for (const config of configuraciones) {
+        const tenant = config.tenant;
+        console.log(`\n🏢 Procesando: ${tenant.name} (${tenant.slug})`);
+
         try {
-          // Check if quota already exists for this period
-          const existingQuota = await Cuota.findOne({
-            where: {
-              socioId: socio.id,
-              periodo: currentMonth
-            }
+          // Use cuotaService to generate quotas for this tenant
+          const result = await cuotaService.generarCuotasMasivas(
+            tenant.id,
+            currentPeriodo
+          );
+
+          summary.totalGenerated += result.generadas;
+          summary.totalExentos += result.exentos;
+          summary.totalErrors += result.errores;
+          summary.totalMontoTotal += result.montoTotal;
+
+          summary.tenants.push({
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            slug: tenant.slug,
+            result
           });
 
-          if (existingQuota) {
-            console.log(`⏭️ Quota already exists for ${socio.getNombreCompleto()} - ${currentMonth}`);
-            skipped++;
-            continue;
-          }
+          // Optional: Send email to admin with summary
+          // await emailService.enviarResumenGeneracionCuotas(tenant, result);
 
-          // Create new quota
-          const monto = montosPorActividad[socio.actividad] || montosPorActividad['Socio'];
-          
-          await Cuota.create({
-            socioId: socio.id,
-            monto: monto,
-            fechaVencimiento: dueDate,
-            periodo: currentMonth,
-            estado: 'Pendiente'
+        } catch (tenantError) {
+          console.error(`❌ Error procesando tenant ${tenant.slug}:`, tenantError.message);
+          summary.totalErrors++;
+
+          summary.tenants.push({
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            slug: tenant.slug,
+            error: tenantError.message
           });
-
-          console.log(`✅ Quota created for ${socio.getNombreCompleto()} - $${monto}`);
-          generated++;
-
-        } catch (quotaError) {
-          console.error(`❌ Error creating quota for ${socio.getNombreCompleto()}:`, quotaError.message);
-          errors++;
         }
       }
 
-      console.log(`✅ Monthly quota generation completed: ${generated} generated, ${skipped} skipped, ${errors} errors`);
-      
-      // Send summary email to admins (optional)
-      // You could implement this to notify administrators about the quota generation
+      // 3. Print final summary
+      console.log(`\n\n📊 ===== RESUMEN FINAL =====`);
+      console.log(`   Periodo: ${currentPeriodo}`);
+      console.log(`   Tenants procesados: ${summary.totalTenants}`);
+      console.log(`   Cuotas generadas: ${summary.totalGenerated}`);
+      console.log(`   Socios exentos: ${summary.totalExentos}`);
+      console.log(`   Errores: ${summary.totalErrors}`);
+      console.log(`   Monto total: $${summary.totalMontoTotal.toFixed(2)}`);
+      console.log(`\n===== FIN DE GENERACIÓN AUTOMÁTICA =====\n`);
 
-      return { generated, errors, skipped };
+      return summary;
 
     } catch (error) {
-      console.error('❌ Critical error in generateMonthlyQuotas:', error);
+      console.error('❌ Error crítico en generación automática:', error);
       throw error;
     }
   }
