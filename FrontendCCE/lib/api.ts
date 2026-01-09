@@ -2,6 +2,16 @@ import { getToken, getTenantSlugFromSubdomain } from './auth'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+export interface ApiActividad {
+  id: number
+  tenantId: number
+  nombre: string
+  monto: string | number
+  activa: boolean
+  orden: number
+  descripcion?: string
+}
+
 export interface ApiMember {
   id: number
   nombre: string
@@ -10,10 +20,20 @@ export interface ApiMember {
   fechaNacimiento: string
   telefono: string
   email: string
-  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Solo socio' // ✅ Actualizado con criterios unificados
+  // DEPRECATED: actividad field is legacy
+  actividad?: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Solo socio'
+  // NEW: Multiple activities via many-to-many
+  actividades?: ApiActividad[]
   esJugador: boolean
-  estado: 'Activo' | 'Inactivo' | 'Suspendido' // ✅ Estados unificados
+  estado: 'Activo' | 'Inactivo' | 'Suspendido'
   fechaIngreso: string
+  // Tutor fields (for minors)
+  tutorNombre?: string
+  tutorTelefono?: string
+  // Exemption fields
+  exentoCuota: boolean
+  mesGraciaHasta?: string
+  // Computed fields
   nombreCompleto?: string
   edad?: number
 }
@@ -25,9 +45,16 @@ export interface CreateMemberData {
   fechaNacimiento: string
   telefono: string
   email: string
-  actividad: 'Basquet' | 'Voley' | 'Karate' | 'Gimnasio' | 'Solo socio' // ✅ Actualizado
+  // Array of activity IDs (multiple selection)
+  actividades?: number[]
   esJugador?: boolean
-  estado?: 'Activo' | 'Inactivo' | 'Suspendido' // ✅ Estados unificados
+  estado?: 'Activo' | 'Inactivo' | 'Suspendido'
+  // Tutor fields
+  tutorNombre?: string
+  tutorTelefono?: string
+  // Exemption fields
+  exentoCuota?: boolean
+  mesGraciaHasta?: string
 }
 
 class ApiError extends Error {
@@ -94,6 +121,32 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  actividades: {
+    getAll: async (): Promise<ApiActividad[]> => {
+      try {
+        const response = await fetchApi('/api/actividades')
+        if (response && response.success && Array.isArray(response.data)) {
+          return response.data
+        }
+        console.warn('Unexpected API response format:', response)
+        return []
+      } catch (error) {
+        console.warn('Backend not available for activities, returning empty array:', error)
+        return []
+      }
+    },
+
+    getById: async (id: number): Promise<ApiActividad | null> => {
+      try {
+        const response = await fetchApi(`/api/actividades/${id}`)
+        return response.success ? response.data : null
+      } catch (error) {
+        console.error('Error fetching activity:', error)
+        return null
+      }
+    },
+  },
+
   socios: {
     getAll: async (): Promise<ApiMember[]> => {
       try {
