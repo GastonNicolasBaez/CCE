@@ -23,6 +23,12 @@ router.get('/',
 // GET /api/socios/estadisticas - Get general statistics
 router.get('/estadisticas', sociosController.obtenerEstadisticas);
 
+// POST /api/socios/send-payment-email - Send payment email
+// IMPORTANT: This must be BEFORE /:id routes to avoid matching 'send-payment-email' as an id
+router.post('/send-payment-email',
+  sociosController.enviarEmailPago
+);
+
 // GET /api/socios/:id - Get single socio by ID
 router.get('/:id',
   validate(schemas.params.id, 'params'),
@@ -46,12 +52,6 @@ router.put('/:id',
 router.delete('/:id',
   validate(schemas.params.id, 'params'),
   sociosController.eliminarSocio
-);
-
-// POST /api/socios/send-payment-email - Send payment email
-// This route is used during registration process, may need special handling
-router.post('/send-payment-email',
-  sociosController.enviarEmailPago
 );
 
 module.exports = router;

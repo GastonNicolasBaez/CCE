@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../../lib/store'
-import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard } from 'lucide-react'
+import { auth } from '../../lib/auth'
+import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Header() {
@@ -17,6 +18,7 @@ export default function Header() {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
   const [globalSearchResults, setGlobalSearchResults] = useState<any[]>([])
+  const [loggingOut, setLoggingOut] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
@@ -69,6 +71,18 @@ export default function Header() {
       return <LayoutDashboard size={16} className="text-blue-500" />
     } else {
       return <Users size={16} className="text-green-500" />
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true)
+      setMobileMenuOpen(false)
+      await auth.logout()
+      // auth.logout() redirige automáticamente a /login
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      setLoggingOut(false)
     }
   }
 
@@ -198,11 +212,16 @@ export default function Header() {
                     <p className="text-sm font-medium text-gray-700">Administrador</p>
                     <p className="text-xs text-gray-500">admin@clubespora.com</p>
                   </div>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-white/50 transition-colors">
+                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors">
                     Configuración
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-white/50 transition-colors">
-                    Cerrar Sesión
+                  <button
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <LogOut size={16} />
+                    {loggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
                   </button>
                 </motion.div>
               )}
