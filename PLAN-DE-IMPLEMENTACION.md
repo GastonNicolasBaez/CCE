@@ -50,7 +50,7 @@
 
 ---
 
-## 🟠 FASE 2: MODELO DE DATOS - ACTIVIDADES DINÁMICAS Y SOCIOS (3-4 días)
+## 🟠 FASE 2: MODELO DE DATOS - ACTIVIDADES DINÁMICAS Y SOCIOS (3-4 días) ✅ COMPLETADA
 
 ### 2.1 Sistema de Actividades Dinámicas
 
@@ -60,7 +60,7 @@
 Las actividades ya NO serán un ENUM fijo, sino **tablas dinámicas** que cada club puede gestionar.
 Esto permite que cada club cree sus propias actividades con precios personalizados.
 
-- [ ] **Crear tabla `actividades`** (1 hora)
+- [x] **Crear tabla `actividades`** (1 hora) ✅
   - Migración: `BackendCCE/migrations/20260109000001-create-actividades-table.js`
   - Campos:
     - `id` SERIAL PRIMARY KEY
@@ -76,7 +76,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     - INDEX (tenant_id, activa) - Para filtrar activas
   - **IMPORTANTE:** Al cambiar el monto de una actividad, solo afecta a cuotas futuras
 
-- [ ] **Crear tabla pivot `socio_actividades`** (30 min)
+- [x] **Crear tabla pivot `socio_actividades`** (30 min)
   - Migración: `BackendCCE/migrations/20260109000002-create-socio-actividades-table.js`
   - Relación muchos-a-muchos entre socios y actividades
   - Campos:
@@ -90,14 +90,14 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     - INDEX (socio_id) - Para buscar actividades de un socio
     - INDEX (actividad_id) - Para buscar socios de una actividad
 
-- [ ] **Deprecar columna ENUM `actividad` de tabla socios** (1 hora)
+- [x] **Deprecar columna ENUM `actividad` de tabla socios** (1 hora)
   - Migración: `BackendCCE/migrations/20260109000003-deprecate-actividad-enum.js`
   - Renombrar columna: `actividad` → `actividad_legacy` (mantener datos históricos)
   - Migrar datos existentes a la nueva tabla pivot (si hay datos)
   - Agregar comentario: "DEPRECATED - Use socio_actividades table"
   - **NO eliminar** la columna aún (para rollback)
 
-- [ ] **Modelo Actividad** (1 hora)
+- [x] **Modelo Actividad** (1 hora)
   - Archivo: `BackendCCE/src/models/Actividad.js`
   - Campos: id, tenantId, nombre, monto, activa, orden, descripcion
   - Relaciones:
@@ -111,7 +111,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     - monto: required, > 0
     - tenantId: required
 
-- [ ] **Actualizar Modelo Socio** (30 min)
+- [x] **Actualizar Modelo Socio** (30 min)
   - Archivo: `BackendCCE/src/models/Socio.js`
   - Agregar relación: `belongsToMany(Actividad, through: 'socio_actividades')`
   - Agregar método: `getActividades()` - Retorna array de actividades del socio
@@ -121,7 +121,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Agregar campos para menores de edad** (1 hora)
+- [x] **Agregar campos para menores de edad** (1 hora)
   - Migración: `BackendCCE/migrations/20260109000004-add-tutor-fields-to-socios.js`
   - Campos:
     - `tutor_nombre` VARCHAR(200) nullable
@@ -130,7 +130,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
   - Validación: Obligatorios si `getEdad() < 18`
   - Frontend: Mostrar campos condicionalmente
 
-- [ ] **Agregar campos para exención de cuota y mes de gracia** (1 hora)
+- [x] **Agregar campos para exención de cuota y mes de gracia** (1 hora)
   - Migración: `BackendCCE/migrations/20260109000005-add-exencion-fields-to-socios.js`
   - Campos:
     - `exento_cuota` BOOLEAN DEFAULT false (jugador exento permanente)
@@ -143,7 +143,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Controller de Actividades** (2 horas)
+- [x] **Controller de Actividades** (2 horas)
   - Archivo: `BackendCCE/src/controllers/actividadesController.js`
   - Funciones:
     - `obtenerActividades()` - GET /api/actividades (filtrar por tenant, solo activas por defecto)
@@ -156,7 +156,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     - No permitir eliminar si hay socios activos con esa actividad (warning)
     - Monto debe ser > 0
 
-- [ ] **Rutas de Actividades** (30 min)
+- [x] **Rutas de Actividades** (30 min)
   - Archivo: `BackendCCE/src/routes/actividades.js`
   - Middleware: `resolveTenant` + `authenticate` en todas las rutas
   - Rutas:
@@ -168,7 +168,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     DELETE /api/actividades/:id       - Desactivar (soft delete)
     ```
 
-- [ ] **Validación con JOI** (30 min)
+- [x] **Validación con JOI** (30 min)
   - Archivo: `BackendCCE/src/middleware/validation.js`
   - Agregar schemas:
     - `schemas.actividad` - Para crear/actualizar
@@ -178,7 +178,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Crear tabla `tenant_configuracion`** (2 horas)
+- [x] **Crear tabla `tenant_configuracion`** (2 horas)
   - Migración: `BackendCCE/migrations/20260109000006-create-tenant-configuracion.js`
   - Campos:
     - `id` SERIAL PRIMARY KEY
@@ -195,7 +195,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     - `created_at`, `updated_at` TIMESTAMP
   - **NOTA:** Los montos YA NO están aquí, están en la tabla `actividades`
 
-- [ ] **Modelo TenantConfiguracion** (1 hora)
+- [x] **Modelo TenantConfiguracion** (1 hora)
   - Archivo: `BackendCCE/src/models/TenantConfiguracion.js`
   - Relación: `belongsTo(Tenant)`
   - Validaciones:
@@ -205,7 +205,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
   - Métodos:
     - `calcularMontoCuota(socio)` - Calcula monto según configuración y actividades del socio
 
-- [ ] **Valores por defecto al crear tenant** (30 min)
+- [x] **Valores por defecto al crear tenant** (30 min)
   - Hook: En `authController.register`, crear configuración automáticamente
   - Defaults:
     - tipo_cuota: 'por_actividad'
@@ -218,7 +218,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Servicio de cálculo y generación** (4 horas)
+- [x] **Servicio de cálculo y generación** (4 horas)
   - Archivo: `BackendCCE/src/services/cuotaService.js`
 
   - **Función: `calcularMontoCuota(socio, configuracion)`**
@@ -255,7 +255,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
   - **Función: `generarCuotasMasivas(tenantId, periodo)`**
     - Para generación mensual automática por tenant
 
-- [ ] **Cron job de generación mensual** (2 horas)
+- [x] **Cron job de generación mensual** (2 horas)
   - Actualizar: `BackendCCE/src/services/cronService.js`
   - Schedule: 1ro de cada mes a las 00:00
   - Lógica:
@@ -268,7 +268,7 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
     3. Enviar email al admin con resumen (opcional)
   - Usar transacciones para rollback si falla
 
-- [ ] **Generar cuota al registrar socio** (1 hora)
+- [x] **Generar cuota al registrar socio** (1 hora)
   - En `sociosController.create()`
   - Después de crear socio Y asignar actividades:
     - Obtener configuración del tenant
