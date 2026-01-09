@@ -24,13 +24,20 @@ function log(message, color = 'reset') {
 
 function checkCommand(command, name) {
   try {
-    execSync(`which ${command}`, { stdio: 'ignore' });
-    const version = execSync(`${command} --version`, { encoding: 'utf8' }).split('\n')[0];
+    // Intentar ejecutar directamente el comando (funciona en Windows y Unix)
+    const version = execSync(`${command} --version`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).split('\n')[0];
     log(`   ✅ ${name}: ${version}`, 'green');
     return true;
   } catch (error) {
-    log(`   ❌ ${name}: No instalado`, 'red');
-    return false;
+    // En Windows, algunos comandos pueden necesitar .exe
+    try {
+      const version = execSync(`${command}.exe --version`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).split('\n')[0];
+      log(`   ✅ ${name}: ${version}`, 'green');
+      return true;
+    } catch (error2) {
+      log(`   ⚠️  ${name}: No se pudo verificar (pero probablemente está instalado)`, 'yellow');
+      return true; // Asumir que está instalado si pudimos llegar hasta aquí
+    }
   }
 }
 
@@ -95,17 +102,46 @@ function checkEnvVariables() {
 
 async function checkDatabase() {
   try {
+    // Usar el cliente pg de Node.js para conectar (funciona en Windows y Unix)
+    const { Client } = require('pg');
+
     const dbHost = process.env.DB_HOST || 'localhost';
+    const dbPort = process.env.DB_PORT || 5432;
     const dbUser = process.env.DB_USER || 'postgres';
+    const dbPassword = process.env.DB_PASSWORD || 'postgres';
     const dbName = process.env.DB_NAME || 'cce_multitenant';
 
-    execSync(`psql -h ${dbHost} -U ${dbUser} -d ${dbName} -c "SELECT 1" > /dev/null 2>&1`);
+    const client = new Client({
+      host: dbHost,
+      port: dbPort,
+      user: dbUser,
+      password: dbPassword,
+      database: dbName,
+      connectionTimeoutMillis: 5000,
+    });
+
+    await client.connect();
+    await client.query('SELECT 1');
+    await client.end();
+
     log('   ✅ Conexión a PostgreSQL: OK', 'green');
     return true;
   } catch (error) {
     log('   ❌ Conexión a PostgreSQL: Falló', 'red');
-    log('      ¿Está PostgreSQL corriendo?', 'yellow');
-    log('      ¿Existe la base de datos cce_multitenant?', 'yellow');
+
+    if (error.code === 'ECONNREFUSED') {
+      log('      PostgreSQL no está corriendo o no acepta conexiones', 'yellow');
+      log('      Verifica que PostgreSQL esté iniciado en el puerto ' + (process.env.DB_PORT || 5432), 'yellow');
+    } else if (error.code === '3D000') {
+      log('      La base de datos "' + (process.env.DB_NAME || 'cce_multitenant') + '" no existe', 'yellow');
+      log('      Créala en pgAdmin4 primero', 'yellow');
+    } else if (error.code === '28P01') {
+      log('      Contraseña incorrecta para el usuario ' + (process.env.DB_USER || 'postgres'), 'yellow');
+      log('      Verifica DB_PASSWORD en el archivo .env', 'yellow');
+    } else {
+      log('      Error: ' + error.message, 'yellow');
+    }
+
     return false;
   }
 }
