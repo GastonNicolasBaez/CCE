@@ -264,8 +264,8 @@ export function useRole() {
 
     // Define permissions by role
     const permissions: Record<string, string[]> = {
-      admin: ['configuracion', 'reportes', 'socios', 'cuotas', 'actividades', 'usuarios'],
-      operador: ['socios', 'cuotas', 'actividades']
+      admin: ['configuracion', 'reportes', 'socios', 'cuotas', 'actividades', 'usuarios', 'estadisticas'],
+      operador: ['socios', 'cuotas', 'actividades', 'estadisticas']
     }
 
     const userPermissions = permissions[user.rol] || []

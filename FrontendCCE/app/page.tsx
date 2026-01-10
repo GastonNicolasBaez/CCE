@@ -11,6 +11,7 @@ import PaymentsManagement from '../components/payments/PaymentsManagement'
 import RegistrationForm from '../components/registration/RegistrationForm'
 import ActividadesPage from './actividades/page'
 import ConfiguracionPage from './configuracion/page'
+import EstadisticasPage from './estadisticas/page'
 import DarkModeProvider from '../components/DarkModeProvider'
 import LandingPage from '../components/LandingPage'
 
@@ -36,6 +37,8 @@ export default function Home() {
         return <ActividadesPage />
       case 'payments':
         return <PaymentsManagement />
+      case 'estadisticas':
+        return <EstadisticasPage />
       case 'registration':
         return <RegistrationForm />
       case 'configuracion':

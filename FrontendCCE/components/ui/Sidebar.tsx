@@ -11,7 +11,8 @@ import {
   Activity,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -50,6 +51,13 @@ const navigationItems: NavigationItem[] = [
     icon: CreditCard,
     description: 'Control de cuotas',
     requiredPermission: 'cuotas'
+  },
+  {
+    id: 'estadisticas',
+    label: 'Estadísticas',
+    icon: BarChart3,
+    description: 'Análisis y métricas',
+    requiredPermission: 'estadisticas'
   },
   {
     id: 'registration',

@@ -17,6 +17,7 @@ const sociosRoutes = require('./routes/socios');
 const actividadesRoutes = require('./routes/actividades');
 const pagosRoutes = require('./routes/pagos');
 const searchRoutes = require('./routes/search');
+const estadisticasRoutes = require('./routes/estadisticas');
 const adminRoutes = require('./routes/admin');
 
 // Create Express app
@@ -181,6 +182,7 @@ app.use('/api/socios', sociosRoutes);
 app.use('/api/actividades', actividadesRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/estadisticas', estadisticasRoutes);
 
 // Admin routes (super admin only)
 app.use('/api/admin', adminRoutes);
