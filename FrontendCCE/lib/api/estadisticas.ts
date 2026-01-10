@@ -1,9 +1,9 @@
-import { apiClient } from '../apiClient'
-
 /**
  * Estadisticas API Client
  * API client for tenant statistics endpoints
  */
+
+import { auth } from '../auth'
 
 // Types
 export interface EstadisticasSocios {
@@ -95,32 +95,48 @@ export interface APIResponse<T> {
  * Get general dashboard statistics
  */
 export async function getEstadisticasDashboard(): Promise<APIResponse<DashboardData>> {
-  const response = await apiClient.get('/estadisticas/dashboard')
-  return response.data
+  try {
+    return await auth.fetch('/api/estadisticas/dashboard')
+  } catch (error) {
+    console.error('getEstadisticasDashboard error:', error)
+    throw error
+  }
 }
 
 /**
  * Get statistics by activity
  */
 export async function getEstadisticasPorActividad(): Promise<APIResponse<ActividadesData>> {
-  const response = await apiClient.get('/estadisticas/actividades')
-  return response.data
+  try {
+    return await auth.fetch('/api/estadisticas/actividades')
+  } catch (error) {
+    console.error('getEstadisticasPorActividad error:', error)
+    throw error
+  }
 }
 
 /**
  * Get growth statistics (last 6 months)
  */
 export async function getCrecimiento(): Promise<APIResponse<CrecimientoData>> {
-  const response = await apiClient.get('/estadisticas/crecimiento')
-  return response.data
+  try {
+    return await auth.fetch('/api/estadisticas/crecimiento')
+  } catch (error) {
+    console.error('getCrecimiento error:', error)
+    throw error
+  }
 }
 
 /**
  * Get detailed payment statistics
  */
 export async function getEstadisticasCuotas(): Promise<APIResponse<CuotasData>> {
-  const response = await apiClient.get('/estadisticas/cuotas')
-  return response.data
+  try {
+    return await auth.fetch('/api/estadisticas/cuotas')
+  } catch (error) {
+    console.error('getEstadisticasCuotas error:', error)
+    throw error
+  }
 }
 
 export const estadisticasAPI = {
