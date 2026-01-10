@@ -32,17 +32,17 @@ const requireRole = (allowedRoles) => {
       const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
       // Super admin tiene acceso a todo
-      if (req.user.rol === 'super_admin') {
+      if (req.user.role === 'super_admin') {
         return next();
       }
 
       // Verificar si el usuario tiene uno de los roles permitidos
-      if (!rolesArray.includes(req.user.rol)) {
+      if (!rolesArray.includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: 'No tienes permisos para acceder a este recurso.',
           requiredRoles: rolesArray,
-          userRole: req.user.rol
+          userRole: req.user.role
         });
       }
 
@@ -84,7 +84,7 @@ const requirePermission = (permission) => {
           success: false,
           message: `No tienes permisos para acceder a ${permission}.`,
           requiredPermission: permission,
-          userRole: req.user.rol
+          userRole: req.user.role
         });
       }
 
@@ -118,11 +118,11 @@ const requireSuperAdmin = (req, res, next) => {
     }
 
     // Verificar que sea super admin
-    if (req.user.rol !== 'super_admin') {
+    if (req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Solo super administradores pueden acceder a este recurso.',
-        userRole: req.user.rol
+        userRole: req.user.role
       });
     }
 
@@ -182,7 +182,7 @@ const verifySameTenant = (tenantIdField = 'tenantId') => {
       }
 
       // Super admin puede acceder a cualquier tenant
-      if (req.user.rol === 'super_admin') {
+      if (req.user.role === 'super_admin') {
         return next();
       }
 

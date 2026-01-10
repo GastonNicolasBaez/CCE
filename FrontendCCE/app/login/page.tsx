@@ -26,7 +26,7 @@ export default function LoginPage() {
 
     // Check if already authenticated (only if tenant exists)
     if (auth.isAuthenticated()) {
-      router.push('/dashboard')
+      router.push('/')
       return
     }
   }, [router])
@@ -40,8 +40,8 @@ export default function LoginPage() {
       const result = await auth.login({ email, password })
 
       if (result.success) {
-        // Get redirect URL from query params or default to dashboard
-        const redirect = searchParams.get('redirect') || '/dashboard'
+        // Get redirect URL from query params or default to home
+        const redirect = searchParams.get('redirect') || '/'
         router.push(redirect)
       } else {
         setError(result.message || 'Error al iniciar sesión. Verifica tus credenciales.')
