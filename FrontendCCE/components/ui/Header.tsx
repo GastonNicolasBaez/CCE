@@ -1,33 +1,60 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '../../lib/store'
 import { auth } from '../../lib/auth'
-import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard, LogOut } from 'lucide-react'
+import { api, SearchResultSocio, SearchResultCuota } from '../../lib/api'
+import { Menu, Bell, User, Search, X, Moon, Sun, Users, LayoutDashboard, LogOut, CreditCard, FileText } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+type SearchResultItem = SearchResultSocio | SearchResultCuota
+
 export default function Header() {
-  const { 
-    sidebarCollapsed, 
+  const {
+    sidebarCollapsed,
     setSidebarCollapsed,
-    darkMode, 
+    darkMode,
     toggleDarkMode,
     setCurrentPage
   } = useAppStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
-  const [globalSearchResults, setGlobalSearchResults] = useState<any[]>([])
+  const [globalSearchResults, setGlobalSearchResults] = useState<SearchResultItem[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
-  
-  const performGlobalSearch = (query: string) => {
-    // TODO: Implement actual search functionality
-    console.log('Searching for:', query)
-    setGlobalSearchResults([])
-  }
+
+  const performGlobalSearch = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setGlobalSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const result = await api.search.global(query)
+
+      if (result.success && result.data) {
+        // Combine socios and cuotas into a single array
+        const combined: SearchResultItem[] = [
+          ...result.data.socios,
+          ...result.data.cuotas
+        ]
+        setGlobalSearchResults(combined)
+      } else {
+        setGlobalSearchResults([])
+      }
+    } catch (error) {
+      console.error('Error searching:', error)
+      setGlobalSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
   
   const clearSearch = () => {
     setGlobalSearchQuery('')
@@ -47,31 +74,61 @@ export default function Header() {
 
   const handleSearchChange = (value: string) => {
     setGlobalSearchQuery(value)
-    if (value.trim()) {
-      performGlobalSearch(value.trim())
-      setShowSearchResults(true)
-    } else {
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (value.trim().length >= 2) {
+      // Debounce search by 500ms
+      searchTimeoutRef.current = setTimeout(() => {
+        performGlobalSearch(value.trim())
+        setShowSearchResults(true)
+      }, 500)
+    } else if (value.trim().length === 0) {
       clearSearch()
+      setShowSearchResults(false)
+    } else {
+      setGlobalSearchResults([])
       setShowSearchResults(false)
     }
   }
 
-  const handleResultClick = (result: { type: string; id: string }) => {
-    if (result.type === 'section') {
-      setCurrentPage(result.id)
-    } else if (result.type === 'member') {
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleResultClick = (result: SearchResultItem) => {
+    if (result.type === 'socio') {
+      // Navigate to members page
       setCurrentPage('members')
+    } else if (result.type === 'cuota') {
+      // Navigate to payments page
+      setCurrentPage('payments')
     }
     setShowSearchResults(false)
     clearSearch()
   }
 
-  const getResultIcon = (result: { type: string }) => {
-    if (result.type === 'section') {
-      return <LayoutDashboard size={16} className="text-blue-500" />
+  const getResultIcon = (result: SearchResultItem) => {
+    if (result.type === 'socio') {
+      return <Users size={16} className="text-blue-500" />
     } else {
-      return <Users size={16} className="text-green-500" />
+      return <CreditCard size={16} className="text-green-500" />
     }
+  }
+
+  const formatPeriodo = (periodo: string): string => {
+    const [year, month] = periodo.split('-')
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    const monthIndex = parseInt(month, 10) - 1
+    return `${monthNames[monthIndex]} ${year}`
   }
 
   const handleLogout = async () => {
@@ -137,7 +194,7 @@ export default function Header() {
                   <div className="p-2">
                     {globalSearchResults.map((result, index) => (
                       <motion.button
-                        key={index}
+                        key={`${result.type}-${result.id}-${index}`}
                         onClick={() => handleResultClick(result)}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -147,14 +204,17 @@ export default function Header() {
                         {getResultIcon(result)}
                         <div className="flex-1">
                           <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
-                            {result.type === 'section' ? result.name : result.name}
+                            {result.type === 'socio' ? result.nombre : `Recibo #${result.numeroRecibo}`}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {result.type === 'section' ? result.description : result.email}
+                            {result.type === 'socio'
+                              ? `DNI: ${result.dni} • ${result.email}`
+                              : `${result.socio?.nombre || 'Sin socio'} • ${formatPeriodo(result.periodo)}`
+                            }
                           </div>
                         </div>
                         <div className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                          {result.type === 'section' ? 'Sección' : 'Socio'}
+                          {result.type === 'socio' ? 'Socio' : 'Cuota'}
                         </div>
                       </motion.button>
                     ))}
@@ -268,7 +328,7 @@ export default function Header() {
                 <div className="p-2">
                   {globalSearchResults.map((result, index) => (
                     <motion.button
-                      key={index}
+                      key={`mobile-${result.type}-${result.id}-${index}`}
                       onClick={() => handleResultClick(result)}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -278,14 +338,17 @@ export default function Header() {
                       {getResultIcon(result)}
                       <div className="flex-1">
                         <div className="font-medium text-gray-800 text-sm">
-                          {result.type === 'section' ? result.name : result.name}
+                          {result.type === 'socio' ? result.nombre : `Recibo #${result.numeroRecibo}`}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {result.type === 'section' ? result.description : result.email}
+                          {result.type === 'socio'
+                            ? `DNI: ${result.dni}`
+                            : `${result.socio?.nombre || 'Sin socio'} • ${formatPeriodo(result.periodo)}`
+                          }
                         </div>
                       </div>
                       <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
-                        {result.type === 'section' ? 'Sección' : 'Socio'}
+                        {result.type === 'socio' ? 'Socio' : 'Cuota'}
                       </div>
                     </motion.button>
                   ))}

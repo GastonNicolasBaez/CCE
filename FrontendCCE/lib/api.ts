@@ -91,6 +91,40 @@ export interface CreateMemberData {
   mesGraciaHasta?: string
 }
 
+export interface SearchResultSocio {
+  type: 'socio'
+  id: number
+  nombre: string
+  dni: string
+  email: string
+  telefono: string
+  estado: string
+}
+
+export interface SearchResultCuota {
+  type: 'cuota'
+  id: number
+  numeroRecibo: string
+  periodo: string
+  monto: number
+  estado: string
+  fechaVencimiento: string
+  socio: {
+    id: number
+    nombre: string
+  } | null
+}
+
+export interface SearchResult {
+  success: boolean
+  data: {
+    query: string
+    socios: SearchResultSocio[]
+    cuotas: SearchResultCuota[]
+    totalResults: number
+  }
+}
+
 class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message)
@@ -315,6 +349,48 @@ export const api = {
       return await api.cuotas.getAll({ estado: 'Pagada' })
     },
   },
+
+  // Search API
+  search: {
+    global: async (query: string): Promise<SearchResult> => {
+      try {
+        const response = await fetchApi(`/api/search?q=${encodeURIComponent(query)}`)
+
+        if (response && response.success && response.data) {
+          return {
+            success: true,
+            data: {
+              query: response.data.query,
+              socios: response.data.results.socios || [],
+              cuotas: response.data.results.cuotas || [],
+              totalResults: response.data.totalResults || 0
+            }
+          }
+        }
+
+        return {
+          success: false,
+          data: {
+            query: query,
+            socios: [],
+            cuotas: [],
+            totalResults: 0
+          }
+        }
+      } catch (error) {
+        console.error('Search error:', error)
+        return {
+          success: false,
+          data: {
+            query: query,
+            socios: [],
+            cuotas: [],
+            totalResults: 0
+          }
+        }
+      }
+    }
+  }
 }
 
 // ✅ MAPEO CORREGIDO: Backend → Frontend

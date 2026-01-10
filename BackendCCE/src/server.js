@@ -16,6 +16,7 @@ const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');
 const actividadesRoutes = require('./routes/actividades');
 const pagosRoutes = require('./routes/pagos');
+const searchRoutes = require('./routes/search');
 
 // Create Express app
 const app = express();
@@ -178,6 +179,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/socios', sociosRoutes);
 app.use('/api/actividades', actividadesRoutes);
 app.use('/api/pagos', pagosRoutes);
+app.use('/api/search', searchRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
