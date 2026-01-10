@@ -14,19 +14,18 @@ export default function LoginPage() {
   const [tenantSlug, setTenantSlug] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get tenant slug from subdomain first
+    // Get tenant slug from subdomain (can be null for super admin)
     const slug = getTenantSlugFromSubdomain()
     setTenantSlug(slug)
 
-    // If no tenant, redirect to main page (highest priority)
-    if (!slug) {
-      router.push('/')
-      return
-    }
-
-    // Check if already authenticated (only if tenant exists)
+    // Check if already authenticated
     if (auth.isAuthenticated()) {
-      router.push('/')
+      // Redirect based on role
+      if (auth.isSuperAdmin()) {
+        router.push('/admin')
+      } else {
+        router.push('/')
+      }
       return
     }
   }, [router])
@@ -40,9 +39,14 @@ export default function LoginPage() {
       const result = await auth.login({ email, password })
 
       if (result.success) {
-        // Get redirect URL from query params or default to home
-        const redirect = searchParams.get('redirect') || '/'
-        router.push(redirect)
+        // Redirect based on user role
+        const user = auth.getUser()
+        if (user?.rol === 'super_admin') {
+          router.push('/admin')
+        } else {
+          const redirect = searchParams.get('redirect') || '/'
+          router.push(redirect)
+        }
       } else {
         setError(result.message || 'Error al iniciar sesión. Verifica tus credenciales.')
       }
@@ -52,17 +56,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!tenantSlug) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#002C6F] to-[#001840]">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Cargando...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -76,8 +69,10 @@ export default function LoginPage() {
               Iniciar Sesión
             </h1>
             <p className="text-white/70 text-sm">
-              {tenantSlug && (
+              {tenantSlug ? (
                 <span className="capitalize">{tenantSlug}</span>
+              ) : (
+                <span>Panel Administrativo</span>
               )}
             </p>
           </div>

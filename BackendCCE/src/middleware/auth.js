@@ -58,16 +58,19 @@ const authenticate = async (req, res, next) => {
 
     // 4. CRITICAL: Verify token's tenantId matches the resolved tenant
     // This prevents users from accessing other tenants' data
-    if (req.tenant && user.tenantId !== req.tenant.id) {
-      logger.security(
-        `Tenant mismatch! Token tenant: ${user.tenantId}, Subdomain tenant: ${req.tenant.id}`
-      );
-      throw new ForbiddenError('No tienes permiso para acceder a este tenant.');
-    }
+    // EXCEPTION: Super admin (tenantId = null) can access any tenant
+    if (user.rol !== 'super_admin') {
+      if (req.tenant && user.tenantId !== req.tenant.id) {
+        logger.security(
+          `Tenant mismatch! Token tenant: ${user.tenantId}, Subdomain tenant: ${req.tenant.id}`
+        );
+        throw new ForbiddenError('No tienes permiso para acceder a este tenant.');
+      }
 
-    // 5. Also verify token's tenantId matches user's current tenantId
-    if (decoded.tenantId !== user.tenantId) {
-      throw new UnauthorizedError('Token inválido para este tenant.');
+      // 5. Also verify token's tenantId matches user's current tenantId
+      if (decoded.tenantId !== user.tenantId) {
+        throw new UnauthorizedError('Token inválido para este tenant.');
+      }
     }
 
     // 6. Attach user info to request

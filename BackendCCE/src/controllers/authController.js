@@ -152,27 +152,42 @@ const authController = {
    */
   login: asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const tenant = req.tenant; // Set by tenant resolution middleware
+    const tenant = req.tenant; // Set by tenant resolution middleware (can be undefined for super admin)
 
+    let user;
+
+    // Check if this is a super admin login (no tenant)
     if (!tenant) {
-      throw new UnauthorizedError('Tenant no encontrado. Verifica el subdominio.');
-    }
+      // Try to find super admin user
+      user = await Usuario.findOne({
+        where: {
+          email: email.toLowerCase(),
+          rol: 'super_admin',
+          tenantId: null
+        }
+      });
 
-    // 1. Find user by email within this tenant
-    const user = await Usuario.findByEmailAndTenant(email, tenant.id);
+      if (!user) {
+        throw new UnauthorizedError('Credenciales inválidas o acceso denegado.');
+      }
+    } else {
+      // Regular tenant user login
+      // 1. Find user by email within this tenant
+      user = await Usuario.findByEmailAndTenant(email, tenant.id);
 
-    if (!user) {
-      throw new UnauthorizedError('Credenciales inválidas');
+      if (!user) {
+        throw new UnauthorizedError('Credenciales inválidas');
+      }
+
+      // 3. Check if tenant is active
+      if (!tenant.isActive() && !tenant.isOnTrial()) {
+        throw new UnauthorizedError('El club está suspendido. Contacta al administrador.');
+      }
     }
 
     // 2. Check if user is active
     if (!user.isActive()) {
       throw new UnauthorizedError('Usuario inactivo. Contacta al administrador.');
-    }
-
-    // 3. Check if tenant is active
-    if (!tenant.isActive() && !tenant.isOnTrial()) {
-      throw new UnauthorizedError('El club está suspendido. Contacta al administrador.');
     }
 
     // 4. Verify password
@@ -189,7 +204,7 @@ const authController = {
     const token = jwt.sign(
       {
         userId: user.id,
-        tenantId: tenant.id,
+        tenantId: tenant ? tenant.id : null, // null for super admin
         email: user.email,
         role: user.rol
       },
@@ -197,23 +212,29 @@ const authController = {
       { expiresIn: config.jwt.expiresIn }
     );
 
-    logger.success(`User logged in: ${user.email} (tenant: ${tenant.slug})`);
+    logger.success(`User logged in: ${user.email}${tenant ? ` (tenant: ${tenant.slug})` : ' (super admin)'}`);
 
     // 7. Return success response
+    const responseData = {
+      user: user.toSafeJSON(),
+      token
+    };
+
+    // Add tenant info only if tenant exists
+    if (tenant) {
+      responseData.tenant = {
+        id: tenant.id,
+        slug: tenant.slug,
+        name: tenant.name,
+        status: tenant.status,
+        plan: tenant.plan
+      };
+    }
+
     res.json({
       success: true,
       message: 'Login exitoso',
-      data: {
-        user: user.toSafeJSON(),
-        tenant: {
-          id: tenant.id,
-          slug: tenant.slug,
-          name: tenant.name,
-          status: tenant.status,
-          plan: tenant.plan
-        },
-        token
-      }
+      data: responseData
     });
   }),
 

@@ -17,6 +17,7 @@ const sociosRoutes = require('./routes/socios');
 const actividadesRoutes = require('./routes/actividades');
 const pagosRoutes = require('./routes/pagos');
 const searchRoutes = require('./routes/search');
+const adminRoutes = require('./routes/admin');
 
 // Create Express app
 const app = express();
@@ -180,6 +181,9 @@ app.use('/api/socios', sociosRoutes);
 app.use('/api/actividades', actividadesRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/search', searchRoutes);
+
+// Admin routes (super admin only)
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

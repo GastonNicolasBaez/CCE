@@ -352,17 +352,24 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 
 /**
  * Login user within tenant context
+ * Also supports super admin login without tenant
  */
 export async function login(data: LoginData): Promise<AuthResponse> {
   try {
     const tenantSlug = getTenantSlugFromSubdomain()
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    // Only add tenant slug header if it exists (not required for super admin)
+    if (tenantSlug) {
+      headers['X-Tenant-Slug'] = tenantSlug
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(tenantSlug ? { 'X-Tenant-Slug': tenantSlug } : {}),
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
@@ -372,7 +379,11 @@ export async function login(data: LoginData): Promise<AuthResponse> {
       // Save auth data
       saveToken(result.data.token)
       saveUser(result.data.user)
-      saveTenant(result.data.tenant)
+
+      // Tenant is optional (null for super admin)
+      if (result.data.tenant) {
+        saveTenant(result.data.tenant)
+      }
     }
 
     return result
