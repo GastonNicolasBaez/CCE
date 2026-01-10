@@ -8,6 +8,7 @@ import {
   CreditCard,
   UserPlus,
   Activity,
+  Settings,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
@@ -43,6 +44,12 @@ const navigationItems = [
     label: 'Inscripción',
     icon: UserPlus,
     description: 'Nuevos registros'
+  },
+  {
+    id: 'configuracion',
+    label: 'Configuración',
+    icon: Settings,
+    description: 'Ajustes del club'
   }
 ]
 

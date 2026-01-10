@@ -12,6 +12,40 @@ export interface ApiActividad {
   descripcion?: string
 }
 
+export interface ApiCuota {
+  id: number
+  tenantId: number
+  socioId: number
+  periodo: string // Format: "YYYY-MM"
+  monto: number
+  fechaVencimiento: string
+  estado: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+  metodoPago?: 'Efectivo' | 'Transferencia' | 'MercadoPago' | 'Tarjeta'
+  fechaPago?: string
+  numeroRecibo?: string
+  observaciones?: string
+  createdAt: string
+  updatedAt: string
+  // Relations
+  socio?: ApiMember
+}
+
+export interface CreateCuotaData {
+  socioId: number
+  periodo: string
+  monto: number
+  fechaVencimiento: string
+  estado?: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+}
+
+export interface UpdateCuotaData {
+  estado?: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+  metodoPago?: 'Efectivo' | 'Transferencia' | 'MercadoPago' | 'Tarjeta'
+  fechaPago?: string
+  numeroRecibo?: string
+  observaciones?: string
+}
+
 export interface ApiMember {
   id: number
   nombre: string
@@ -202,14 +236,84 @@ export const api = {
   },
 
   pagos: {
-    getOverdue: (): Promise<ApiMember[]> => 
+    getOverdue: (): Promise<ApiMember[]> =>
       fetchApi('/api/pagos/vencidos'),
-    
-    processPayment: (socioId: number, monto: number): Promise<{ success: boolean; message?: string }> => 
+
+    processPayment: (socioId: number, monto: number): Promise<{ success: boolean; message?: string }> =>
       fetchApi('/api/pagos/procesar', {
         method: 'POST',
         body: JSON.stringify({ socioId, monto }),
       }),
+  },
+
+  cuotas: {
+    getAll: async (filters?: {
+      estado?: 'Pendiente' | 'Pagada' | 'Vencida' | 'Cancelada'
+      socioId?: number
+      periodo?: string
+    }): Promise<ApiCuota[]> => {
+      const params = new URLSearchParams()
+      if (filters?.estado) params.append('estado', filters.estado)
+      if (filters?.socioId) params.append('socioId', filters.socioId.toString())
+      if (filters?.periodo) params.append('periodo', filters.periodo)
+
+      const queryString = params.toString()
+      const url = queryString ? `/api/cuotas?${queryString}` : '/api/cuotas'
+
+      try {
+        const response = await fetchApi(url)
+        if (response && response.success && Array.isArray(response.data)) {
+          return response.data
+        }
+        console.warn('Unexpected API response format:', response)
+        return []
+      } catch (error) {
+        console.warn('Backend not available for cuotas, returning empty array:', error)
+        return []
+      }
+    },
+
+    getById: async (id: number): Promise<ApiCuota | null> => {
+      try {
+        const response = await fetchApi(`/api/cuotas/${id}`)
+        return response.success ? response.data : null
+      } catch (error) {
+        console.error('Error fetching cuota:', error)
+        return null
+      }
+    },
+
+    create: async (data: CreateCuotaData): Promise<{ success: boolean; data?: ApiCuota; message?: string }> => {
+      return await fetchApi('/api/cuotas', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    update: async (id: number, data: UpdateCuotaData): Promise<{ success: boolean; data?: ApiCuota; message?: string }> => {
+      return await fetchApi(`/api/cuotas/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    delete: async (id: number): Promise<{ success: boolean; message?: string }> => {
+      return await fetchApi(`/api/cuotas/${id}`, {
+        method: 'DELETE',
+      })
+    },
+
+    getPendientes: async (): Promise<ApiCuota[]> => {
+      return await api.cuotas.getAll({ estado: 'Pendiente' })
+    },
+
+    getVencidas: async (): Promise<ApiCuota[]> => {
+      return await api.cuotas.getAll({ estado: 'Vencida' })
+    },
+
+    getPagadas: async (): Promise<ApiCuota[]> => {
+      return await api.cuotas.getAll({ estado: 'Pagada' })
+    },
   },
 }
 
