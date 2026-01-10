@@ -130,15 +130,105 @@ module.exports = {
       ];
 
       await queryInterface.bulkInsert('usuarios', usuarios, { transaction });
-      console.log('✅ Created 3 demo users (2 admins, 1 regular user)');
+      console.log('✅ Created 3 demo users (2 admins, 1 operador)');
 
       // ==========================================
-      // 3. CREATE SAMPLE SOCIOS FOR EACH TENANT
+      // 3. CREATE ACTIVIDADES FOR EACH TENANT
+      // ==========================================
+
+      const actividades = [
+        // Tenant 1 (Espora) - Activities
+        {
+          id: 1,
+          tenant_id: 1,
+          nombre: 'Básquet',
+          descripcion: 'Entrenamiento y partidos de básquetbol',
+          precio_mensual: 5000.00,
+          activa: true,
+          orden: 1,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          id: 2,
+          tenant_id: 1,
+          nombre: 'Vóley',
+          descripcion: 'Entrenamiento y partidos de vóleibol',
+          precio_mensual: 4500.00,
+          activa: true,
+          orden: 2,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          id: 3,
+          tenant_id: 1,
+          nombre: 'Karate',
+          descripcion: 'Clases de karate para todas las edades',
+          precio_mensual: 6000.00,
+          activa: true,
+          orden: 3,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          id: 4,
+          tenant_id: 1,
+          nombre: 'Gimnasio',
+          descripcion: 'Acceso a gimnasio equipado',
+          precio_mensual: 3500.00,
+          activa: true,
+          orden: 4,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          id: 5,
+          tenant_id: 1,
+          nombre: 'Solo Socio',
+          descripcion: 'Membresía sin actividad deportiva',
+          precio_mensual: 2000.00,
+          activa: true,
+          orden: 5,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Tenant 2 (Demo) - Activities
+        {
+          id: 6,
+          tenant_id: 2,
+          nombre: 'Básquet',
+          descripcion: 'Entrenamiento de básquetbol',
+          precio_mensual: 4000.00,
+          activa: true,
+          orden: 1,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          id: 7,
+          tenant_id: 2,
+          nombre: 'Gimnasio',
+          descripcion: 'Gimnasio con máquinas',
+          precio_mensual: 3000.00,
+          activa: true,
+          orden: 2,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ];
+
+      await queryInterface.bulkInsert('actividades', actividades, { transaction });
+      console.log('✅ Created 7 demo activities (5 for espora, 2 for demo)');
+
+      // ==========================================
+      // 4. CREATE SAMPLE SOCIOS FOR EACH TENANT
       // ==========================================
 
       const socios = [
         // Tenant 1 (Espora) - 3 socios
         {
+          id: 1,
           tenant_id: 1,
           nombre: 'Juan',
           apellido: 'Pérez',
@@ -147,13 +237,13 @@ module.exports = {
           telefono: '+54 9 11 1111-1111',
           fecha_nacimiento: '1990-05-15',
           fecha_ingreso: '2024-01-01',
-          actividad: 'Basquet',
           es_jugador: true,
           estado: 'Activo',
           created_at: new Date(),
           updated_at: new Date()
         },
         {
+          id: 2,
           tenant_id: 1,
           nombre: 'María',
           apellido: 'González',
@@ -162,13 +252,13 @@ module.exports = {
           telefono: '+54 9 11 2222-2222',
           fecha_nacimiento: '1985-08-20',
           fecha_ingreso: '2024-02-01',
-          actividad: 'Voley',
           es_jugador: true,
           estado: 'Activo',
           created_at: new Date(),
           updated_at: new Date()
         },
         {
+          id: 3,
           tenant_id: 1,
           nombre: 'Carlos',
           apellido: 'Rodríguez',
@@ -177,7 +267,6 @@ module.exports = {
           telefono: '+54 9 11 3333-3333',
           fecha_nacimiento: '1995-03-10',
           fecha_ingreso: '2024-03-01',
-          actividad: 'Solo socio',
           es_jugador: false,
           estado: 'Activo',
           created_at: new Date(),
@@ -185,6 +274,7 @@ module.exports = {
         },
         // Tenant 2 (Demo) - 2 socios
         {
+          id: 4,
           tenant_id: 2,
           nombre: 'Ana',
           apellido: 'Martínez',
@@ -193,13 +283,13 @@ module.exports = {
           telefono: '+54 9 11 4444-4444',
           fecha_nacimiento: '1992-11-25',
           fecha_ingreso: '2024-01-15',
-          actividad: 'Karate',
           es_jugador: true,
           estado: 'Activo',
           created_at: new Date(),
           updated_at: new Date()
         },
         {
+          id: 5,
           tenant_id: 2,
           nombre: 'Pedro',
           apellido: 'López',
@@ -208,7 +298,6 @@ module.exports = {
           telefono: '+54 9 11 5555-5555',
           fecha_nacimiento: '1988-07-30',
           fecha_ingreso: '2024-02-15',
-          actividad: 'Gimnasio',
           es_jugador: false,
           estado: 'Activo',
           created_at: new Date(),
@@ -219,6 +308,98 @@ module.exports = {
       await queryInterface.bulkInsert('socios', socios, { transaction });
       console.log('✅ Created 5 demo socios (3 for espora, 2 for demo)');
 
+      // ==========================================
+      // 5. CREATE SOCIO-ACTIVIDADES RELATIONSHIPS
+      // ==========================================
+
+      const socioActividades = [
+        // Juan Pérez (socio_id: 1) -> Básquet (actividad_id: 1)
+        {
+          socio_id: 1,
+          actividad_id: 1,
+          fecha_inicio: '2024-01-01',
+          fecha_fin: null,
+          activa: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // María González (socio_id: 2) -> Vóley (actividad_id: 2)
+        {
+          socio_id: 2,
+          actividad_id: 2,
+          fecha_inicio: '2024-02-01',
+          fecha_fin: null,
+          activa: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Carlos Rodríguez (socio_id: 3) -> Solo Socio (actividad_id: 5)
+        {
+          socio_id: 3,
+          actividad_id: 5,
+          fecha_inicio: '2024-03-01',
+          fecha_fin: null,
+          activa: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Ana Martínez (socio_id: 4) -> Básquet (actividad_id: 6, tenant 2)
+        {
+          socio_id: 4,
+          actividad_id: 6,
+          fecha_inicio: '2024-01-15',
+          fecha_fin: null,
+          activa: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Pedro López (socio_id: 5) -> Gimnasio (actividad_id: 7, tenant 2)
+        {
+          socio_id: 5,
+          actividad_id: 7,
+          fecha_inicio: '2024-02-15',
+          fecha_fin: null,
+          activa: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ];
+
+      await queryInterface.bulkInsert('socio_actividades', socioActividades, { transaction });
+      console.log('✅ Created 5 socio-actividad relationships');
+
+      // ==========================================
+      // 6. CREATE TENANT CONFIGURATIONS
+      // ==========================================
+
+      const tenantConfig = [
+        {
+          tenant_id: 1,
+          tipo_cuota: 'por_actividad',
+          multiple_actividades_strategy: 'sumar',
+          dia_vencimiento: 10,
+          recordatorio_dias_antes: 2,
+          generar_automaticamente: true,
+          enviar_recordatorios: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        {
+          tenant_id: 2,
+          tipo_cuota: 'por_actividad',
+          multiple_actividades_strategy: 'sumar',
+          dia_vencimiento: 5,
+          recordatorio_dias_antes: 3,
+          generar_automaticamente: true,
+          enviar_recordatorios: false,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ];
+
+      await queryInterface.bulkInsert('tenant_configuracion', tenantConfig, { transaction });
+      console.log('✅ Created tenant configurations');
+
       await transaction.commit();
       console.log('\n========================================');
       console.log('✅ SEED COMPLETED SUCCESSFULLY');
@@ -227,13 +408,15 @@ module.exports = {
       console.log('1. Club Comandante Espora');
       console.log('   URL: http://espora.localhost:3000');
       console.log('   Admin: admin@espora.com / password123');
-      console.log('   User: user@espora.com / password123');
-      console.log('   Socios: 3');
+      console.log('   Operador: user@espora.com / password123');
+      console.log('   Socios: 3 (Juan - Básquet, María - Vóley, Carlos - Solo Socio)');
+      console.log('   Actividades: 5');
       console.log('   Plan: Pro (500 members)');
       console.log('\n2. Club Demo');
       console.log('   URL: http://demo.localhost:3000');
       console.log('   Admin: admin@demo.com / password123');
-      console.log('   Socios: 2');
+      console.log('   Socios: 2 (Ana - Básquet, Pedro - Gimnasio)');
+      console.log('   Actividades: 2');
       console.log('   Plan: Free (50 members, trial)');
       console.log('\n========================================\n');
     } catch (error) {
@@ -248,6 +431,9 @@ module.exports = {
 
     try {
       // Delete in reverse order due to foreign keys
+      await queryInterface.bulkDelete('tenant_configuracion', { tenant_id: [1, 2] }, { transaction });
+      await queryInterface.bulkDelete('socio_actividades', null, { transaction });
+      await queryInterface.bulkDelete('actividades', { tenant_id: [1, 2] }, { transaction });
       await queryInterface.bulkDelete('cuotas', { tenant_id: [1, 2] }, { transaction });
       await queryInterface.bulkDelete('socios', { tenant_id: [1, 2] }, { transaction });
       await queryInterface.bulkDelete('usuarios', { tenant_id: [1, 2] }, { transaction });
