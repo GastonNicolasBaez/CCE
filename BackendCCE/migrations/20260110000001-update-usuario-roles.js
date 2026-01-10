@@ -21,37 +21,83 @@ module.exports = {
     try {
       console.log('🚀 Starting roles migration...\n');
 
-      // Step 1: Change rol column to VARCHAR temporarily
-      console.log('📝 Step 1: Converting rol ENUM to VARCHAR...');
-      await queryInterface.changeColumn('usuarios', 'rol', {
+      // Step 1: Add a temporary column for the new role
+      console.log('📝 Step 1: Adding temporary rol_new column...');
+      await queryInterface.addColumn('usuarios', 'rol_new', {
         type: Sequelize.STRING(20),
-        allowNull: false,
-        defaultValue: 'operador'
+        allowNull: true
       }, { transaction });
-      console.log('✅ Converted rol to VARCHAR\n');
+      console.log('✅ Added rol_new column\n');
 
-      // Step 2: Update existing values
-      // Keep 'admin' as 'admin', change 'user' to 'operador'
-      console.log('📝 Step 2: Updating existing role values...');
+      // Step 2: Copy and transform existing values
+      // Map: 'admin' -> 'admin', 'user' -> 'operador'
+      console.log('📝 Step 2: Copying and transforming role values...');
       await queryInterface.sequelize.query(
-        `UPDATE usuarios SET rol = 'operador' WHERE rol = 'user'`,
+        `UPDATE usuarios SET rol_new =
+          CASE
+            WHEN rol::text = 'admin' THEN 'admin'
+            WHEN rol::text = 'user' THEN 'operador'
+            ELSE 'operador'
+          END`,
         { transaction }
       );
-      console.log('✅ Updated role values (user → operador)\n');
+      console.log('✅ Transformed role values (user → operador)\n');
 
-      // Step 3: Change rol back to ENUM with new values
-      console.log('📝 Step 3: Converting rol back to ENUM with new values...');
-      await queryInterface.changeColumn('usuarios', 'rol', {
-        type: Sequelize.ENUM('super_admin', 'admin', 'operador'),
-        allowNull: false,
-        defaultValue: 'operador',
-        comment: 'User role: super_admin (global), admin (club admin), operador (staff)'
-      }, { transaction });
-      console.log('✅ Converted rol to new ENUM\n');
+      // Step 3: Drop the old rol column
+      console.log('📝 Step 3: Dropping old rol column...');
+      await queryInterface.removeColumn('usuarios', 'rol', { transaction });
+      console.log('✅ Dropped old rol column\n');
 
-      // Step 4: Remove NOT NULL constraint from tenant_id
+      // Step 4: Drop the old ENUM type if it exists
+      console.log('📝 Step 4: Dropping old ENUM type...');
+      try {
+        await queryInterface.sequelize.query(
+          `DROP TYPE IF EXISTS "enum_usuarios_rol" CASCADE`,
+          { transaction }
+        );
+        console.log('✅ Dropped old ENUM type\n');
+      } catch (error) {
+        console.log('ℹ️  Old ENUM type does not exist (ok)\n');
+      }
+
+      // Step 5: Rename rol_new to rol
+      console.log('📝 Step 5: Renaming rol_new to rol...');
+      await queryInterface.renameColumn('usuarios', 'rol_new', 'rol', { transaction });
+      console.log('✅ Renamed column\n');
+
+      // Step 6: Create new ENUM type
+      console.log('📝 Step 6: Creating new ENUM type...');
+      await queryInterface.sequelize.query(
+        `CREATE TYPE "enum_usuarios_rol" AS ENUM ('super_admin', 'admin', 'operador')`,
+        { transaction }
+      );
+      console.log('✅ Created new ENUM type\n');
+
+      // Step 7: Convert rol column to new ENUM type
+      console.log('📝 Step 7: Converting rol to new ENUM type...');
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios"
+         ALTER COLUMN "rol" TYPE "enum_usuarios_rol"
+         USING rol::text::"enum_usuarios_rol"`,
+        { transaction }
+      );
+      console.log('✅ Converted to ENUM type\n');
+
+      // Step 8: Set NOT NULL and default value
+      console.log('📝 Step 8: Setting NOT NULL and default value...');
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios" ALTER COLUMN "rol" SET NOT NULL`,
+        { transaction }
+      );
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios" ALTER COLUMN "rol" SET DEFAULT 'operador'::enum_usuarios_rol`,
+        { transaction }
+      );
+      console.log('✅ Set constraints\n');
+
+      // Step 9: Remove NOT NULL constraint from tenant_id
       // (to allow super_admin users with tenant_id = NULL)
-      console.log('📝 Step 4: Allowing NULL for tenant_id (super_admin users)...');
+      console.log('📝 Step 9: Allowing NULL for tenant_id (super_admin users)...');
       await queryInterface.changeColumn('usuarios', 'tenant_id', {
         type: Sequelize.INTEGER,
         allowNull: true, // Changed from false to true
@@ -65,8 +111,8 @@ module.exports = {
       }, { transaction });
       console.log('✅ Updated tenant_id to allow NULL\n');
 
-      // Step 5: Add index for role
-      console.log('📝 Step 5: Adding index for rol field...');
+      // Step 10: Add index for role
+      console.log('📝 Step 10: Adding index for rol field...');
       try {
         await queryInterface.addIndex('usuarios', ['rol'], {
           name: 'usuarios_rol_idx',
@@ -123,32 +169,75 @@ module.exports = {
       }, { transaction });
       console.log('✅ Restored tenant_id NOT NULL\n');
 
-      // Change rol to VARCHAR temporarily
-      console.log('📝 Converting rol to VARCHAR...');
-      await queryInterface.changeColumn('usuarios', 'rol', {
+      // Add temporary column
+      console.log('📝 Adding temporary column...');
+      await queryInterface.addColumn('usuarios', 'rol_old', {
         type: Sequelize.STRING(20),
-        allowNull: false,
-        defaultValue: 'user'
+        allowNull: true
       }, { transaction });
-      console.log('✅ Converted rol to VARCHAR\n');
+      console.log('✅ Added rol_old column\n');
 
-      // Update values back
+      // Copy and transform values back
       console.log('📝 Reverting role values...');
       await queryInterface.sequelize.query(
-        `UPDATE usuarios SET rol = 'user' WHERE rol IN ('operador', 'super_admin')`,
+        `UPDATE usuarios SET rol_old =
+          CASE
+            WHEN rol::text = 'admin' THEN 'admin'
+            WHEN rol::text = 'operador' THEN 'user'
+            WHEN rol::text = 'super_admin' THEN 'user'
+            ELSE 'user'
+          END`,
         { transaction }
       );
       console.log('✅ Reverted role values (operador/super_admin → user)\n');
 
-      // Change rol back to old ENUM
-      console.log('📝 Converting rol back to old ENUM...');
-      await queryInterface.changeColumn('usuarios', 'rol', {
-        type: Sequelize.ENUM('admin', 'user'),
-        allowNull: false,
-        defaultValue: 'user',
-        comment: 'User role: admin (full access) or user (limited access)'
-      }, { transaction });
-      console.log('✅ Converted rol to old ENUM\n');
+      // Drop new column
+      console.log('📝 Dropping new rol column...');
+      await queryInterface.removeColumn('usuarios', 'rol', { transaction });
+      console.log('✅ Dropped rol column\n');
+
+      // Drop new ENUM type
+      console.log('📝 Dropping new ENUM type...');
+      await queryInterface.sequelize.query(
+        `DROP TYPE IF EXISTS "enum_usuarios_rol" CASCADE`,
+        { transaction }
+      );
+      console.log('✅ Dropped new ENUM type\n');
+
+      // Rename temp column back
+      console.log('📝 Renaming rol_old to rol...');
+      await queryInterface.renameColumn('usuarios', 'rol_old', 'rol', { transaction });
+      console.log('✅ Renamed column\n');
+
+      // Create old ENUM type
+      console.log('📝 Creating old ENUM type...');
+      await queryInterface.sequelize.query(
+        `CREATE TYPE "enum_usuarios_rol" AS ENUM ('admin', 'user')`,
+        { transaction }
+      );
+      console.log('✅ Created old ENUM type\n');
+
+      // Convert to old ENUM
+      console.log('📝 Converting to old ENUM...');
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios"
+         ALTER COLUMN "rol" TYPE "enum_usuarios_rol"
+         USING rol::text::"enum_usuarios_rol"`,
+        { transaction }
+      );
+      console.log('✅ Converted to old ENUM type\n');
+
+      // Set constraints
+      console.log('📝 Setting constraints...');
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios" ALTER COLUMN "rol" SET NOT NULL`,
+        { transaction }
+      );
+      await queryInterface.sequelize.query(
+        `ALTER TABLE "usuarios" ALTER COLUMN "rol" SET DEFAULT 'user'::enum_usuarios_rol`,
+        { transaction }
+      );
+      console.log('✅ Set constraints\n');
 
       console.log('✅ Rollback completed successfully!\n');
 
