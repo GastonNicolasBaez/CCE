@@ -24,6 +24,11 @@ const navItems: NavItem[] = [
     label: 'Tenants',
     href: '/admin/tenants',
     icon: '🏢'
+  },
+  {
+    label: 'Estadísticas Globales',
+    href: '/admin/stats',
+    icon: '📈'
   }
 ]
 
