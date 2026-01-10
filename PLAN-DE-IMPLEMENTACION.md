@@ -504,35 +504,51 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 ---
 
-## 🟣 FASE 6: ROLES Y PERMISOS (2 días)
+## 🟣 FASE 6: ROLES Y PERMISOS (2 días) ✅ COMPLETADA
 
 ### 6.1 Sistema de Roles
 
 **Prioridad:** 🟡 MEDIA
 
-- [ ] **Actualizar modelo Usuario** (1 hora)
-  - Cambiar campo `rol` de ENUM('admin', 'user')
-  - A: ENUM('super_admin', 'admin', 'operador')
-  - Migración: `20260110000001-update-usuario-roles.js`
-  - super_admin: tenant_id = NULL (global)
-  - admin: tenant_id = X (admin del club)
-  - operador: tenant_id = X (staff del club)
+- [x] **Actualizar modelo Usuario** (1 hora) ✅
+  - ✅ Cambiar campo `rol` de ENUM('admin', 'user')
+  - ✅ A: ENUM('super_admin', 'admin', 'operador')
+  - ✅ Migración: `20260110000001-update-usuario-roles.js`
+  - ✅ super_admin: tenant_id = NULL (global)
+  - ✅ admin: tenant_id = X (admin del club)
+  - ✅ operador: tenant_id = X (staff del club)
+  - ✅ Agregados métodos: `isSuperAdmin()`, `isAdmin()`, `isOperador()`, `hasRole()`, `hasPermission()`
 
-- [ ] **Middleware de permisos** (2 horas)
-  - Backend: `BackendCCE/src/middleware/permissions.js`
-  - Función: `requireRole(['admin', 'operador'])` (array de roles permitidos)
-  - Aplicar a rutas:
-    - `/api/configuracion/*` → solo 'admin'
-    - `/api/reportes/*` → solo 'admin'
-    - `/api/socios/*` → 'admin' y 'operador'
-    - `/api/cuotas/*` → 'admin' y 'operador'
+- [x] **Middleware de permisos** (2 horas) ✅
+  - ✅ Backend: `BackendCCE/src/middleware/permissions.js`
+  - ✅ Middlewares creados:
+    - `requireRole(['admin', 'operador'])` - Array de roles permitidos
+    - `requirePermission(permission)` - Verificación por permiso específico
+    - `requireSuperAdmin` - Solo super_admin
+    - `requireAdmin` - Solo admin (incluye super_admin)
+    - `requireStaff` - Admin y operador
+    - `verifySameTenant` - Verificar tenant del recurso
+  - ✅ Aplicado a rutas:
+    - `/api/socios/*` → requireStaff (admin y operador)
+    - `/api/actividades/*` GET → requireStaff, POST/PUT/DELETE → requireAdmin
+    - `/api/pagos/*` (protegidas) → requireStaff (admin y operador)
+    - Configuración (futura) → requireAdmin
+    - Reportes (futuro) → requireAdmin
 
-- [ ] **UI condicional por rol** (1 hora)
-  - Frontend: Hook `useRole()` que lee rol del usuario
-  - Ocultar elementos según rol:
-    - "Configuración" sidebar → solo admin
-    - "Reportes" sidebar → solo admin
-    - Botones de desactivar socio → admin y operador
+- [x] **UI condicional por rol** (1 hora) ✅
+  - ✅ Frontend: Hook `useRole()` implementado en `lib/hooks.ts`
+  - ✅ Funcionalidades del hook:
+    - `isSuperAdmin()`, `isAdmin()`, `isOperador()`
+    - `hasRole(roles)` - Verificar roles específicos
+    - `hasPermission(permission)` - Verificar permisos
+    - `getRoleDisplayName()` - Nombre del rol en español
+  - ✅ Sidebar con navegación condicional:
+    - Items filtrados según permisos del usuario
+    - "Configuración" → solo admin
+    - "Reportes" → solo admin (cuando se implemente)
+    - Dashboard, Socios, Actividades, Pagos → admin y operador
+  - ✅ Display del rol del usuario en footer del Sidebar
+  - ✅ Actualizado tipo `User` en `lib/auth.ts` con nuevos roles
 
 ### 6.2 Panel de SuperAdmin
 
