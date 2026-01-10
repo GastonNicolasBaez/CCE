@@ -155,7 +155,7 @@ const tenantsController = {
     const recentMembers = await Socio.count({
       where: {
         tenantId: tenant.id,
-        createdAt: { [Op.gte]: thirtyDaysAgo }
+        created_at: { [Op.gte]: thirtyDaysAgo }
       }
     });
 
@@ -429,7 +429,7 @@ const tenantsController = {
 
     const users = await Usuario.findAll({
       where: { tenantId: tenant.id },
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       attributes: { exclude: ['password'] }
     });
 
@@ -491,7 +491,11 @@ const tenantsController = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const recentTenants = await Tenant.count({
-      where: { createdAt: { [Op.gte]: thirtyDaysAgo } }
+      where: sequelize.where(
+        sequelize.fn('DATE', sequelize.col('created_at')),
+        Op.gte,
+        thirtyDaysAgo.toISOString().split('T')[0]
+      )
     });
 
     // Tenants with expiring trials (next 7 days)
@@ -501,7 +505,7 @@ const tenantsController = {
     const expiringTrials = await Tenant.count({
       where: {
         status: 'trial',
-        trialEndsAt: {
+        trial_ends_at: {
           [Op.between]: [new Date(), sevenDaysFromNow]
         }
       }
@@ -535,7 +539,7 @@ const tenantsController = {
         [sequelize.fn('COUNT', sequelize.col('id')), 'count']
       ],
       where: {
-        createdAt: { [Op.gte]: sixMonthsAgo }
+        created_at: { [Op.gte]: sixMonthsAgo }
       },
       group: [sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM')],
       order: [[sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM'), 'ASC']],

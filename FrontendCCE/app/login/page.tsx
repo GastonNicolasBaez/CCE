@@ -156,7 +156,7 @@ export default function LoginPage() {
           <p className="text-white/70 text-sm">
             ¿No tienes un club registrado?{' '}
             <a
-              href={`${window.location.protocol}//${window.location.hostname.split('.').slice(-2).join('.')}/register`}
+              href="/register"
               className="text-[#FFA500] hover:text-[#FF8C00] font-medium"
             >
               Registrar nuevo club
