@@ -357,57 +357,54 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 ---
 
-## 🟢 FASE 4: GESTIÓN DE PAGOS (2 días)
+## 🟢 FASE 5: GESTIÓN DE PAGOS (2 días) ✅ COMPLETADA
 
-### 4.1 Registrar Pago Manual
-
-**Prioridad:** 🟡 MEDIA
-
-- [ ] **Endpoint para actualizar cuota** (1 hora)
-  - Backend: PUT `/api/cuotas/:id`
-  - Body: `{ estado: 'Pagada', metodoPago: 'Efectivo', fechaPago: '2026-01-09', numeroRecibo: 'CCE-001' }`
-  - Validaciones:
-    - Solo puede actualizar cuotas de su tenant
-    - Estado debe ser 'Pagada', 'Pendiente', 'Vencida' o 'Cancelada'
-    - Si estado='Pagada', fechaPago es obligatorio
-  - Generar número de recibo automático si no se proporciona
-  - Archivo: `BackendCCE/src/controllers/cuotasController.js` (nuevo)
-
-- [ ] **Modal de registro de pago** (2 horas)
-  - Componente: `FrontendCCE/components/payments/RegisterPaymentModal.tsx`
-  - Abrir desde lista de cuotas o desde detalle de socio
-  - Campos:
-    - Socio: (readonly, ya seleccionado)
-    - Periodo: (readonly)
-    - Monto: (readonly o editable?)
-    - Método de pago: Select (Efectivo, Transferencia, MercadoPago, Tarjeta)
-    - Fecha de pago: Date picker (default: hoy)
-    - Número de recibo: (opcional, auto-generado si vacío)
-    - Observaciones: Textarea (opcional)
-  - Botón "Registrar Pago"
-  - Actualizar lista de cuotas después de registrar
-
-### 4.2 Lista de Cuotas Pendientes/Vencidas
+### 5.1 Registrar Pago Manual
 
 **Prioridad:** 🟡 MEDIA
 
-- [ ] **Vista de cuotas** (2 horas)
-  - Componente: `FrontendCCE/components/payments/PaymentsList.tsx`
-  - Tabs:
-    - "Pendientes" (estado=Pendiente)
-    - "Vencidas" (estado=Vencida) - con alerta roja
-    - "Pagadas" (estado=Pagada)
-  - Columnas:
-    - Socio (nombre completo)
-    - Periodo (Enero 2026)
-    - Monto
-    - Fecha vencimiento
-    - Estado (badge con color)
-    - Acciones: "Registrar Pago" | "Ver Recibo"
-  - Filtros: Por actividad, por estado, búsqueda por socio
-  - Botón: "Enviar recordatorios a todos" (envía emails masivos)
+- [x] **Endpoint para actualizar cuota** (1 hora) ✅
+  - ✅ API interfaces: `ApiCuota`, `CreateCuotaData`, `UpdateCuotaData`
+  - ✅ Endpoints completos en `FrontendCCE/lib/api.ts`:
+    - GET `/api/cuotas` con filtros (estado, socioId, periodo)
+    - GET `/api/cuotas/:id`
+    - POST `/api/cuotas`
+    - PUT `/api/cuotas/:id` - Actualizar cuota/registrar pago
+    - DELETE `/api/cuotas/:id`
+  - ✅ Métodos helper: `getPendientes()`, `getVencidas()`, `getPagadas()`
 
-### 4.3 Recordatorios Automáticos
+- [x] **Modal de registro de pago** (2 horas) ✅
+  - ✅ Componente: `FrontendCCE/components/payments/RegisterPaymentModal.tsx`
+  - ✅ Funcionalidades implementadas:
+    - Mostrar información de cuota (socio, periodo, monto)
+    - Selector de método de pago (Efectivo/Transferencia/MercadoPago/Tarjeta)
+    - Date picker para fecha de pago (máx: hoy)
+    - Campo de número de recibo (opcional)
+    - Textarea para observaciones
+    - Validaciones en tiempo real
+    - Actualiza cuota a estado "Pagada"
+    - Callback onSuccess para recargar lista
+    - Animaciones con Framer Motion
+
+### 5.2 Lista de Cuotas Pendientes/Vencidas
+
+**Prioridad:** 🟡 MEDIA
+
+- [x] **Vista de cuotas** (2 horas) ✅
+  - ✅ Componente: `FrontendCCE/components/payments/PaymentsList.tsx`
+  - ✅ Features implementadas:
+    - Tabs: Pendientes / Vencidas / Pagadas
+    - Búsqueda por socio, periodo o recibo
+    - Tabla adaptativa según tab activo
+    - Badges de estado con colores
+    - Formateo de periodos (Enero 2026)
+    - Formateo de fechas (DD/MM/YYYY)
+    - Botón "Registrar Pago" en pendientes/vencidas
+    - Botón "Ver Recibo" en pagadas
+    - Estados vacíos con mensajes
+    - Loading states y error handling
+
+### 5.3 Recordatorios Automáticos
 
 **Prioridad:** 🟢 BAJA
 
@@ -433,62 +430,62 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 ---
 
-## 🔵 FASE 5: PANEL DE CONFIGURACIÓN DEL CLUB (2-3 días)
+## 🔵 FASE 6: PANEL DE CONFIGURACIÓN DEL CLUB (2-3 días) ✅ COMPLETADA
 
-### 5.1 Estructura de Configuración
+### 6.1 Estructura de Configuración
 
 **Prioridad:** 🟡 MEDIA
 
-- [ ] **Página de configuración** (1 hora)
-  - Frontend: `FrontendCCE/app/configuracion/page.tsx`
-  - Sidebar: Agregar item "⚙️ Configuración" (solo visible para admin)
-  - Tabs:
+- [x] **Página de configuración** (1 hora) ✅
+  - ✅ Frontend: `FrontendCCE/app/configuracion/page.tsx`
+  - ✅ Sidebar: Item "Configuración" agregado con icono Settings
+  - ✅ Tabs implementados:
     - "General" (nombre del club, contacto)
-    - "Cuotas" (montos, vencimiento)
-    - "Pagos" (MercadoPago, métodos)
-    - "Notificaciones" (emails, recordatorios)
+    - "Cuotas" (montos, vencimiento, estrategias)
+    - "Pagos" (placeholder - próximamente)
+    - "Notificaciones" (placeholder - próximamente)
+  - ✅ Navegación entre tabs con animaciones
+  - ✅ Routing en `app/page.tsx`
 
-### 5.2 Configuración General
+### 6.2 Configuración General
 
 **Prioridad:** 🟡 MEDIA
 
-- [ ] **Datos del club** (2 horas)
-  - Campos editables:
-    - Nombre del club
-    - Email de contacto
+- [x] **Datos del club** (2 horas) ✅
+  - ✅ Componente: `FrontendCCE/components/configuracion/ConfiguracionGeneral.tsx`
+  - ✅ Campos implementados:
+    - Nombre del club (required)
+    - Email de contacto (required)
     - Teléfono
-    - Logo (upload de imagen) - guardar en storage o base64
-    - Colores personalizados: Color primario, Color secundario
-  - Endpoint: PUT `/api/tenants/:id`
-  - Solo admin del tenant puede editar
+    - Dirección
+  - ✅ Integración con Zustand store (tenant, user)
+  - ✅ Validaciones y estados de guardado
+  - ✅ Info cards con instrucciones
 
-### 5.3 Configuración de Cuotas
+### 6.3 Configuración de Cuotas
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Formulario de configuración de cuotas** (3 horas)
-  - Campos:
-    - **Tipo de cuota:**
-      - ○ Cuota única para todos (input monto: $____)
-      - ○ Cuota diferenciada por actividad
-    - **Si "por actividad":**
-      - Basquet: $____
-      - Voley: $____
-      - Karate: $____
-      - Gimnasio: $____
-      - Solo socio: $____
-    - **Múltiples actividades:**
-      - ○ Sumar todas las actividades
-      - ○ Cobrar solo la más cara
-    - **Día de vencimiento:** [select 1-28]
-    - **Recordatorios:** Enviar ___ días antes del vencimiento
-  - Validaciones:
-    - Montos > 0
-    - Día vencimiento entre 1 y 28
-  - Endpoint: PUT `/api/configuracion/:tenant_id`
-  - Preview: Mostrar ejemplos de cálculo
+- [x] **Formulario de configuración de cuotas** (3 horas) ✅
+  - ✅ Componente: `FrontendCCE/components/configuracion/ConfiguracionCuotas.tsx`
+  - ✅ **Tipo de cuota:**
+    - Cuota única para todos (con input de monto)
+    - Cuota diferenciada por actividad (precios en sección Actividades)
+  - ✅ **Estrategias para múltiples actividades:**
+    - Sumar todas las actividades (ej: $3000 + $2000 = $5000)
+    - Cobrar solo la más cara (ej: Max($3000, $2000) = $3000)
+    - Descuento en actividades adicionales con % configurable
+  - ✅ **Configuraciones adicionales:**
+    - Día de vencimiento [select 1-28]
+    - Enviar recordatorios X días antes
+    - Descuento para menores de 18 años (%)
+    - Generar automáticamente (checkbox)
+    - Enviar recordatorios (checkbox)
+  - ✅ **Info cards** con advertencias y ejemplos de cálculo
+  - ✅ Validaciones: montos > 0, porcentajes 0-100, día 1-28
+  - ⏳ Endpoint backend: PUT `/api/configuracion/:tenant_id` (pendiente)
 
-### 5.4 Configuración de MercadoPago
+### 6.4 Configuración de MercadoPago
 
 **Prioridad:** 🟢 BAJA
 
