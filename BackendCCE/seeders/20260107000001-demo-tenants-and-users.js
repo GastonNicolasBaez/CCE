@@ -143,7 +143,7 @@ module.exports = {
           tenant_id: 1,
           nombre: 'Básquet',
           descripcion: 'Entrenamiento y partidos de básquetbol',
-          precio_mensual: 5000.00,
+          monto: 5000.00,
           activa: true,
           orden: 1,
           created_at: new Date(),
@@ -154,7 +154,7 @@ module.exports = {
           tenant_id: 1,
           nombre: 'Vóley',
           descripcion: 'Entrenamiento y partidos de vóleibol',
-          precio_mensual: 4500.00,
+          monto: 4500.00,
           activa: true,
           orden: 2,
           created_at: new Date(),
@@ -165,7 +165,7 @@ module.exports = {
           tenant_id: 1,
           nombre: 'Karate',
           descripcion: 'Clases de karate para todas las edades',
-          precio_mensual: 6000.00,
+          monto: 6000.00,
           activa: true,
           orden: 3,
           created_at: new Date(),
@@ -176,7 +176,7 @@ module.exports = {
           tenant_id: 1,
           nombre: 'Gimnasio',
           descripcion: 'Acceso a gimnasio equipado',
-          precio_mensual: 3500.00,
+          monto: 3500.00,
           activa: true,
           orden: 4,
           created_at: new Date(),
@@ -187,7 +187,7 @@ module.exports = {
           tenant_id: 1,
           nombre: 'Solo Socio',
           descripcion: 'Membresía sin actividad deportiva',
-          precio_mensual: 2000.00,
+          monto: 2000.00,
           activa: true,
           orden: 5,
           created_at: new Date(),
@@ -199,7 +199,7 @@ module.exports = {
           tenant_id: 2,
           nombre: 'Básquet',
           descripcion: 'Entrenamiento de básquetbol',
-          precio_mensual: 4000.00,
+          monto: 4000.00,
           activa: true,
           orden: 1,
           created_at: new Date(),
@@ -210,7 +210,7 @@ module.exports = {
           tenant_id: 2,
           nombre: 'Gimnasio',
           descripcion: 'Gimnasio con máquinas',
-          precio_mensual: 3000.00,
+          monto: 3000.00,
           activa: true,
           orden: 2,
           created_at: new Date(),
@@ -318,50 +318,35 @@ module.exports = {
           socio_id: 1,
           actividad_id: 1,
           fecha_inicio: '2024-01-01',
-          fecha_fin: null,
-          activa: true,
-          created_at: new Date(),
-          updated_at: new Date()
+          created_at: new Date()
         },
         // María González (socio_id: 2) -> Vóley (actividad_id: 2)
         {
           socio_id: 2,
           actividad_id: 2,
           fecha_inicio: '2024-02-01',
-          fecha_fin: null,
-          activa: true,
-          created_at: new Date(),
-          updated_at: new Date()
+          created_at: new Date()
         },
         // Carlos Rodríguez (socio_id: 3) -> Solo Socio (actividad_id: 5)
         {
           socio_id: 3,
           actividad_id: 5,
           fecha_inicio: '2024-03-01',
-          fecha_fin: null,
-          activa: true,
-          created_at: new Date(),
-          updated_at: new Date()
+          created_at: new Date()
         },
         // Ana Martínez (socio_id: 4) -> Básquet (actividad_id: 6, tenant 2)
         {
           socio_id: 4,
           actividad_id: 6,
           fecha_inicio: '2024-01-15',
-          fecha_fin: null,
-          activa: true,
-          created_at: new Date(),
-          updated_at: new Date()
+          created_at: new Date()
         },
         // Pedro López (socio_id: 5) -> Gimnasio (actividad_id: 7, tenant 2)
         {
           socio_id: 5,
           actividad_id: 7,
           fecha_inicio: '2024-02-15',
-          fecha_fin: null,
-          activa: true,
-          created_at: new Date(),
-          updated_at: new Date()
+          created_at: new Date()
         }
       ];
 
@@ -376,9 +361,12 @@ module.exports = {
         {
           tenant_id: 1,
           tipo_cuota: 'por_actividad',
+          monto_base: 0,
           multiple_actividades_strategy: 'sumar',
+          descuento_actividades: 0,
           dia_vencimiento: 10,
           recordatorio_dias_antes: 2,
+          descuento_menores: 0,
           generar_automaticamente: true,
           enviar_recordatorios: true,
           created_at: new Date(),
@@ -387,9 +375,12 @@ module.exports = {
         {
           tenant_id: 2,
           tipo_cuota: 'por_actividad',
+          monto_base: 0,
           multiple_actividades_strategy: 'sumar',
+          descuento_actividades: 0,
           dia_vencimiento: 5,
           recordatorio_dias_antes: 3,
+          descuento_menores: 0,
           generar_automaticamente: true,
           enviar_recordatorios: false,
           created_at: new Date(),
