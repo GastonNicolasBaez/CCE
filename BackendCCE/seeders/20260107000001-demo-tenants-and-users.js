@@ -120,7 +120,7 @@ module.exports = {
           apellido: 'Test',
           email: 'user@espora.com',
           password: hashedPassword,
-          rol: 'user',
+          rol: 'operador',
           status: 'active',
           activo: true,
           last_login_at: null,
