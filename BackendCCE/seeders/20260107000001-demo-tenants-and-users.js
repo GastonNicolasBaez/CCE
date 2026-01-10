@@ -278,7 +278,7 @@ module.exports = {
           tenant_id: 2,
           nombre: 'Ana',
           apellido: 'Martínez',
-          dni: '12345678', // Same DNI as tenant 1, but different tenant (OK!)
+          dni: '56789012',
           email: 'ana.martinez@email.com',
           telefono: '+54 9 11 4444-4444',
           fecha_nacimiento: '1992-11-25',
