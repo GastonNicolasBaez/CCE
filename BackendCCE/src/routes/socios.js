@@ -4,15 +4,19 @@ const sociosController = require('../controllers/sociosController');
 const { validate, schemas } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
 const { resolveTenant } = require('../middleware/tenantResolver');
+const { requireStaff } = require('../middleware/permissions');
 
 /**
- * ALL socios routes require authentication and tenant resolution
- * Middleware chain: resolveTenant → authenticate → validate → controller
+ * ALL socios routes require authentication, tenant resolution, and staff permissions
+ * Middleware chain: resolveTenant → authenticate → requireStaff → validate → controller
+ *
+ * Permissions: Admin and Operador can access socios routes
  */
 
-// Apply tenant resolution and authentication to ALL routes
+// Apply tenant resolution, authentication, and permissions to ALL routes
 router.use(resolveTenant);
 router.use(authenticate);
+router.use(requireStaff); // Only admin and operador can access
 
 // GET /api/socios - Get all socios with filtering and pagination
 router.get('/',

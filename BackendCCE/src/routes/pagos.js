@@ -5,13 +5,16 @@ const { validate, schemas } = require('../middleware/validation');
 const { paymentLimiter, webhookLimiter } = require('../middleware/rateLimiter');
 const { authenticate } = require('../middleware/auth');
 const { resolveTenant } = require('../middleware/tenantResolver');
+const { requireStaff } = require('../middleware/permissions');
 
 /**
  * Payment routes with multi-tenant support
  *
  * IMPORTANT: Webhook routes (/webhook, /notifications) do NOT have authentication
  * because they come from external services (MercadoPago). All other routes require
- * tenant resolution and authentication.
+ * tenant resolution, authentication, and staff permissions.
+ *
+ * Permissions: Admin and Operador can access payment routes (requireStaff)
  */
 
 // PUBLIC ROUTES (no auth required)
@@ -30,12 +33,13 @@ router.post('/notifications',
   pagosController.confirmarPago
 );
 
-// PROTECTED ROUTES (require auth and tenant)
-// ===========================================
+// PROTECTED ROUTES (require auth, tenant, and staff permissions)
+// ================================================================
 
-// Apply tenant resolution and authentication to remaining routes
+// Apply tenant resolution, authentication, and permissions to remaining routes
 router.use(resolveTenant);
 router.use(authenticate);
+router.use(requireStaff); // Only admin and operador can access
 
 // GET /api/pagos - Get payment status for all socios
 router.get('/',

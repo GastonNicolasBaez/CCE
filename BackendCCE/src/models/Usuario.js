@@ -17,7 +17,7 @@ const Usuario = sequelize.define('Usuario', {
   // MULTI-TENANT: Relación con tenant
   tenantId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true, // NULL for super_admin users
     field: 'tenant_id',
     references: {
       model: 'tenants',
@@ -25,7 +25,7 @@ const Usuario = sequelize.define('Usuario', {
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
-    comment: 'Tenant this user belongs to'
+    comment: 'Tenant this user belongs to (NULL for super_admin)'
   },
 
   nombre: {
@@ -67,10 +67,10 @@ const Usuario = sequelize.define('Usuario', {
   },
 
   rol: {
-    type: DataTypes.ENUM('admin', 'user'),
+    type: DataTypes.ENUM('super_admin', 'admin', 'operador'),
     allowNull: false,
-    defaultValue: 'user',
-    comment: 'User role: admin (full access) or user (limited access)'
+    defaultValue: 'operador',
+    comment: 'User role: super_admin (global), admin (club admin), operador (staff)'
   },
 
   status: {
@@ -159,10 +159,53 @@ Usuario.prototype.isActive = function() {
 };
 
 /**
- * Check if user is admin
+ * Check if user is super admin (global administrator)
+ */
+Usuario.prototype.isSuperAdmin = function() {
+  return this.rol === 'super_admin';
+};
+
+/**
+ * Check if user is admin (club administrator)
  */
 Usuario.prototype.isAdmin = function() {
-  return this.rol === 'admin';
+  return this.rol === 'admin' || this.rol === 'super_admin';
+};
+
+/**
+ * Check if user is operador (staff member)
+ */
+Usuario.prototype.isOperador = function() {
+  return this.rol === 'operador';
+};
+
+/**
+ * Check if user has specific role(s)
+ * @param {string|string[]} roles - Single role or array of roles to check
+ * @returns {boolean}
+ */
+Usuario.prototype.hasRole = function(roles) {
+  const roleArray = Array.isArray(roles) ? roles : [roles];
+  return roleArray.includes(this.rol);
+};
+
+/**
+ * Check if user has permission to access a resource
+ * @param {string} permission - Permission to check (e.g., 'configuracion', 'reportes')
+ * @returns {boolean}
+ */
+Usuario.prototype.hasPermission = function(permission) {
+  // Super admin has all permissions
+  if (this.isSuperAdmin()) return true;
+
+  // Define permissions by role
+  const permissions = {
+    admin: ['configuracion', 'reportes', 'socios', 'cuotas', 'actividades', 'usuarios'],
+    operador: ['socios', 'cuotas', 'actividades']
+  };
+
+  const userPermissions = permissions[this.rol] || [];
+  return userPermissions.includes(permission);
 };
 
 /**

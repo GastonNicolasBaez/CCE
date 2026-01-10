@@ -14,6 +14,7 @@ const logger = require('./utils/logger');
 // Import routes
 const authRoutes = require('./routes/auth');
 const sociosRoutes = require('./routes/socios');
+const actividadesRoutes = require('./routes/actividades');
 const pagosRoutes = require('./routes/pagos');
 
 // Create Express app
@@ -173,8 +174,9 @@ app.get('/health', async (req, res) => {
 // Authentication routes (multi-tenant)
 app.use('/api/auth', authRoutes);
 
-// Resource routes (will need tenant scoping in future updates)
+// Resource routes (with multi-tenant support and role-based permissions)
 app.use('/api/socios', sociosRoutes);
+app.use('/api/actividades', actividadesRoutes);
 app.use('/api/pagos', pagosRoutes);
 
 // 404 handler

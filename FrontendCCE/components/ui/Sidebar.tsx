@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useAppStore } from '../../lib/store'
+import { useRole } from '../../lib/hooks'
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +15,15 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const navigationItems = [
+interface NavigationItem {
+  id: string
+  label: string
+  icon: React.ElementType
+  description: string
+  requiredPermission?: string // Permission required to see this item
+}
+
+const navigationItems: NavigationItem[] = [
   {
     id: 'dashboard',
     label: 'Panel de Control',
@@ -25,42 +34,60 @@ const navigationItems = [
     id: 'members',
     label: 'Socios y Jugadores',
     icon: Users,
-    description: 'Gestión de miembros'
+    description: 'Gestión de miembros',
+    requiredPermission: 'socios'
   },
   {
     id: 'activities',
     label: 'Actividades',
     icon: Activity,
-    description: 'Deportes y precios'
+    description: 'Deportes y precios',
+    requiredPermission: 'actividades'
   },
   {
     id: 'payments',
     label: 'Estado de Pagos',
     icon: CreditCard,
-    description: 'Control de cuotas'
+    description: 'Control de cuotas',
+    requiredPermission: 'cuotas'
   },
   {
     id: 'registration',
     label: 'Inscripción',
     icon: UserPlus,
-    description: 'Nuevos registros'
+    description: 'Nuevos registros',
+    requiredPermission: 'socios'
   },
   {
     id: 'configuracion',
     label: 'Configuración',
     icon: Settings,
-    description: 'Ajustes del club'
+    description: 'Ajustes del club',
+    requiredPermission: 'configuracion' // Only admin
   }
 ]
 
 export default function Sidebar() {
-  const { 
-    sidebarCollapsed, 
+  const {
+    sidebarCollapsed,
     setSidebarCollapsed,
-    currentPage, 
-    setCurrentPage 
+    currentPage,
+    setCurrentPage
   } = useAppStore()
-  
+
+  const { hasPermission, getRoleDisplayName } = useRole()
+
+  // Filter navigation items based on user permissions
+  const visibleNavigationItems = useMemo(() => {
+    return navigationItems.filter((item) => {
+      // If no permission required, show to everyone
+      if (!item.requiredPermission) return true
+
+      // Check if user has the required permission
+      return hasPermission(item.requiredPermission)
+    })
+  }, [hasPermission])
+
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
 
   return (
@@ -99,7 +126,7 @@ export default function Sidebar() {
 
              {/* Navigation */}
        <nav className="p-3 sm:p-4 space-y-2">
-        {navigationItems.map((item) => {
+        {visibleNavigationItems.map((item) => {
           const Icon = item.icon
           const isActive = currentPage === item.id
           
@@ -143,6 +170,9 @@ export default function Sidebar() {
           <div className="text-center">
             <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Club Comandante Espora</p>
             <p className="text-xs text-gray-500 dark:text-gray-500">Sistema de Gestión</p>
+            <div className="mt-2 pt-2 border-t border-white/20">
+              <p className="text-xs text-primary font-semibold">{getRoleDisplayName()}</p>
+            </div>
           </div>
         </motion.div>
       )}

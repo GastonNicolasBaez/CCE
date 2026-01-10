@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useAppStore } from './store'
 import { api, transformApiMemberToFrontend, transformFrontendMemberToApi, ApiActividad, CreateMemberData } from './api'
+import { auth, User } from './auth'
 
 export function useLoadMembers() {
   const { setMembers, setLoading, setError, isLoading, error } = useAppStore()
@@ -213,4 +214,87 @@ export function useDeleteMember() {
   }
 
   return { deleteMemberData }
+}
+
+/**
+ * Hook for role-based access control
+ * Provides utilities to check user roles and permissions
+ */
+export function useRole() {
+  const { user } = useAppStore()
+
+  /**
+   * Check if user is super admin
+   */
+  const isSuperAdmin = useCallback((): boolean => {
+    return user?.rol === 'super_admin'
+  }, [user])
+
+  /**
+   * Check if user is admin (includes super_admin)
+   */
+  const isAdmin = useCallback((): boolean => {
+    return user?.rol === 'admin' || user?.rol === 'super_admin'
+  }, [user])
+
+  /**
+   * Check if user is operador
+   */
+  const isOperador = useCallback((): boolean => {
+    return user?.rol === 'operador'
+  }, [user])
+
+  /**
+   * Check if user has specific role(s)
+   */
+  const hasRole = useCallback((roles: string | string[]): boolean => {
+    if (!user) return false
+    const roleArray = Array.isArray(roles) ? roles : [roles]
+    return roleArray.includes(user.rol)
+  }, [user])
+
+  /**
+   * Check if user has permission to access a resource
+   */
+  const hasPermission = useCallback((permission: string): boolean => {
+    if (!user) return false
+
+    // Super admin has all permissions
+    if (user.rol === 'super_admin') return true
+
+    // Define permissions by role
+    const permissions: Record<string, string[]> = {
+      admin: ['configuracion', 'reportes', 'socios', 'cuotas', 'actividades', 'usuarios'],
+      operador: ['socios', 'cuotas', 'actividades']
+    }
+
+    const userPermissions = permissions[user.rol] || []
+    return userPermissions.includes(permission)
+  }, [user])
+
+  /**
+   * Get user's role display name
+   */
+  const getRoleDisplayName = useCallback((): string => {
+    if (!user) return 'Sin rol'
+
+    const roleNames: Record<string, string> = {
+      super_admin: 'Super Administrador',
+      admin: 'Administrador',
+      operador: 'Operador'
+    }
+
+    return roleNames[user.rol] || user.rol
+  }, [user])
+
+  return {
+    user,
+    rol: user?.rol,
+    isSuperAdmin,
+    isAdmin,
+    isOperador,
+    hasRole,
+    hasPermission,
+    getRoleDisplayName
+  }
 }

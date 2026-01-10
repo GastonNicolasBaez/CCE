@@ -13,8 +13,8 @@ export interface User {
   nombre: string
   apellido: string
   email: string
-  rol: 'admin' | 'usuario'
-  tenantId: number
+  rol: 'super_admin' | 'admin' | 'operador'
+  tenantId: number | null // null for super_admin
   status: 'active' | 'inactive' | 'suspended'
   lastLoginAt?: string
 }
@@ -160,11 +160,59 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Check if user is admin
+ * Check if user is super admin (global administrator)
+ */
+export function isSuperAdmin(): boolean {
+  const user = getUser()
+  return user?.rol === 'super_admin'
+}
+
+/**
+ * Check if user is admin (club administrator)
+ * Note: Super admin is also considered admin
  */
 export function isAdmin(): boolean {
   const user = getUser()
-  return user?.rol === 'admin'
+  return user?.rol === 'admin' || user?.rol === 'super_admin'
+}
+
+/**
+ * Check if user is operador (staff member)
+ */
+export function isOperador(): boolean {
+  const user = getUser()
+  return user?.rol === 'operador'
+}
+
+/**
+ * Check if user has specific role(s)
+ */
+export function hasRole(roles: string | string[]): boolean {
+  const user = getUser()
+  if (!user) return false
+
+  const roleArray = Array.isArray(roles) ? roles : [roles]
+  return roleArray.includes(user.rol)
+}
+
+/**
+ * Check if user has permission to access a resource
+ */
+export function hasPermission(permission: string): boolean {
+  const user = getUser()
+  if (!user) return false
+
+  // Super admin has all permissions
+  if (user.rol === 'super_admin') return true
+
+  // Define permissions by role
+  const permissions: Record<string, string[]> = {
+    admin: ['configuracion', 'reportes', 'socios', 'cuotas', 'actividades', 'usuarios'],
+    operador: ['socios', 'cuotas', 'actividades']
+  }
+
+  const userPermissions = permissions[user.rol] || []
+  return userPermissions.includes(permission)
 }
 
 // ==================== TENANT RESOLUTION ====================
@@ -426,7 +474,11 @@ export const auth = {
 
   // Auth status
   isAuthenticated,
+  isSuperAdmin,
   isAdmin,
+  isOperador,
+  hasRole,
+  hasPermission,
 
   // Tenant resolution
   getTenantSlugFromSubdomain,
