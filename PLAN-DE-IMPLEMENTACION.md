@@ -570,31 +570,38 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 ---
 
-## 🟠 FASE 7: BÚSQUEDA Y REPORTES (2 días)
+## 🟠 FASE 8: BÚSQUEDA Y REPORTES (2 días)
 
-### 7.1 Búsqueda Global
+### 8.1 Búsqueda Global ✅ COMPLETADA
 
 **Prioridad:** 🟡 MEDIA
 
-- [ ] **Endpoint de búsqueda** (1 hora)
-  - Backend: GET `/api/search?q=juan`
-  - Buscar en:
+- [x] **Endpoint de búsqueda** (1 hora) ✅
+  - ✅ Backend: GET `/api/search?q=juan`
+  - ✅ Buscar en:
     - Socios: nombre, apellido, dni, email
     - Cuotas: numero_recibo
-  - Retornar: Tipo de resultado + datos básicos
-  - Filtrado por tenant
+  - ✅ Retornar: Tipo de resultado + datos básicos
+  - ✅ Filtrado por tenant
+  - ✅ Límite de 5 resultados por categoría
+  - ✅ Permisos: requireStaff (admin y operador)
+  - ✅ Archivos: `BackendCCE/src/controllers/searchController.js`, `BackendCCE/src/routes/search.js`
 
-- [ ] **Implementar búsqueda en header** (2 horas)
-  - Frontend: `Header.tsx`
-  - Input de búsqueda con debounce (500ms)
-  - Dropdown con resultados:
-    - Sección "Socios" (máximo 5 resultados)
-    - Sección "Cuotas" (máximo 5 resultados)
-  - Click en resultado: Navegar a detalle
+- [x] **Implementar búsqueda en header** (2 horas) ✅
+  - ✅ Frontend: `Header.tsx`
+  - ✅ Input de búsqueda con debounce (500ms)
+  - ✅ Dropdown con resultados:
+    - Socios (máximo 5 resultados) con nombre, DNI, email
+    - Cuotas (máximo 5 resultados) con recibo, socio, periodo
+  - ✅ Click en resultado: Navegar a detalle (members o payments)
+  - ✅ Tipos TypeScript: SearchResultSocio, SearchResultCuota, SearchResult
+  - ✅ Función API: `api.search.global(query)`
+  - ✅ Formato de periodos en español
+  - ✅ Versión desktop y móvil
 
-### 7.2 Reportes
+### 8.2 Reportes
 
-**Prioridad:** 🟢 BAJA
+**Prioridad:** 🟢 BAJA (post-MVP)
 
 - [ ] **Endpoint de reportes** (3 horas)
   - Backend: GET `/api/reportes/recaudacion?mes=2026-01&format=json|pdf`
