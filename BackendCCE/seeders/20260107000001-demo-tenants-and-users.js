@@ -83,10 +83,25 @@ module.exports = {
       console.log('✅ Created 2 demo tenants');
 
       // ==========================================
-      // 2. CREATE ADMIN USERS FOR EACH TENANT
+      // 2. CREATE SUPER ADMIN AND TENANT USERS
       // ==========================================
 
       const usuarios = [
+        // Super Admin (global administrator, no tenant)
+        {
+          tenant_id: null,
+          nombre: 'Super',
+          apellido: 'Admin',
+          email: 'superadmin@cce.com',
+          password: hashedPassword,
+          rol: 'super_admin',
+          status: 'active',
+          activo: true,
+          last_login_at: null,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Tenant 1 - Admin
         {
           tenant_id: 1,
           nombre: 'Admin',
@@ -100,6 +115,7 @@ module.exports = {
           created_at: new Date(),
           updated_at: new Date()
         },
+        // Tenant 2 - Admin
         {
           tenant_id: 2,
           nombre: 'Admin',
@@ -113,7 +129,7 @@ module.exports = {
           created_at: new Date(),
           updated_at: new Date()
         },
-        // Additional user for tenant 1 (regular user)
+        // Tenant 1 - Operador
         {
           tenant_id: 1,
           nombre: 'Usuario',
@@ -130,7 +146,7 @@ module.exports = {
       ];
 
       await queryInterface.bulkInsert('usuarios', usuarios, { transaction });
-      console.log('✅ Created 3 demo users (2 admins, 1 operador)');
+      console.log('✅ Created 4 demo users (1 super_admin, 2 admins, 1 operador)');
 
       // ==========================================
       // 3. CREATE ACTIVIDADES FOR EACH TENANT
@@ -395,7 +411,10 @@ module.exports = {
       console.log('\n========================================');
       console.log('✅ SEED COMPLETED SUCCESSFULLY');
       console.log('========================================');
-      console.log('\n📋 Demo Tenants Created:\n');
+      console.log('\n🔐 Global Administrator:\n');
+      console.log('   Super Admin: superadmin@cce.com / password123');
+      console.log('   (Can access all tenants)\n');
+      console.log('📋 Demo Tenants Created:\n');
       console.log('1. Club Comandante Espora');
       console.log('   URL: http://espora.localhost:3000');
       console.log('   Admin: admin@espora.com / password123');
@@ -428,6 +447,10 @@ module.exports = {
       await queryInterface.bulkDelete('cuotas', { tenant_id: [1, 2] }, { transaction });
       await queryInterface.bulkDelete('socios', { tenant_id: [1, 2] }, { transaction });
       await queryInterface.bulkDelete('usuarios', { tenant_id: [1, 2] }, { transaction });
+      await queryInterface.sequelize.query(
+        `DELETE FROM usuarios WHERE tenant_id IS NULL AND email = 'superadmin@cce.com'`,
+        { transaction }
+      );
       await queryInterface.bulkDelete('tenants', { id: [1, 2] }, { transaction });
 
       await transaction.commit();
