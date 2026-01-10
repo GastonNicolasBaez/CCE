@@ -531,14 +531,15 @@ const tenantsController = {
 
     const monthlyGrowth = await Tenant.findAll({
       attributes: [
-        [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at')), 'month'],
+        [sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM'), 'month'],
         [sequelize.fn('COUNT', sequelize.col('id')), 'count']
       ],
       where: {
         createdAt: { [Op.gte]: sixMonthsAgo }
       },
-      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at'))],
-      order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at')), 'ASC']]
+      group: [sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM')],
+      order: [[sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM'), 'ASC']],
+      raw: true
     });
 
     res.json({

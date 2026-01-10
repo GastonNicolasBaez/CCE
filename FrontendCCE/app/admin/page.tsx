@@ -289,7 +289,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link
           href="/admin/tenants"
           className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow group"
@@ -316,21 +316,6 @@ export default function AdminDashboard() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Crear Nuevo Tenant</h3>
               <p className="text-sm text-gray-600 mt-1">Registrar un nuevo club</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/stats"
-          className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <span className="text-2xl">📊</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Estadísticas Detalladas</h3>
-              <p className="text-sm text-gray-600 mt-1">Ver análisis completo</p>
             </div>
           </div>
         </Link>
