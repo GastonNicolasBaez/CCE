@@ -9,6 +9,7 @@ import Dashboard from '../components/dashboard/Dashboard'
 import MembersTable from '../components/members/MembersTable'
 import PaymentsManagement from '../components/payments/PaymentsManagement'
 import RegistrationForm from '../components/registration/RegistrationForm'
+import ActividadesPage from './actividades/page'
 import DarkModeProvider from '../components/DarkModeProvider'
 import LandingPage from '../components/LandingPage'
 
@@ -30,6 +31,8 @@ export default function Home() {
         return <Dashboard />
       case 'members':
         return <MembersTable />
+      case 'activities':
+        return <ActividadesPage />
       case 'payments':
         return <PaymentsManagement />
       case 'registration':

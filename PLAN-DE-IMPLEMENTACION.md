@@ -278,51 +278,42 @@ Esto permite que cada club cree sus propias actividades con precios personalizad
 
 ---
 
-## 🟡 FASE 3: FORMULARIOS Y UI - GESTIÓN DE SOCIOS (2 días)
+## 🟡 FASE 3: FORMULARIOS Y UI - GESTIÓN DE SOCIOS (2 días) ✅ COMPLETADA
 
 ### 3.1 Formulario de Registro de Socios
 
 **Prioridad:** 🟠 ALTA
 
-- [ ] **Completar campos obligatorios** (2 horas)
+- [x] **Completar campos obligatorios** (2 horas) ✅
   - Frontend: `FrontendCCE/components/registration/RegistrationForm.tsx`
-  - Campos a agregar/corregir:
-    - DNI: Input real (no placeholder)
-    - Fecha Nacimiento: Date picker (calcular edad automáticamente)
-    - Teléfono: Validación de formato
-    - Email: Validación
-    - Actividades: Checkboxes múltiples (reemplazar select único)
-    - **Condicional si edad < 18:**
-      - Nombre completo del tutor (obligatorio)
-      - Teléfono del tutor (obligatorio)
-    - Exento de cuota: Checkbox
-    - Mes de gracia hasta: Date picker (opcional)
-  - Validación frontend:
-    - DNI 7-8 dígitos
-    - Email formato válido
-    - Teléfono formato argentino
-    - Si menor, tutor obligatorio
+  - Campos implementados:
+    - ✅ DNI: Input con validación regex (solo números, 7-20 dígitos)
+    - ✅ Nombre y Apellido: Separados como el backend espera
+    - ✅ Fecha Nacimiento: Date picker con cálculo automático de edad
+    - ✅ Teléfono: Input con validación
+    - ✅ Email: Input con validación
+    - ✅ Actividades: Checkboxes múltiples cargados desde backend
+    - ✅ **Condicional si edad < 18:**
+      - ✅ Nombre completo del tutor (aparece automáticamente)
+      - ✅ Teléfono del tutor (aparece automáticamente)
+    - ✅ Exento de cuota: Checkbox
+    - ✅ Mes de gracia hasta: Date picker (opcional)
+    - ✅ Es jugador: Checkbox
+  - Validaciones implementadas:
+    - ✅ DNI regex: solo números
+    - ✅ Email formato válido
+    - ✅ Teléfono mínimo 8 dígitos
+    - ✅ Si menor, tutor obligatorio (validación en `.superRefine()`)
+    - ✅ Cálculo automático de edad en tiempo real
 
-- [ ] **Conectar formulario con backend** (1 hora)
-  - API call: `api.socios.create()` en `FrontendCCE/lib/api.ts`
-  - Mapear campos correctamente:
-    ```javascript
-    {
-      nombre,
-      apellido,
-      dni,
-      email,
-      telefono,
-      fechaNacimiento,
-      actividades: ['Basquet', 'Gimnasio'], // array
-      tutorNombre,
-      tutorTelefono,
-      exentoCuota,
-      mesGraciaHasta,
-      estado: 'Activo'
-    }
-    ```
-  - Manejo de errores: mostrar mensajes de validación del backend
+- [x] **Conectar formulario con backend** (1 hora) ✅
+  - ✅ Schema de validación: `FrontendCCE/lib/validations.ts`
+  - ✅ API types actualizados: `FrontendCCE/lib/api.ts`
+  - ✅ Hook `useLoadActividades()`: Carga actividades desde backend
+  - ✅ Hook `useCreateMember()`: Envía datos al backend
+  - ✅ Transformación de datos frontend ↔ backend
+  - ✅ Manejo de errores con mensajes claros
+  - ✅ Pantalla de éxito con opción de nuevo registro
 
 ### 3.2 Lista de Socios
 

@@ -8,7 +8,8 @@ export interface Member {
   name: string
   email: string
   phone: string
-  activity?: 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio' // Actividades consistentes con backend
+  activity?: 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio' // DEPRECATED: Use activities instead
+  activities?: string[] // Array de nombres de actividades (ej: ["Básquet", "Gimnasio"])
   status: 'active' | 'inactive' | 'suspended' // Estados consistentes con backend
   paymentStatus: 'paid' | 'pending' | 'overdue' | 'cancelled' // Estados de cuotas consistentes
   registrationDate: string

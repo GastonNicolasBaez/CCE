@@ -329,14 +329,16 @@ export default function MembersTable() {
                         ) : (
                           <Activity size={16} className="text-green-600" />
                         )}
-                        <span className="text-sm text-gray-900">
-                          {member.membershipType === 'socio' ? 'Socio' : 'Jugador'}
-                        </span>
-                        {member.activity && member.membershipType === 'jugador' && (
-                          <span className="text-xs text-gray-500">
-                            ({getActivityLabel(member.activity)})
-                          </span>
-                        )}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {member.membershipType === 'socio' ? 'Socio' : 'Jugador'}
+                          </div>
+                          {member.activities && member.activities.length > 0 && (
+                            <div className="text-xs text-gray-500">
+                              {member.activities.slice(0, 2).join(', ')}{member.activities.length > 2 ? `, +${member.activities.length - 2}` : ''}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -443,12 +445,16 @@ export default function MembersTable() {
                                     {member.membershipType === 'socio' ? 'Socio' : 'Jugador'}
                                   </span>
                                 </div>
-                                {member.activity && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-gray-500">Actividad:</span>
-                                    <span className="text-gray-700 font-medium">
-                                      {getActivityLabel(member.activity)}
-                                    </span>
+                                {member.activities && member.activities.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-gray-500">Actividades:</span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {member.activities.map((activity, idx) => (
+                                        <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          {activity}
+                                        </span>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">

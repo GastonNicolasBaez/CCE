@@ -243,19 +243,27 @@ export function transformApiMemberToFrontend(apiMember: ApiMember & { resumenPag
     }
   }
 
+  // Transform activities array
+  const activities = apiMember.actividades && Array.isArray(apiMember.actividades)
+    ? apiMember.actividades.map(act => act.nombre)
+    : apiMember.actividad
+    ? [apiMember.actividad]
+    : undefined
+
   return {
     id: apiMember.id.toString(),
     name: apiMember.nombreCompleto || `${apiMember.nombre} ${apiMember.apellido}`,
     email: apiMember.email,
     phone: apiMember.telefono,
-    activity: activityMap[apiMember.actividad] as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio',
+    activity: activityMap[apiMember.actividad] as 'basketball' | 'volleyball' | 'karate' | 'gym' | 'solo-socio', // DEPRECATED
+    activities, // NEW: Array of activity names
     status: statusMap[apiMember.estado] || 'inactive',
     paymentStatus,
     registrationDate: apiMember.fechaIngreso,
     membershipType: apiMember.esJugador ? 'jugador' : 'socio',
     lastPaymentDate: apiMember.resumenPagos?.ultimaCuota?.fechaPago || undefined,
-    nextPaymentDate: apiMember.resumenPagos?.ultimaCuota ? 
-      new Date(new Date(apiMember.resumenPagos.ultimaCuota.fechaVencimiento).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] : 
+    nextPaymentDate: apiMember.resumenPagos?.ultimaCuota ?
+      new Date(new Date(apiMember.resumenPagos.ultimaCuota.fechaVencimiento).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] :
       undefined
   }
 }

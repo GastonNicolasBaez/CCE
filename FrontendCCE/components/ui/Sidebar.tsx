@@ -2,11 +2,12 @@
 
 import React from 'react'
 import { useAppStore } from '../../lib/store'
-import { 
-  LayoutDashboard, 
-  Users, 
-  CreditCard, 
-  UserPlus, 
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  UserPlus,
+  Activity,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
@@ -24,6 +25,12 @@ const navigationItems = [
     label: 'Socios y Jugadores',
     icon: Users,
     description: 'Gestión de miembros'
+  },
+  {
+    id: 'activities',
+    label: 'Actividades',
+    icon: Activity,
+    description: 'Deportes y precios'
   },
   {
     id: 'payments',
