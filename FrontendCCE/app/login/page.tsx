@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { auth, getTenantSlugFromSubdomain } from '@/lib/auth'
+import { useAppStore } from '@/lib/store'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [tenantSlug, setTenantSlug] = useState<string | null>(null)
+  const setAuth = useAppStore(state => state.setAuth)
 
   useEffect(() => {
     // Get tenant slug from subdomain (can be null for super admin)
@@ -31,9 +33,12 @@ export default function LoginPage() {
     try {
       const result = await auth.login({ email, password })
 
-      if (result.success) {
+      if (result.success && result.data) {
+        // Update Zustand store with auth data immediately
+        setAuth(result.data.user, result.data.tenant)
+
         // Redirect based on user role
-        const user = auth.getUser()
+        const user = result.data.user
         if (user?.rol === 'super_admin') {
           router.push('/admin')
         } else {
