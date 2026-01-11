@@ -19,16 +19,9 @@ export default function LoginPage() {
     setTenantSlug(slug)
 
     // Check if already authenticated
-    if (auth.isAuthenticated()) {
-      // Redirect based on role
-      if (auth.isSuperAdmin()) {
-        router.push('/admin')
-      } else {
-        router.push('/')
-      }
-      return
-    }
-  }, [router])
+    // Note: Don't redirect here, let the middleware handle it
+    // This prevents redirect loops with invalid tokens
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
