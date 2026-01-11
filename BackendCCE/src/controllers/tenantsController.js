@@ -525,7 +525,11 @@ const tenantsController = {
           ]
         ]
       },
-      order: [[sequelize.literal('memberCount'), 'DESC']],
+      order: [[sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM socios
+        WHERE socios.tenant_id = "Tenant"."id"
+      )`), 'DESC']],
       limit: 5
     });
 
