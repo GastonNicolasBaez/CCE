@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { useAppStore } from '../../lib/store'
+import { Card, Button, InfoCard } from '@/components/ui'
 
 export default function ConfiguracionGeneral() {
   const { tenant, user } = useAppStore()
@@ -48,9 +49,9 @@ export default function ConfiguracionGeneral() {
   }
 
   return (
-    <div className="neumorphism-card p-6">
+    <Card variant="form" padding="default">
       <div className="flex items-center gap-2 mb-6">
-        <Building size={20} className="text-blue-600" />
+        <Building size={20} className="text-blue-600 dark:text-blue-400" />
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
           Información del Club
         </h2>
@@ -127,58 +128,44 @@ export default function ConfiguracionGeneral() {
         </div>
 
         {/* Info Card */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-medium mb-1">Información importante:</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
-                <li>Esta información se usará en emails y documentos oficiales</li>
-                <li>El email de contacto recibirá notificaciones importantes</li>
-                <li>Los cambios se aplicarán inmediatamente</li>
-              </ul>
-            </div>
+        <InfoCard variant="info">
+          <div>
+            <p className="font-medium mb-2">Información importante:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Esta información se usará en emails y documentos oficiales</li>
+              <li>El email de contacto recibirá notificaciones importantes</li>
+              <li>Los cambios se aplicarán inmediatamente</li>
+            </ul>
           </div>
-        </div>
+        </InfoCard>
 
         {/* Error Message */}
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
+          <InfoCard variant="error">
+            <p>{error}</p>
+          </InfoCard>
         )}
 
         {/* Success Message */}
         {saveSuccess && (
-          <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2">
-            <CheckCircle size={16} className="text-green-600" />
-            <p className="text-sm text-green-600 dark:text-green-400">
-              Configuración guardada correctamente
-            </p>
-          </div>
+          <InfoCard variant="success" icon={CheckCircle}>
+            <p>Configuración guardada correctamente</p>
+          </InfoCard>
         )}
 
         {/* Submit Button */}
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            icon={isSaving ? Loader2 : Save}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isSaving}
           >
-            {isSaving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                Guardar Cambios
-              </>
-            )}
-          </button>
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+          </Button>
         </div>
       </form>
-    </div>
+    </Card>
   )
 }
