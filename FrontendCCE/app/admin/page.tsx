@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { tenantsAPI, type GlobalStatistics } from '@/lib/api/tenants'
-import { Card, Button, Badge } from '@/components/ui'
+import { Card, Button, Badge, Skeleton } from '@/components/ui'
 import {
   Building2,
   CheckCircle,
@@ -56,10 +56,72 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Cargando estadísticas...</p>
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-6 p-6">
+          {/* Header Skeleton */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-between mb-6"
+          >
+            <div>
+              <Skeleton variant="text" width={250} height={32} animation="shimmer" />
+              <div className="mt-2">
+                <Skeleton variant="text" width={300} height={16} animation="shimmer" />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Skeleton variant="rectangular" width={120} height={40} animation="shimmer" />
+              <Skeleton variant="rectangular" width={150} height={40} animation="shimmer" />
+            </div>
+          </motion.div>
+
+          {/* Overview Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Card variant="metric" padding="default">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Skeleton variant="circular" width={48} height={48} animation="shimmer" />
+                  </div>
+                  <Skeleton variant="text" width="100%" height={28} animation="shimmer" />
+                  <div className="mt-2">
+                    <Skeleton variant="text" width="70%" height={16} animation="shimmer" />
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Content Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card padding="default">
+              <Skeleton variant="text" width={180} height={24} animation="shimmer" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton variant="text" width="100%" height={60} animation="shimmer" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card padding="default">
+              <Skeleton variant="text" width={180} height={24} animation="shimmer" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton variant="text" width="100%" height={60} animation="shimmer" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     )

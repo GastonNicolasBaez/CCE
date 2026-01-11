@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   DollarSign,
   Calendar,
@@ -11,8 +12,10 @@ import {
   CheckCircle,
   AlertCircle,
   HelpCircle,
-  Info
+  Info,
+  Lightbulb
 } from 'lucide-react'
+import { Card, Button, InfoCard } from '@/components/ui'
 
 export default function ConfiguracionCuotas() {
   const [formData, setFormData] = useState({
@@ -44,16 +47,25 @@ export default function ConfiguracionCuotas() {
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       setSaveSuccess(true)
+      toast.success('Configuración de cuotas guardada correctamente', {
+        icon: '💰',
+        duration: 4000,
+      })
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar la configuración')
+      const errorMessage = err instanceof Error ? err.message : 'Error al guardar la configuración'
+      setError(errorMessage)
+      toast.error(errorMessage, {
+        icon: '❌',
+        duration: 4000,
+      })
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div className="neumorphism-card p-6">
+    <Card variant="form" padding="default">
       <div className="flex items-center gap-2 mb-6">
         <DollarSign size={20} className="text-green-600" />
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -139,8 +151,9 @@ export default function ConfiguracionCuotas() {
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Cada actividad tiene su propio precio. Se calcula según las actividades del socio
                   </div>
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                    💡 Los precios de cada actividad se configuran en la sección "Actividades"
+                  <div className="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+                    <Lightbulb size={12} className="text-blue-500" />
+                    <span>Los precios de cada actividad se configuran en la sección "Actividades"</span>
                   </div>
                 </div>
               </div>
@@ -385,58 +398,47 @@ export default function ConfiguracionCuotas() {
         </div>
 
         {/* Info Card */}
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Info size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-800 dark:text-yellow-200">
-              <p className="font-medium mb-1">Importante:</p>
-              <ul className="list-disc list-inside space-y-1 text-yellow-700 dark:text-yellow-300">
-                <li>Los cambios de precios solo afectarán cuotas futuras</li>
-                <li>Las cuotas ya generadas mantendrán su monto original</li>
-                <li>Los socios con "Exento de cuota" no generarán cuotas automáticas</li>
-              </ul>
-            </div>
+        <InfoCard variant="warning">
+          <div>
+            <p className="font-medium mb-1">Importante:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Los cambios de precios solo afectarán cuotas futuras</li>
+              <li>Las cuotas ya generadas mantendrán su monto original</li>
+              <li>Los socios con "Exento de cuota" no generarán cuotas automáticas</li>
+            </ul>
           </div>
-        </div>
+        </InfoCard>
 
         {/* Error Message */}
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
+          <InfoCard variant="error">
+            <p>{error}</p>
+          </InfoCard>
         )}
 
         {/* Success Message */}
         {saveSuccess && (
-          <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-2">
-            <CheckCircle size={16} className="text-green-600" />
-            <p className="text-sm text-green-600 dark:text-green-400">
-              Configuración guardada correctamente
-            </p>
-          </div>
+          <InfoCard variant="success">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={16} />
+              <p>Configuración guardada correctamente</p>
+            </div>
+          </InfoCard>
         )}
 
         {/* Submit Button */}
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
+            variant="success"
+            icon={isSaving ? Loader2 : Save}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isSaving}
           >
-            {isSaving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                Guardar Configuración
-              </>
-            )}
-          </button>
+            {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+          </Button>
         </div>
       </form>
-    </div>
+    </Card>
   )
 }

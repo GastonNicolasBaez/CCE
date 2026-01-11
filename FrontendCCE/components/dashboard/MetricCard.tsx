@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import React from 'react'
 import { cn } from '../../lib/utils'
+import { AnimatedCounter } from '@/components/ui'
 
 interface MetricCardProps {
   title: string
@@ -15,6 +15,12 @@ interface MetricCardProps {
   delay?: number
 }
 
+/**
+ * MetricCard Component - Sistema de Diseño Unificado CCE
+ *
+ * Card de métricas mejorada con AnimatedCounter premium.
+ * Usa Framer Motion spring para animaciones más suaves.
+ */
 export default function MetricCard({
   title,
   value,
@@ -24,26 +30,6 @@ export default function MetricCard({
   changeType,
   delay = 0
 }: MetricCardProps) {
-  const [displayValue, setDisplayValue] = useState(0)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      let start = 0
-      const increment = value / 50
-      const counter = setInterval(() => {
-        start += increment
-        if (start >= value) {
-          setDisplayValue(value)
-          clearInterval(counter)
-        } else {
-          setDisplayValue(Math.floor(start))
-        }
-      }, 20)
-    }, delay * 1000)
-
-    return () => clearTimeout(timer)
-  }, [value, delay])
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -60,36 +46,35 @@ export default function MetricCard({
         <Icon size={16} className="text-white" />
       </div>
 
-      {/* Value */}
-      <motion.div
-        key={displayValue}
-        initial={{ scale: 1.2 }}
-        animate={{ scale: 1 }}
-        className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2"
-      >
-        {displayValue.toLocaleString()}
-      </motion.div>
+      {/* Value with AnimatedCounter */}
+      <AnimatedCounter
+        value={value}
+        duration={2}
+        delay={delay}
+        formatValue={(v) => Math.floor(v).toLocaleString()}
+        className="text-2xl font-bold text-gray-800 dark:text-gray-200 block mb-2"
+      />
 
       {/* Title */}
-      <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+      <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
         {title}
       </h3>
 
       {/* Change indicator */}
-      <div className={cn(
-        "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm",
-        changeType === 'positive' 
-          ? 'bg-green-100/80 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/50' 
-          : 'bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200/50 dark:border-red-800/50'
-      )}>
-        <span className={cn(
-          "w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent",
-          changeType === 'positive' 
-            ? 'border-b-green-700 dark:border-b-green-400' 
-            : 'border-t-red-700 dark:border-t-red-400'
-        )}></span>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: delay + 0.5 }}
+        className={cn(
+          "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm",
+          changeType === 'positive'
+            ? 'bg-green-100/80 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-800/50'
+            : 'bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200/50 dark:border-red-800/50'
+        )}
+      >
+        <span>{changeType === 'positive' ? '↑' : '↓'}</span>
         {change}
-      </div>
+      </motion.div>
     </motion.div>
   )
 }

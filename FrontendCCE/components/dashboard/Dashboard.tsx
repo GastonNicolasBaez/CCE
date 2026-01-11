@@ -1,14 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '../../lib/store'
 import { useLoadMembers } from '../../lib/hooks'
-import { Users, CreditCard, TrendingUp, UserPlus } from 'lucide-react'
+import { Users, CreditCard, TrendingUp, UserPlus, DollarSign, Activity, BarChart3 } from 'lucide-react'
 import MetricCard from './MetricCard'
 import PaymentChart from './PaymentChart'
 import RecentRegistrations from './RecentRegistrations'
+import { FloatingButton, Skeleton } from '@/components/ui'
 
 export default function Dashboard() {
+  const router = useRouter()
   const { members, setCurrentPage } = useAppStore()
   const { isLoading, error } = useLoadMembers()
 
@@ -61,10 +64,103 @@ export default function Dashboard() {
     }
   ]
 
+  // Quick actions for floating button
+  const quickActions = [
+    {
+      id: 'new-member',
+      label: 'Nuevo Socio',
+      icon: UserPlus,
+      onClick: () => router.push('/members/new'),
+      color: 'bg-blue-500 hover:bg-blue-600'
+    },
+    {
+      id: 'new-payment',
+      label: 'Registrar Pago',
+      icon: DollarSign,
+      onClick: () => router.push('/payments/new'),
+      color: 'bg-green-500 hover:bg-green-600'
+    },
+    {
+      id: 'new-activity',
+      label: 'Nueva Actividad',
+      icon: Activity,
+      onClick: () => router.push('/actividades'),
+      color: 'bg-purple-500 hover:bg-purple-600'
+    },
+    {
+      id: 'stats',
+      label: 'Ver Estadísticas',
+      icon: BarChart3,
+      onClick: () => router.push('/estadisticas'),
+      color: 'bg-orange-500 hover:bg-orange-600'
+    }
+  ]
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="h-full flex flex-col space-y-3">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between flex-shrink-0">
+          <div className="space-y-2">
+            <Skeleton variant="text" width={300} height={32} animation="shimmer" />
+            <Skeleton variant="text" width={250} height={16} animation="shimmer" />
+          </div>
+          <Skeleton variant="rectangular" width={150} height={40} animation="shimmer" />
+        </div>
+
+        {/* Metrics Grid Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 shadow-2xl rounded-2xl p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton variant="circular" width={48} height={48} animation="shimmer" />
+              </div>
+              <Skeleton variant="text" width="80%" height={24} animation="shimmer" />
+              <div className="mt-2">
+                <Skeleton variant="text" width="60%" height={16} animation="shimmer" />
+              </div>
+              <div className="mt-3">
+                <Skeleton variant="rectangular" width={80} height={24} animation="shimmer" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 flex-1 min-h-0">
+          <div className="xl:col-span-2">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 shadow-2xl rounded-2xl p-6 h-full">
+              <Skeleton variant="text" width={200} height={24} animation="shimmer" />
+              <div className="mt-4">
+                <Skeleton variant="rectangular" height={300} animation="shimmer" />
+              </div>
+            </div>
+          </div>
+          <div className="hidden xl:block">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 shadow-2xl rounded-2xl p-6 h-full">
+              <Skeleton variant="text" width={180} height={24} animation="shimmer" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton variant="circular" width={40} height={40} animation="shimmer" />
+                    <div className="flex-1">
+                      <Skeleton variant="text" width="80%" height={16} animation="shimmer" />
+                      <div className="mt-1">
+                        <Skeleton variant="text" width="60%" height={12} animation="shimmer" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -156,6 +252,13 @@ export default function Dashboard() {
           <RecentRegistrations />
         </motion.div>
       </div>
+
+      {/* Floating Action Button */}
+      <FloatingButton
+        position="bottom-right"
+        actions={quickActions}
+        mainColor="bg-orange-500 hover:bg-orange-600"
+      />
     </div>
   )
 }

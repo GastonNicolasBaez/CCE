@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   Activity,
   Plus,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react'
 import { useLoadActividades } from '../../lib/hooks'
 import { api, type ApiActividad } from '../../lib/api'
-import { Card, Button, Badge, IconButton, InfoCard } from '@/components/ui'
+import { Card, Button, Badge, IconButton, InfoCard, EmptyState, Skeleton, Confetti } from '@/components/ui'
 
 export default function ActividadesPage() {
   const { actividades, isLoading, error, loadActividades } = useLoadActividades()
@@ -33,6 +34,7 @@ export default function ActividadesPage() {
   })
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const handleCreate = () => {
     setCreating(true)
@@ -102,6 +104,14 @@ export default function ActividadesPage() {
           const errorData = await response.json()
           throw new Error(errorData.message || 'Error al crear actividad')
         }
+
+        // Show success toast and confetti
+        toast.success('¡Actividad creada exitosamente!', {
+          icon: '🎉',
+          duration: 4000,
+        })
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 3000)
       } else if (editingId) {
         // Update existing activity
         const response = await fetch(`/api/actividades/${editingId}`, {
@@ -117,13 +127,24 @@ export default function ActividadesPage() {
           const errorData = await response.json()
           throw new Error(errorData.message || 'Error al actualizar actividad')
         }
+
+        // Show success toast
+        toast.success('Actividad actualizada correctamente', {
+          icon: '✅',
+          duration: 3000,
+        })
       }
 
       // Reload activities and reset form
       await loadActividades()
       handleCancel()
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al guardar actividad')
+      const errorMessage = err instanceof Error ? err.message : 'Error al guardar actividad'
+      setSubmitError(errorMessage)
+      toast.error(errorMessage, {
+        icon: '❌',
+        duration: 4000,
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -146,8 +167,13 @@ export default function ActividadesPage() {
       }
 
       await loadActividades()
+      toast.success(
+        currentActive ? 'Actividad desactivada' : 'Actividad activada',
+        { icon: currentActive ? '⏸️' : '▶️', duration: 2000 }
+      )
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al cambiar estado de actividad')
+      const errorMessage = err instanceof Error ? err.message : 'Error al cambiar estado de actividad'
+      toast.error(errorMessage, { icon: '❌', duration: 4000 })
     }
   }
 
@@ -170,15 +196,69 @@ export default function ActividadesPage() {
       }
 
       await loadActividades()
+      toast.success(`"${nombre}" eliminada correctamente`, {
+        icon: '🗑️',
+        duration: 3000,
+      })
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar actividad')
+      const errorMessage = err instanceof Error ? err.message : 'Error al eliminar actividad'
+      toast.error(errorMessage, { icon: '❌', duration: 4000 })
     }
   }
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 size={48} className="animate-spin text-gray-400" />
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Header Skeleton */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton variant="text" width={250} height={32} animation="shimmer" />
+                <div className="mt-2">
+                  <Skeleton variant="text" width={350} height={16} animation="shimmer" />
+                </div>
+              </div>
+              <Skeleton variant="rectangular" width={150} height={40} animation="shimmer" />
+            </div>
+          </motion.div>
+
+          {/* Activities List Skeleton */}
+          <Card padding="default">
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Skeleton variant="text" width={180} height={24} animation="shimmer" />
+                        <Skeleton variant="rectangular" width={60} height={24} animation="shimmer" />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Skeleton variant="text" width={120} height={16} animation="shimmer" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton variant="circular" width={36} height={36} animation="shimmer" />
+                      <Skeleton variant="circular" width={36} height={36} animation="shimmer" />
+                      <Skeleton variant="circular" width={36} height={36} animation="shimmer" />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -339,18 +419,13 @@ export default function ActividadesPage() {
         {/* Activities List */}
         <Card padding="default">
           {actividades.length === 0 ? (
-            <div className="text-center py-12">
-              <Activity size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
-                No hay actividades registradas
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Comienza creando tu primera actividad deportiva
-              </p>
-              <Button variant="accent" icon={Plus} onClick={handleCreate}>
-                Nueva Actividad
-              </Button>
-            </div>
+            <EmptyState
+              illustration="inbox"
+              title="No hay actividades registradas"
+              description="Comienza creando tu primera actividad deportiva. Las actividades te permiten organizar diferentes deportes y definir sus precios mensuales."
+              actionLabel="Nueva Actividad"
+              onAction={handleCreate}
+            />
           ) : (
             <div className="space-y-4">
               {actividades.map((actividad) => (
@@ -435,6 +510,9 @@ export default function ActividadesPage() {
           </div>
         </InfoCard>
       </div>
+
+      {/* Confetti */}
+      {showConfetti && <Confetti />}
     </div>
   )
 }
