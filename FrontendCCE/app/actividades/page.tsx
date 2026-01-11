@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useLoadActividades } from '../../lib/hooks'
 import { api, type ApiActividad } from '../../lib/api'
+import { Card, Button, Badge, IconButton, InfoCard } from '@/components/ui'
 
 export default function ActividadesPage() {
   const { actividades, isLoading, error, loadActividades } = useLoadActividades()
@@ -201,13 +202,9 @@ export default function ActividadesPage() {
               </p>
             </div>
             {!creating && !editingId && (
-              <button
-                onClick={handleCreate}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                <Plus size={20} />
+              <Button variant="accent" icon={Plus} onClick={handleCreate}>
                 Nueva Actividad
-              </button>
+              </Button>
             )}
           </div>
         </motion.div>
@@ -228,10 +225,11 @@ export default function ActividadesPage() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-6"
             >
-              <form onSubmit={handleSubmit} className="neumorphism-card p-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  {creating ? 'Nueva Actividad' : 'Editar Actividad'}
-                </h3>
+              <Card variant="form" padding="default">
+                <form onSubmit={handleSubmit}>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                    {creating ? 'Nueva Actividad' : 'Editar Actividad'}
+                  </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -312,57 +310,46 @@ export default function ActividadesPage() {
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors disabled:opacity-50"
-                  >
-                    <X size={16} className="inline mr-1" />
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        Guardar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      icon={X}
+                      onClick={handleCancel}
+                      disabled={isSubmitting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      icon={isSubmitting ? Loader2 : Save}
+                      disabled={isSubmitting}
+                      loading={isSubmitting}
+                    >
+                      {isSubmitting ? 'Guardando...' : 'Guardar'}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Activities List */}
-        <div className="neumorphism-card p-6">
+        <Card padding="default">
           {actividades.length === 0 ? (
             <div className="text-center py-12">
-              <Activity size={48} className="mx-auto text-gray-300 mb-4" />
+              <Activity size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
                 No hay actividades registradas
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Comienza creando tu primera actividad deportiva
               </p>
-              <button
-                onClick={handleCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                <Plus size={20} />
+              <Button variant="accent" icon={Plus} onClick={handleCreate}>
                 Nueva Actividad
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -383,15 +370,9 @@ export default function ActividadesPage() {
                         <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                           {actividad.nombre}
                         </h4>
-                        {actividad.activa ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Activa
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                            Inactiva
-                          </span>
-                        )}
+                        <Badge variant={actividad.activa ? 'success' : 'default'}>
+                          {actividad.activa ? 'Activa' : 'Inactiva'}
+                        </Badge>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -412,54 +393,47 @@ export default function ActividadesPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
+                      <IconButton
+                        icon={actividad.activa ? ToggleRight : ToggleLeft}
+                        variant={actividad.activa ? 'success' : 'ghost'}
+                        ariaLabel={actividad.activa ? 'Desactivar' : 'Activar'}
                         onClick={() => handleToggleActive(actividad.id, actividad.activa)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          actividad.activa
-                            ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                            : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                        title={actividad.activa ? 'Desactivar' : 'Activar'}
-                      >
-                        {actividad.activa ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                      </button>
-                      <button
+                        size={20}
+                      />
+                      <IconButton
+                        icon={Edit}
+                        variant="primary"
+                        ariaLabel="Editar actividad"
                         onClick={() => handleEdit(actividad)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit size={20} />
-                      </button>
-                      <button
+                        size={20}
+                      />
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        ariaLabel="Eliminar actividad"
                         onClick={() => handleDelete(actividad.id, actividad.nombre)}
-                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                        size={20}
+                      />
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Info Card */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-medium mb-1">Información importante:</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
-                <li>Los cambios de precio solo afectan a cuotas futuras</li>
-                <li>Desactivar una actividad no afecta a socios que ya la tienen</li>
-                <li>Las actividades inactivas no aparecen en el formulario de registro</li>
-                <li>El orden determina cómo se muestran en el formulario</li>
-              </ul>
-            </div>
+        <InfoCard variant="info" className="mt-6">
+          <div>
+            <p className="font-medium mb-2">Información importante:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Los cambios de precio solo afectan a cuotas futuras</li>
+              <li>Desactivar una actividad no afecta a socios que ya la tienen</li>
+              <li>Las actividades inactivas no aparecen en el formulario de registro</li>
+              <li>El orden determina cómo se muestran en el formulario</li>
+            </ul>
           </div>
-        </div>
+        </InfoCard>
       </div>
     </div>
   )

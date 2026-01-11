@@ -4,10 +4,25 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { tenantsAPI, type GlobalStatistics } from '@/lib/api/tenants'
+import { Card, Button, Badge } from '@/components/ui'
+import {
+  Building2,
+  CheckCircle,
+  RefreshCw,
+  Users,
+  AlertTriangle,
+  TrendingUp,
+  Plus,
+  BarChart3,
+  Loader2
+} from 'lucide-react'
+import { motion } from 'framer-motion'
 
 /**
  * Super Admin Dashboard
  * Shows global system statistics and overview
+ *
+ * Actualizado para usar el Sistema de Diseño Unificado CCE
  */
 
 export default function AdminDashboard() {
@@ -43,8 +58,8 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando estadísticas...</p>
+          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Cargando estadísticas...</p>
         </div>
       </div>
     )
@@ -52,17 +67,16 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h3 className="text-red-800 font-semibold mb-2">Error</h3>
-          <p className="text-red-600">{error}</p>
-          <button
-            onClick={loadStats}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Reintentar
-          </button>
-        </div>
+      <div className="max-w-7xl mx-auto p-6">
+        <Card variant="form" padding="default">
+          <div className="text-center">
+            <h3 className="text-red-600 dark:text-red-400 font-semibold text-lg mb-2">Error</h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
+            <Button variant="danger" onClick={loadStats}>
+              Reintentar
+            </Button>
+          </div>
+        </Card>
       </div>
     )
   }
@@ -74,266 +88,290 @@ export default function AdminDashboard() {
   const { overview, recent, topTenants } = stats
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Global</h1>
-          <p className="text-gray-600 mt-1">Vista general del sistema multi-tenant</p>
-        </div>
-
-        <Link
-          href="/admin/tenants/new"
-          className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-7xl mx-auto space-y-6 p-6">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center justify-between mb-6"
         >
-          + Crear Tenant
-        </Link>
-      </div>
-
-      {/* Overview Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Tenants */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Total Tenants</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {overview.totalTenants}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏢</span>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-orange-500 mb-2">Dashboard Global</h1>
+            <p className="text-gray-600 dark:text-gray-300">Vista general del sistema multi-tenant</p>
           </div>
+
+          <Link href="/admin/tenants/new">
+            <Button variant="accent" icon={Plus}>
+              Crear Tenant
+            </Button>
+          </Link>
+        </motion.div>
+
+        {/* Overview Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Total Tenants */}
+          <Card variant="metric" padding="compact" animation animationDelay={0.1}>
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600
+                          flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+              <Building2 className="text-white" size={16} />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">
+              {overview.totalTenants}
+            </p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              Total Tenants
+            </p>
+          </Card>
+
+          {/* Active Tenants */}
+          <Card variant="metric" padding="compact" animation animationDelay={0.2}>
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600
+                          flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+              <CheckCircle className="text-white" size={16} />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">
+              {overview.tenantsByStatus?.active || 0}
+            </p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              Tenants Activos
+            </p>
+          </Card>
+
+          {/* Trial Tenants */}
+          <Card variant="metric" padding="compact" animation animationDelay={0.3}>
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600
+                          flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+              <RefreshCw className="text-white" size={16} />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">
+              {overview.tenantsByStatus?.trial || 0}
+            </p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              En Prueba
+            </p>
+          </Card>
+
+          {/* Total Members */}
+          <Card variant="metric" padding="compact" animation animationDelay={0.4}>
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600
+                          flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+              <Users className="text-white" size={16} />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">
+              {overview.totalMembers}
+            </p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              Total Miembros
+            </p>
+          </Card>
         </div>
 
-        {/* Active Tenants */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Tenants Activos</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {overview.tenantsByStatus?.active || 0}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">✅</span>
-            </div>
-          </div>
-        </div>
+        {/* Alerts Section */}
+        {(recent.expiringTrialsNext7Days > 0 || recent.tenantsLast30Days > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Expiring Trials */}
+            {recent.expiringTrialsNext7Days > 0 && (
+              <Card padding="default">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600
+                                flex items-center justify-center shadow-lg flex-shrink-0">
+                    <AlertTriangle className="text-white" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-700 dark:text-yellow-400 font-semibold text-base mb-1">
+                      Trials Expirando
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm mb-2">
+                      {recent.expiringTrialsNext7Days} {recent.expiringTrialsNext7Days === 1 ? 'tenant expira' : 'tenants expiran'} en los próximos 7 días
+                    </p>
+                    <Link
+                      href="/admin/tenants?status=trial"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm inline-flex items-center gap-1"
+                    >
+                      Ver tenants en prueba
+                      <TrendingUp size={14} />
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            )}
 
-        {/* Trial Tenants */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">En Prueba</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                {overview.tenantsByStatus?.trial || 0}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🔄</span>
-            </div>
+            {/* Recent Growth */}
+            {recent.tenantsLast30Days > 0 && (
+              <Card padding="default">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600
+                                flex items-center justify-center shadow-lg flex-shrink-0">
+                    <TrendingUp className="text-white" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-green-700 dark:text-green-400 font-semibold text-base mb-1">
+                      Crecimiento Reciente
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">
+                      {recent.tenantsLast30Days} {recent.tenantsLast30Days === 1 ? 'nuevo tenant' : 'nuevos tenants'} en los últimos 30 días
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Total Members */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Total Miembros</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">
-                {overview.totalMembers}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">👥</span>
-            </div>
+        {/* Top Tenants Table */}
+        <Card variant="table" padding="none">
+          <div className="px-6 py-4 border-b border-white/20 dark:border-gray-600/20 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              Top 5 Tenants por Miembros
+            </h2>
+            <Link
+              href="/admin/tenants"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm inline-flex items-center gap-1"
+            >
+              Ver todos
+              <TrendingUp size={14} />
+            </Link>
           </div>
-        </div>
-      </div>
 
-      {/* Alerts Section */}
-      {(recent.expiringTrialsNext7Days > 0 || recent.tenantsLast30Days > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Expiring Trials */}
-          {recent.expiringTrialsNext7Days > 0 && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-xl">⚠️</span>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-b border-white/30 dark:border-gray-600/30">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Tenant
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Slug
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Plan
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Miembros
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Uso
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/20 dark:divide-gray-600/20">
+                {topTenants.map((tenant) => {
+                  const usagePercent = (tenant.memberCount / tenant.maxMembers) * 100
+                  return (
+                    <tr key={tenant.id} className="hover:bg-white/30 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link
+                          href={`/admin/tenants/${tenant.id}`}
+                          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        >
+                          {tenant.name}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{tenant.slug}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge
+                          variant={
+                            tenant.plan === 'enterprise'
+                              ? 'success'
+                              : tenant.plan === 'pro'
+                              ? 'info'
+                              : 'default'
+                          }
+                        >
+                          {tenant.plan.toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                        {tenant.memberCount} / {tenant.maxMembers}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                usagePercent >= 90
+                                  ? 'bg-red-500'
+                                  : usagePercent >= 70
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{usagePercent.toFixed(0)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/admin/tenants">
+            <Card padding="default" hover className="h-full cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600
+                              flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+                  <Building2 className="text-white" size={20} />
                 </div>
                 <div>
-                  <h3 className="text-yellow-800 font-semibold text-lg">Trials Expirando</h3>
-                  <p className="text-yellow-700 mt-1">
-                    {recent.expiringTrialsNext7Days} {recent.expiringTrialsNext7Days === 1 ? 'tenant expira' : 'tenants expiran'} en los próximos 7 días
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                    Ver Todos los Tenants
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Gestionar clubs registrados
                   </p>
-                  <Link
-                    href="/admin/tenants?status=trial"
-                    className="text-yellow-800 font-medium hover:underline mt-2 inline-block"
-                  >
-                    Ver tenants en prueba →
-                  </Link>
                 </div>
               </div>
-            </div>
-          )}
+            </Card>
+          </Link>
 
-          {/* Recent Growth */}
-          {recent.tenantsLast30Days > 0 && (
-            <div className="bg-green-50 border-l-4 border-green-400 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-green-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-xl">📈</span>
+          <Link href="/admin/tenants/new">
+            <Card padding="default" hover className="h-full cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600
+                              flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+                  <Plus className="text-white" size={20} />
                 </div>
                 <div>
-                  <h3 className="text-green-800 font-semibold text-lg">Crecimiento Reciente</h3>
-                  <p className="text-green-700 mt-1">
-                    {recent.tenantsLast30Days} {recent.tenantsLast30Days === 1 ? 'nuevo tenant' : 'nuevos tenants'} en los últimos 30 días
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                    Crear Nuevo Tenant
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Registrar un nuevo club
                   </p>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            </Card>
+          </Link>
 
-      {/* Top Tenants Table */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Top 5 Tenants por Miembros</h2>
-          <Link
-            href="/admin/tenants"
-            className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
-          >
-            Ver todos →
+          <Link href="/admin/stats">
+            <Card padding="default" hover className="h-full cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600
+                              flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
+                  <BarChart3 className="text-white" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                    Estadísticas Detalladas
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Ver análisis completo
+                  </p>
+                </div>
+              </div>
+            </Card>
           </Link>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tenant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Miembros
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Uso
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {topTenants.map((tenant) => {
-                const usagePercent = (tenant.memberCount / tenant.maxMembers) * 100
-                return (
-                  <tr key={tenant.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link
-                        href={`/admin/tenants/${tenant.id}`}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-900"
-                      >
-                        {tenant.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{tenant.slug}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          tenant.plan === 'enterprise'
-                            ? 'bg-purple-100 text-purple-800'
-                            : tenant.plan === 'pro'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {tenant.plan.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {tenant.memberCount} / {tenant.maxMembers}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${
-                              usagePercent >= 90
-                                ? 'bg-red-500'
-                                : usagePercent >= 70
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
-                            }`}
-                            style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-gray-600">{usagePercent.toFixed(0)}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link
-          href="/admin/tenants"
-          className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-              <span className="text-2xl">🏢</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Ver Todos los Tenants</h3>
-              <p className="text-sm text-gray-600 mt-1">Gestionar clubs registrados</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/tenants/new"
-          className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-              <span className="text-2xl">➕</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Crear Nuevo Tenant</h3>
-              <p className="text-sm text-gray-600 mt-1">Registrar un nuevo club</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/stats"
-          className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <span className="text-2xl">📊</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Estadísticas Detalladas</h3>
-              <p className="text-sm text-gray-600 mt-1">Ver análisis completo</p>
-            </div>
-          </div>
-        </Link>
       </div>
     </div>
   )
