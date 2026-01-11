@@ -66,69 +66,7 @@ export const FloatingButton: React.FC<FloatingButtonProps> = ({
   }
 
   return (
-    <div className={`fixed ${positionClasses[position]} z-40`}>
-      {/* Action Buttons */}
-      <AnimatePresence>
-        {isOpen &&
-          actions.map((action, index) => {
-            const Icon = action.icon
-            const { x, y } = getActionPosition(index, actions.length)
-
-            return (
-              <motion.button
-                key={action.id}
-                initial={{ scale: 0, x: 0, y: 0, opacity: 0 }}
-                animate={{ scale: 1, x, y, opacity: 1 }}
-                exit={{ scale: 0, x: 0, y: 0, opacity: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 260,
-                  damping: 20,
-                  delay: index * 0.05
-                }}
-                onClick={() => {
-                  action.onClick()
-                  setIsOpen(false)
-                }}
-                className={`absolute bottom-0 right-0 w-12 h-12 ${
-                  action.color || 'bg-blue-500 hover:bg-blue-600'
-                } text-white rounded-full shadow-lg flex items-center justify-center transition-colors group`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Icon size={20} />
-
-                {/* Label tooltip */}
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="absolute right-full mr-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                >
-                  {action.label}
-                  <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
-                </motion.div>
-              </motion.button>
-            )
-          })}
-      </AnimatePresence>
-
-      {/* Main Button */}
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 ${mainColor} text-white rounded-full shadow-xl flex items-center justify-center relative z-10`}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        animate={{ rotate: isOpen ? 45 : 0 }}
-        transition={{ type: 'spring', stiffness: 200 }}
-      >
-        <motion.div
-          animate={{ rotate: isOpen ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {isOpen ? <X size={24} /> : <Plus size={24} />}
-        </motion.div>
-      </motion.button>
-
+    <>
       {/* Backdrop blur when open */}
       <AnimatePresence>
         {isOpen && (
@@ -137,11 +75,74 @@ export const FloatingButton: React.FC<FloatingButtonProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 -z-10"
-            style={{ backdropFilter: 'blur(2px)' }}
+            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-[9998]"
           />
         )}
       </AnimatePresence>
-    </div>
+
+      <div className={`fixed ${positionClasses[position]} z-[9999]`}>
+        {/* Action Buttons */}
+        <AnimatePresence>
+          {isOpen &&
+            actions.map((action, index) => {
+              const Icon = action.icon
+              const { x, y } = getActionPosition(index, actions.length)
+
+              return (
+                <motion.button
+                  key={action.id}
+                  initial={{ scale: 0, x: 0, y: 0, opacity: 0 }}
+                  animate={{ scale: 1, x, y, opacity: 1 }}
+                  exit={{ scale: 0, x: 0, y: 0, opacity: 0 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 260,
+                    damping: 20,
+                    delay: index * 0.05
+                  }}
+                  onClick={() => {
+                    action.onClick()
+                    setIsOpen(false)
+                  }}
+                  className={`absolute bottom-0 right-0 w-12 h-12 ${
+                    action.color || 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-full shadow-lg flex items-center justify-center transition-colors group`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Icon size={20} />
+
+                  {/* Label tooltip */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="absolute right-full mr-3 px-3 py-1.5 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl"
+                  >
+                    {action.label}
+                    <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45" />
+                  </motion.div>
+                </motion.button>
+              )
+            })}
+        </AnimatePresence>
+
+        {/* Main Button */}
+        <motion.button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-14 h-14 ${mainColor} text-white rounded-full shadow-xl flex items-center justify-center relative`}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          animate={{ rotate: isOpen ? 45 : 0 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+        >
+          <motion.div
+            animate={{ rotate: isOpen ? 45 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {isOpen ? <X size={24} /> : <Plus size={24} />}
+          </motion.div>
+        </motion.button>
+      </div>
+    </>
   )
 }
