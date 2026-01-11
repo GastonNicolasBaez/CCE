@@ -48,13 +48,13 @@ async function fixAndSeed() {
       console.log('\n✅ ¡Todo listo! Ahora puedes hacer login con:');
       console.log('   - admin@espora.com / password123');
       console.log('   - admin@demo.com / password123');
-      console.log('   - superadmin@cce.com / Admin2024!');
+      console.log('   - superadmin@cce.com / password123');
     } else {
       console.log('\n❌ Operación cancelada. Los datos existentes no fueron modificados.');
       console.log('\nSi quieres intentar el login con las credenciales existentes:');
       console.log('   - admin@espora.com / password123');
       console.log('   - admin@demo.com / password123');
-      console.log('   - superadmin@cce.com / Admin2024!');
+      console.log('   - superadmin@cce.com / password123');
 
       await sequelize.close();
       rl.close();

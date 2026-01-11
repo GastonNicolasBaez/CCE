@@ -59,7 +59,6 @@ const PUBLIC_ROUTES_WITH_TENANT = [
  * All other routes by default
  */
 const PROTECTED_ROUTES = [
-  '/dashboard',
   '/socios',
   '/pagos',
   '/estadisticas',
@@ -98,10 +97,10 @@ export function middleware(request: NextRequest) {
   // CASE 2: Public routes requiring tenant (subdomain)
   // ============================================================
   if (tenantSlug && PUBLIC_ROUTES_WITH_TENANT.some(route => pathname.startsWith(route))) {
-    // If already authenticated, redirect to dashboard
+    // If already authenticated, redirect to home (dashboard is at root)
     if (token) {
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = '/'
       return NextResponse.redirect(url)
     }
 
