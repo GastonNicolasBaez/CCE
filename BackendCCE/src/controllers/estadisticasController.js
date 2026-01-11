@@ -27,15 +27,13 @@ const estadisticasController = {
       where: { tenantId, estado: 'Activo' }
     });
 
-    // Get socios by type
-    const sociosPorTipo = await Socio.findAll({
-      where: { tenantId },
-      attributes: [
-        'tipo',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
-      ],
-      group: ['tipo'],
-      raw: true
+    // Get socios by esJugador (jugadores vs solo socios)
+    const jugadores = await Socio.count({
+      where: { tenantId, esJugador: true }
+    });
+
+    const soloSocios = await Socio.count({
+      where: { tenantId, esJugador: false }
     });
 
     // Get total actividades
@@ -77,10 +75,10 @@ const estadisticasController = {
           total: totalSocios,
           activos: sociosActivos,
           inactivos: totalSocios - sociosActivos,
-          porTipo: sociosPorTipo.reduce((acc, item) => {
-            acc[item.tipo] = parseInt(item.count);
-            return acc;
-          }, {})
+          porTipo: {
+            jugadores: jugadores,
+            soloSocios: soloSocios
+          }
         },
         actividades: {
           total: totalActividades
@@ -123,23 +121,22 @@ const estadisticasController = {
           'cantidadSocios'
         ]
       ],
-      order: [[sequelize.literal('cantidadSocios'), 'DESC']]
+      order: [[sequelize.literal('"cantidadSocios"'), 'DESC']],
+      raw: true
     });
 
     // Calculate total monthly income per activity
-    const actividadesConIngresos = await Promise.all(
-      actividades.map(async (actividad) => {
-        const ingresoMensual = actividad.monto * parseInt(actividad.getDataValue('cantidadSocios') || 0);
+    const actividadesConIngresos = actividades.map((actividad) => {
+      const ingresoMensual = actividad.monto * parseInt(actividad.cantidadSocios || 0);
 
-        return {
-          id: actividad.id,
-          nombre: actividad.nombre,
-          monto: parseFloat(actividad.monto),
-          cantidadSocios: parseInt(actividad.getDataValue('cantidadSocios') || 0),
-          ingresoMensualEstimado: parseFloat(ingresoMensual.toFixed(2))
-        };
-      })
-    );
+      return {
+        id: actividad.id,
+        nombre: actividad.nombre,
+        monto: parseFloat(actividad.monto),
+        cantidadSocios: parseInt(actividad.cantidadSocios || 0),
+        ingresoMensualEstimado: parseFloat(ingresoMensual.toFixed(2))
+      };
+    });
 
     res.json({
       success: true,
@@ -163,7 +160,13 @@ const estadisticasController = {
     const crecimientoSocios = await Socio.findAll({
       where: {
         tenantId,
-        createdAt: { [Op.gte]: sixMonthsAgo }
+        [Op.and]: [
+          sequelize.where(
+            sequelize.col('created_at'),
+            Op.gte,
+            sixMonthsAgo
+          )
+        ]
       },
       attributes: [
         [sequelize.fn('to_char', sequelize.col('created_at'), 'YYYY-MM'), 'mes'],
@@ -179,7 +182,13 @@ const estadisticasController = {
       where: {
         tenantId,
         estado: 'Pagada',
-        fecha_pago: { [Op.gte]: sixMonthsAgo }
+        [Op.and]: [
+          sequelize.where(
+            sequelize.col('fecha_pago'),
+            Op.gte,
+            sixMonthsAgo
+          )
+        ]
       },
       attributes: [
         [sequelize.fn('to_char', sequelize.col('fecha_pago'), 'YYYY-MM'), 'mes'],
@@ -214,24 +223,21 @@ const estadisticasController = {
   obtenerEstadisticasCuotas: asyncHandler(async (req, res) => {
     const tenantId = req.user.tenantId;
 
-    // Get current month's stats
+    // Get current month's period (formato: YYYY-MM)
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const periodoActual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     const cuotasMesActual = await Cuota.count({
       where: {
         tenantId,
-        mes: now.getMonth() + 1,
-        anio: now.getFullYear()
+        periodo: periodoActual
       }
     });
 
     const cuotasPagadasMesActual = await Cuota.count({
       where: {
         tenantId,
-        mes: now.getMonth() + 1,
-        anio: now.getFullYear(),
+        periodo: periodoActual,
         estado: 'Pagada'
       }
     });
@@ -239,8 +245,7 @@ const estadisticasController = {
     const ingresoMesActual = await Cuota.sum('monto', {
       where: {
         tenantId,
-        mes: now.getMonth() + 1,
-        anio: now.getFullYear(),
+        periodo: periodoActual,
         estado: 'Pagada'
       }
     }) || 0;
@@ -261,6 +266,7 @@ const estadisticasController = {
       success: true,
       data: {
         mesActual: {
+          periodo: periodoActual,
           mes: now.getMonth() + 1,
           anio: now.getFullYear(),
           total: cuotasMesActual,
@@ -271,7 +277,7 @@ const estadisticasController = {
         porEstado: cuotasPorEstado.map(item => ({
           estado: item.estado,
           cantidad: parseInt(item.cantidad),
-          montoTotal: parseFloat(parseFloat(item.monto_total).toFixed(2))
+          montoTotal: parseFloat(parseFloat(item.monto_total || 0).toFixed(2))
         }))
       }
     });
