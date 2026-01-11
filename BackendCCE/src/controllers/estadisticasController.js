@@ -15,7 +15,7 @@ const estadisticasController = {
    * Get general statistics for tenant dashboard
    */
   obtenerEstadisticasDashboard: asyncHandler(async (req, res) => {
-    const tenantId = req.tenant.id;
+    const tenantId = req.user.tenantId;
 
     // Get total socios count
     const totalSocios = await Socio.count({
@@ -105,7 +105,7 @@ const estadisticasController = {
    * Get statistics by activity
    */
   obtenerEstadisticasPorActividad: asyncHandler(async (req, res) => {
-    const tenantId = req.tenant.id;
+    const tenantId = req.user.tenantId;
 
     // Get all activities with socio count
     const actividades = await Actividad.findAll({
@@ -154,7 +154,7 @@ const estadisticasController = {
    * Get growth statistics (last 6 months)
    */
   obtenerCrecimiento: asyncHandler(async (req, res) => {
-    const tenantId = req.tenant.id;
+    const tenantId = req.user.tenantId;
 
     // Get socios created in last 6 months grouped by month
     const sixMonthsAgo = new Date();
@@ -212,7 +212,7 @@ const estadisticasController = {
    * Get detailed cuotas statistics
    */
   obtenerEstadisticasCuotas: asyncHandler(async (req, res) => {
-    const tenantId = req.tenant.id;
+    const tenantId = req.user.tenantId;
 
     // Get current month's stats
     const now = new Date();
