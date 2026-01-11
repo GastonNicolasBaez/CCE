@@ -574,8 +574,8 @@ const tenantsController = {
           maxMembers: t.maxMembers
         })),
         growth: monthlyGrowth.map(item => ({
-          month: item.getDataValue('month'),
-          count: parseInt(item.getDataValue('count'))
+          month: item.month,
+          count: parseInt(item.count)
         }))
       }
     });
