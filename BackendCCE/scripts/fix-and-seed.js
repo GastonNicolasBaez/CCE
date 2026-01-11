@@ -4,6 +4,18 @@
 
 const { sequelize } = require('../src/models');
 const { execSync } = require('child_process');
+const readline = require('readline');
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+function question(prompt) {
+  return new Promise((resolve) => {
+    rl.question(prompt, resolve);
+  });
+}
 
 async function fixAndSeed() {
   try {
@@ -13,22 +25,44 @@ async function fixAndSeed() {
     await sequelize.query('ALTER TABLE usuarios ALTER COLUMN tenant_id DROP NOT NULL;');
     console.log('✅ Columna tenant_id ahora permite NULL');
 
-    // Cerrar conexión
-    await sequelize.close();
-    console.log('✅ Conexión cerrada');
+    // Preguntar si quiere limpiar datos
+    console.log('\n⚠️  ADVERTENCIA: Se detectaron datos existentes en la base de datos.');
+    const answer = await question('¿Deseas ELIMINAR todos los datos y empezar de cero? (s/n): ');
 
-    console.log('\n🌱 Ejecutando seeders...');
+    if (answer.toLowerCase() === 's' || answer.toLowerCase() === 'si') {
+      console.log('\n🗑️  Limpiando base de datos...');
 
-    // Ejecutar seeder
-    execSync('npm run db:seed', { stdio: 'inherit' });
+      await sequelize.query('TRUNCATE TABLE usuarios, socios, cuotas, actividades, socio_actividades, tenant_configuracion, tenants RESTART IDENTITY CASCADE;');
+      console.log('✅ Base de datos limpia');
 
-    console.log('\n✅ ¡Todo listo! Ahora puedes hacer login con:');
-    console.log('   - admin@espora.com / password123');
-    console.log('   - admin@demo.com / password123');
-    console.log('   - superadmin@cce.com / Admin2024!');
+      // Cerrar conexión
+      await sequelize.close();
+      rl.close();
+      console.log('✅ Conexión cerrada');
+
+      console.log('\n🌱 Ejecutando seeders...');
+
+      // Ejecutar seeder
+      execSync('npm run db:seed', { stdio: 'inherit' });
+
+      console.log('\n✅ ¡Todo listo! Ahora puedes hacer login con:');
+      console.log('   - admin@espora.com / password123');
+      console.log('   - admin@demo.com / password123');
+      console.log('   - superadmin@cce.com / Admin2024!');
+    } else {
+      console.log('\n❌ Operación cancelada. Los datos existentes no fueron modificados.');
+      console.log('\nSi quieres intentar el login con las credenciales existentes:');
+      console.log('   - admin@espora.com / password123');
+      console.log('   - admin@demo.com / password123');
+      console.log('   - superadmin@cce.com / Admin2024!');
+
+      await sequelize.close();
+      rl.close();
+    }
 
   } catch (error) {
     console.error('❌ Error:', error.message);
+    rl.close();
     process.exit(1);
   }
 }
