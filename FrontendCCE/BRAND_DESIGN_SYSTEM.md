@@ -234,7 +234,7 @@ Base:      z-0
 background: var(--accent-primary);
 color: #000000; /* Black text on neon */
 font-weight: 600;
-border-radius: 4px; /* Sharp corners */
+border-radius: 2px; /* Almost straight corners */
 padding: 12px 24px;
 border: none;
 box-shadow: 0 0 20px var(--accent-primary-glow);
@@ -251,7 +251,7 @@ background: transparent;
 color: var(--text-primary);
 font-weight: 600;
 border: 2px solid var(--border-emphasis);
-border-radius: 4px;
+border-radius: 2px;
 padding: 10px 24px;
 
 /* Hover */
@@ -272,7 +272,7 @@ color: #FFFFFF;
 background: var(--bg-tertiary);
 color: var(--text-primary);
 border: 1px solid var(--border-default);
-border-radius: 4px;
+border-radius: 2px;
 padding: 12px 16px;
 font-size: var(--text-body);
 
@@ -294,12 +294,11 @@ box-shadow: 0 0 0 3px var(--accent-alert-glow);
 ```css
 background: var(--surface-default);
 border: 1px solid var(--border-default);
-border-radius: 8px;
+border-radius: 2px;
 padding: 24px;
 
-/* Hover (for interactive cards) */
-border-color: var(--border-emphasis);
-transform: translateY(-2px);
+/* Note: Cards do NOT have hover effects */
+/* Only interactive elements (buttons, rows, nav items) have hovers */
 ```
 
 ### Tables (Floating Row Style)
@@ -314,7 +313,7 @@ padding: 0;
 ```css
 background: var(--surface-default);
 border: 1px solid var(--border-default);
-border-radius: 4px;
+border-radius: 2px;
 padding: 16px;
 margin-bottom: 8px; /* Spacing between rows */
 
@@ -352,7 +351,7 @@ border: none;
 **Status Badge Base**
 ```css
 padding: 4px 12px;
-border-radius: 12px; /* Pill shape */
+border-radius: 2px;
 font-size: var(--text-caption);
 font-weight: 600;
 text-transform: uppercase;
@@ -370,7 +369,7 @@ letter-spacing: var(--tracking-wide);
 ```css
 background: var(--bg-secondary);
 border: 1px solid var(--border-emphasis);
-border-radius: 8px;
+border-radius: 2px;
 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 padding: 32px;
 max-width: 600px;
@@ -386,7 +385,7 @@ backdrop-filter: blur(4px);
 /* Default */
 color: var(--text-secondary);
 padding: 12px 16px;
-border-radius: 4px;
+border-radius: 2px;
 margin-bottom: 4px;
 
 /* Hover */
@@ -435,7 +434,7 @@ font-size: var(--text-caption);
 /* Tooltip */
 background: var(--bg-secondary);
 border: 1px solid var(--border-emphasis);
-border-radius: 4px;
+border-radius: 2px;
 padding: 12px;
 color: var(--text-primary);
 ```
@@ -466,9 +465,12 @@ color: var(--text-primary);
 ### Hover Effects
 
 - **Buttons:** `transform: translateY(-1px)` + glow increase
-- **Cards:** `transform: translateY(-2px)` + border color change
+- **Floating Rows (Tables):** `background: var(--surface-hover)` + border color change
+- **Sidebar Nav Items:** `background: var(--surface-hover)` + text color change
 - **Links:** Color change + underline appear
 - **Icons:** `scale: 1.1` + color change
+
+**Note:** Cards do NOT have hover effects. Only truly interactive elements have hovers.
 
 ### Focus Indicators
 
@@ -476,6 +478,35 @@ All interactive elements must have visible focus state:
 ```css
 outline: 2px solid var(--accent-focus);
 outline-offset: 2px;
+```
+
+### Custom Scrollbars
+
+```css
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-emphasis);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-emphasis) var(--bg-primary);
+}
 ```
 
 ---
@@ -628,11 +659,12 @@ When refactoring components, ensure:
 3. **No Gradients on Backgrounds** - Solid colors only for surfaces
 4. **No Small Text** - Minimum 12px (0.75rem)
 5. **No Low Contrast** - Always test text legibility
-6. **No Rounded Corners > 8px** - Keep it sharp (except pills/badges)
+6. **No Rounded Corners > 2px** - Keep it almost straight (2px max everywhere)
 7. **No Animations > 500ms** - Keep it snappy
 8. **No Multiple Accent Colors in One Component** - One accent per context
 9. **No Grid Lines in Tables** - Use floating rows
 10. **No Glassmorphism/Neumorphism** - Flat design with borders
+11. **No Hover Effects on Cards** - Only interactive elements (buttons, rows, nav) have hovers
 
 ---
 
