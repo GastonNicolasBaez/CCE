@@ -36,7 +36,9 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans`}>
         <AuthInitializer />
-        {children}
+        <CommandPaletteProvider>
+          {children}
+        </CommandPaletteProvider>
         <Toaster
           position="top-right"
           toastOptions={{

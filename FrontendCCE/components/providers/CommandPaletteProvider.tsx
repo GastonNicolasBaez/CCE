@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCommandPalette, CommandItem } from '@/components/ui'
 import {
@@ -27,6 +27,12 @@ const CommandPaletteContext = createContext<CommandPaletteContextType | null>(nu
 
 export function CommandPaletteProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Only mount on client side
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const commands: CommandItem[] = [
     // Navegación
@@ -148,11 +154,22 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     }
   ]
 
-  const { isOpen, open, close, toggle, CommandPaletteComponent } = useCommandPalette(commands)
+  // Only use the hook after mounting to avoid SSR issues
+  const commandPalette = isMounted ? useCommandPalette(commands) : null
 
   return (
-    <CommandPaletteContext.Provider value={{ open, close, toggle }}>
-      {CommandPaletteComponent}
+    <CommandPaletteContext.Provider
+      value={commandPalette ? {
+        open: commandPalette.open,
+        close: commandPalette.close,
+        toggle: commandPalette.toggle
+      } : {
+        open: () => {},
+        close: () => {},
+        toggle: () => {}
+      }}
+    >
+      {isMounted && commandPalette?.CommandPaletteComponent}
       {children}
     </CommandPaletteContext.Provider>
   )
