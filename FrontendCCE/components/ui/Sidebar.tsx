@@ -99,54 +99,50 @@ export default function Sidebar() {
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
 
   return (
-         <motion.div
-       initial={{ x: -300 }}
-       animate={{ x: 0 }}
-             className={`fixed left-0 top-0 h-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-r border-white/30 dark:border-gray-700/30 shadow-glass z-50 transition-all duration-300 ${
+    <motion.div
+      initial={{ x: -300 }}
+      animate={{ x: 0 }}
+      className={`fixed left-0 top-0 h-full bg-bg-secondary border-r border-border z-50 transition-all duration-300 ${
         sidebarCollapsed ? 'w-16 sm:w-20' : 'w-64'
       }`}
-     >
-             {/* Header */}
-       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/30">
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
         {!sidebarCollapsed && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex items-center gap-2"
           >
-                         <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-               <span className="text-white font-bold text-xs">CCE</span>
-             </div>
-             <div>
-               <h1 className="font-bold text-primary text-sm">Club Espora</h1>
-               <p className="text-xs text-gray-500 dark:text-gray-400">Dashboard</p>
-             </div>
+            <div className="w-8 h-8 bg-accent-primary rounded-sharp flex items-center justify-center shadow-glow-primary">
+              <span className="text-black font-bold text-xs">CCE</span>
+            </div>
+            <div>
+              <h1 className="font-bold text-text-primary text-sm">Club Espora</h1>
+              <p className="text-xs text-text-tertiary uppercase tracking-wide">Dashboard</p>
+            </div>
           </motion.div>
         )}
-        
-                 <button
-           onClick={toggleSidebar}
-           className="p-1.5 sm:p-2 rounded-lg hover:bg-white/50 transition-colors"
-         >
-           {sidebarCollapsed ? <ChevronRight size={16} className="sm:w-5 sm:h-5" /> : <ChevronLeft size={16} className="sm:w-5 sm:h-5" />}
-         </button>
+
+        <button
+          onClick={toggleSidebar}
+          className="p-1.5 sm:p-2 rounded-sharp hover:bg-surface-hover transition-colors text-text-secondary hover:text-text-primary"
+        >
+          {sidebarCollapsed ? <ChevronRight size={16} className="sm:w-5 sm:h-5" /> : <ChevronLeft size={16} className="sm:w-5 sm:h-5" />}
+        </button>
       </div>
 
-             {/* Navigation */}
-       <nav className="p-3 sm:p-4 space-y-2">
+      {/* Navigation */}
+      <nav className="p-3 sm:p-4 space-y-2">
         {visibleNavigationItems.map((item) => {
           const Icon = item.icon
           const isActive = currentPage === item.id
-          
+
           return (
             <motion.button
               key={item.id}
               onClick={() => setCurrentPage(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 ${
-                isActive 
-                  ? 'bg-primary text-white shadow-lg' 
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:text-primary dark:hover:text-primary'
-              }`}
+              className={`w-full sidebar-item-fintech ${isActive ? '!bg-accent-primary !text-black !font-semibold !shadow-glow-primary' : ''}`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -155,10 +151,10 @@ export default function Sidebar() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-left"
+                  className="text-left flex-1"
                 >
-                  <div className="font-medium">{item.label}</div>
-                  <div className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <div className="font-medium text-sm">{item.label}</div>
+                  <div className={`text-xs ${isActive ? 'text-black/70' : 'text-text-tertiary'}`}>
                     {item.description}
                   </div>
                 </motion.div>
@@ -170,16 +166,16 @@ export default function Sidebar() {
 
       {/* Footer */}
       {!sidebarCollapsed && (
-                 <motion.div
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-white/30"
-         >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 p-3 sm:p-4 bg-surface border border-border rounded-sharp"
+        >
           <div className="text-center">
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Club Comandante Espora</p>
-            <p className="text-xs text-gray-500 dark:text-gray-500">Sistema de Gestión</p>
-            <div className="mt-2 pt-2 border-t border-white/20">
-              <p className="text-xs text-primary font-semibold">{getRoleDisplayName()}</p>
+            <p className="text-xs text-text-secondary font-medium">Club Comandante Espora</p>
+            <p className="text-xs text-text-tertiary">Sistema de Gestión</p>
+            <div className="mt-2 pt-2 border-t border-border">
+              <p className="text-xs text-accent-primary font-semibold">{getRoleDisplayName()}</p>
             </div>
           </div>
         </motion.div>
