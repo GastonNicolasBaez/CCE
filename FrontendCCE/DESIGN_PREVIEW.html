@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCE Dashboard - Dark Fintech Design Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ===== RESET ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      /* Backgrounds */
+      --bg-primary: #121212;
+      --bg-secondary: #1A1A1A;
+      --bg-tertiary: #252525;
+
+      /* Surfaces */
+      --surface-default: #252525;
+      --surface-hover: #2D2D2D;
+      --surface-active: #333333;
+
+      /* Borders */
+      --border-default: #333333;
+      --border-emphasis: #404040;
+
+      /* Text */
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-tertiary: #666666;
+
+      /* Accents */
+      --accent-primary: #00FFC2;
+      --accent-primary-hover: #00E5B0;
+      --accent-secondary: #00E5FF;
+      --accent-alert: #FF4757;
+      --accent-alert-hover: #FF3545;
+      --accent-warning: #FFAA00;
+      --accent-success: #00FF88;
+      --accent-focus: #BB86FC;
+
+      /* Typography */
+      --font-primary: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    }
+
+    /* ===== BASE STYLES ===== */
+    body {
+      font-family: var(--font-primary);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section {
+      margin-bottom: 60px;
+      padding: 30px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--accent-primary);
+      padding-bottom: 12px;
+    }
+
+    .section-subtitle {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 24px 0 12px;
+      color: var(--text-primary);
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    /* ===== COLOR PALETTE ===== */
+    .color-swatch {
+      padding: 20px;
+      border-radius: 4px;
+      border: 1px solid var(--border-default);
+      text-align: center;
+    }
+
+    .color-swatch .color-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .color-swatch .color-hex {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* ===== TYPOGRAPHY EXAMPLES ===== */
+    .type-example {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--surface-default);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+    }
+
+    .type-label {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+
+    .display-text {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.05em;
+      font-family: var(--font-mono);
+    }
+
+    .h1-text { font-size: 2.5rem; font-weight: 700; line-height: 1.2; }
+    .h2-text { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+    .h3-text { font-size: 1.5rem; font-weight: 600; line-height: 1.2; }
+    .body-text { font-size: 1rem; font-weight: 400; color: var(--text-secondary); }
+    .caption-text { font-size: 0.75rem; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 100ms ease;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #000000;
+      box-shadow: 0 0 20px rgba(0, 255, 194, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-primary-hover);
+      box-shadow: 0 0 30px rgba(0, 255, 194, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 2px solid var(--border-emphasis);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-danger {
+      background: var(--accent-alert);
+      color: #FFFFFF;
+      box-shadow: 0 0 20px rgba(255, 71, 87, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: var(--accent-alert-hover);
+      box-shadow: 0 0 30px rgba(255, 71, 87, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* ===== INPUTS ===== */
+    .input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: var(--font-primary);
+      transition: all 100ms ease;
+    }
+
+    .input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(0, 255, 194, 0.2);
+    }
+
+    .input-error {
+      border-color: var(--accent-alert);
+    }
+
+    .input-error:focus {
+      box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.2);
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--surface-default);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 24px;
+      transition: all 200ms ease;
+    }
+
+    .card-hover {
+      cursor: pointer;
+    }
+
+    .card-hover:hover {
+      border-color: var(--border-emphasis);
+      transform: translateY(-2px);
+    }
+
+    /* ===== METRIC CARDS ===== */
+    .metric-card {
+      background: var(--surface-default);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.05em;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .metric-change {
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-change.positive { color: var(--accent-success); }
+    .metric-change.negative { color: var(--accent-alert); }
+
+    /* ===== FLOATING ROWS ===== */
+    .floating-row {
+      background: var(--surface-default);
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 8px;
+      transition: all 100ms ease;
+      cursor: pointer;
+    }
+
+    .floating-row:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-emphasis);
+    }
+
+    .floating-row.selected {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(0, 255, 194, 0.2);
+    }
+
+    .floating-row-content {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+      gap: 16px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .table-header-cell {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    /* ===== BADGES ===== */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-active {
+      background: rgba(0, 255, 194, 0.2);
+      color: var(--accent-primary);
+    }
+
+    .badge-pending {
+      background: rgba(255, 170, 0, 0.2);
+      color: var(--accent-warning);
+    }
+
+    .badge-alert {
+      background: rgba(255, 71, 87, 0.2);
+      color: var(--accent-alert);
+    }
+
+    .badge-inactive {
+      background: var(--surface-active);
+      color: var(--text-tertiary);
+    }
+
+    /* ===== SPLIT SCREEN LAYOUT ===== */
+    .split-screen-demo {
+      display: grid;
+      grid-template-columns: 35% 65%;
+      height: 500px;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .split-left {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-default);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .split-right {
+      background: var(--bg-primary);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* ===== SIDEBAR NAV ITEM ===== */
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      transition: all 100ms ease;
+      cursor: pointer;
+    }
+
+    .sidebar-item:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .sidebar-item.active {
+      background: var(--accent-primary);
+      color: #000000;
+      font-weight: 600;
+      box-shadow: 0 0 20px rgba(0, 255, 194, 0.2);
+    }
+
+    .sidebar-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== UTILITIES ===== */
+    .mb-4 { margin-bottom: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .text-primary { color: var(--text-primary); }
+    .text-secondary { color: var(--text-secondary); }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .text-sm { font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ===== HEADER ===== -->
+    <div style="text-align: center; margin-bottom: 60px;">
+      <h1 style="font-size: 3.5rem; font-weight: 900; margin-bottom: 12px; background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        Club Comandante Espora
+      </h1>
+      <p style="font-size: 1.25rem; color: var(--text-secondary);">Dark Swiss Split-Screen Fintech Terminal Design System</p>
+      <p style="font-size: 0.875rem; color: var(--text-tertiary); margin-top: 8px;">Preview de Componentes - Abrir en navegador para ver animaciones</p>
+    </div>
+
+    <!-- ===== COLOR PALETTE ===== -->
+    <div class="section">
+      <h2 class="section-title">🎨 Paleta de Colores</h2>
+
+      <h3 class="section-subtitle">Backgrounds</h3>
+      <div class="grid grid-3 mb-4">
+        <div class="color-swatch" style="background: var(--bg-primary);">
+          <div class="color-name">Primary BG</div>
+          <div class="color-hex">#121212</div>
+        </div>
+        <div class="color-swatch" style="background: var(--bg-secondary);">
+          <div class="color-name">Secondary BG</div>
+          <div class="color-hex">#1A1A1A</div>
+        </div>
+        <div class="color-swatch" style="background: var(--bg-tertiary);">
+          <div class="color-name">Tertiary BG</div>
+          <div class="color-hex">#252525</div>
+        </div>
+      </div>
+
+      <h3 class="section-subtitle">Accent Colors (Neon)</h3>
+      <div class="grid grid-4">
+        <div class="color-swatch" style="background: var(--accent-primary); color: #000;">
+          <div class="color-name">Primary / Money In</div>
+          <div class="color-hex" style="color: #000; opacity: 0.7;">#00FFC2</div>
+        </div>
+        <div class="color-swatch" style="background: var(--accent-alert);">
+          <div class="color-name">Alert / Debt</div>
+          <div class="color-hex">#FF4757</div>
+        </div>
+        <div class="color-swatch" style="background: var(--accent-warning);">
+          <div class="color-name">Warning</div>
+          <div class="color-hex">#FFAA00</div>
+        </div>
+        <div class="color-swatch" style="background: var(--accent-success);">
+          <div class="color-name">Success</div>
+          <div class="color-hex">#00FF88</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TYPOGRAPHY ===== -->
+    <div class="section">
+      <h2 class="section-title">📝 Tipografía (Swiss Hierarchy)</h2>
+
+      <div class="type-example">
+        <div class="type-label">Display (Métricas Hero) - JetBrains Mono Black</div>
+        <div class="display-text">$127,450</div>
+      </div>
+
+      <div class="type-example">
+        <div class="type-label">H1 - Page Titles</div>
+        <div class="h1-text">Dashboard Principal</div>
+      </div>
+
+      <div class="type-example">
+        <div class="type-label">H2 - Section Headers</div>
+        <div class="h2-text">Miembros Activos</div>
+      </div>
+
+      <div class="type-example">
+        <div class="type-label">H3 - Subsection Headers</div>
+        <div class="h3-text">Detalles de Pagos</div>
+      </div>
+
+      <div class="type-example">
+        <div class="type-label">Body - Regular Text</div>
+        <div class="body-text">Este es el texto del cuerpo con información detallada sobre los miembros del club.</div>
+      </div>
+
+      <div class="type-example">
+        <div class="type-label">Caption - Labels & Hints</div>
+        <div class="caption-text">Última actualización: 12 Ene 2026</div>
+      </div>
+    </div>
+
+    <!-- ===== BUTTONS ===== -->
+    <div class="section">
+      <h2 class="section-title">🔘 Botones</h2>
+
+      <div class="grid grid-3">
+        <div>
+          <h3 class="section-subtitle">Primary Button</h3>
+          <button class="btn btn-primary">Guardar Cambios</button>
+          <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">
+            Para acciones principales (Submit, Confirmar, etc.)
+          </p>
+        </div>
+
+        <div>
+          <h3 class="section-subtitle">Secondary Button</h3>
+          <button class="btn btn-secondary">Cancelar</button>
+          <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">
+            Para acciones secundarias o navegación
+          </p>
+        </div>
+
+        <div>
+          <h3 class="section-subtitle">Danger Button</h3>
+          <button class="btn btn-danger">Eliminar Miembro</button>
+          <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">
+            Para acciones destructivas
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FORM INPUTS ===== -->
+    <div class="section">
+      <h2 class="section-title">📝 Form Inputs</h2>
+
+      <div class="grid grid-2">
+        <div>
+          <label class="input-label">Nombre del Miembro</label>
+          <input type="text" class="input" placeholder="Ingrese el nombre completo">
+        </div>
+
+        <div>
+          <label class="input-label">Email (con error)</label>
+          <input type="email" class="input input-error" placeholder="email@ejemplo.com" value="invalido">
+          <p style="font-size: 0.75rem; color: var(--accent-alert); margin-top: 4px;">Email inválido</p>
+        </div>
+
+        <div>
+          <label class="input-label">Monto a Pagar (Monospace)</label>
+          <input type="text" class="input" style="font-family: var(--font-mono); font-size: 1.5rem;" value="$12,500.00">
+        </div>
+
+        <div>
+          <label class="input-label">Fecha de Inscripción</label>
+          <input type="date" class="input">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== METRIC CARDS ===== -->
+    <div class="section">
+      <h2 class="section-title">📊 Metric Cards (Dashboard)</h2>
+
+      <div class="grid grid-4">
+        <div class="metric-card">
+          <div class="metric-label">Miembros Activos</div>
+          <div class="metric-value">247</div>
+          <div class="metric-change positive">
+            <span>▲</span>
+            <span>+12.5% vs mes anterior</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Ingresos del Mes</div>
+          <div class="metric-value">$127K</div>
+          <div class="metric-change positive">
+            <span>▲</span>
+            <span>+8.3%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Pagos Pendientes</div>
+          <div class="metric-value">18</div>
+          <div class="metric-change negative">
+            <span>▼</span>
+            <span>-5.2%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Deudas Total</div>
+          <div class="metric-value" style="color: var(--accent-alert);">$8.5K</div>
+          <div class="metric-change positive">
+            <span>▲</span>
+            <span>Mejoró 15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATUS BADGES ===== -->
+    <div class="section">
+      <h2 class="section-title">🏷️ Status Badges</h2>
+
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <span class="badge badge-active">Pagado</span>
+        <span class="badge badge-active">Activo</span>
+        <span class="badge badge-pending">Pendiente</span>
+        <span class="badge badge-alert">Vencido</span>
+        <span class="badge badge-alert">Deuda</span>
+        <span class="badge badge-inactive">Inactivo</span>
+      </div>
+    </div>
+
+    <!-- ===== CARDS ===== -->
+    <div class="section">
+      <h2 class="section-title">🗂️ Cards</h2>
+
+      <div class="grid grid-3">
+        <div class="card">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Card Normal</h3>
+          <p style="color: var(--text-secondary); font-size: 0.875rem;">
+            Esta es una card estándar sin interacción.
+          </p>
+        </div>
+
+        <div class="card card-hover">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Card con Hover</h3>
+          <p style="color: var(--text-secondary); font-size: 0.875rem;">
+            Pasa el mouse por encima para ver el efecto.
+          </p>
+        </div>
+
+        <div class="card" style="border-color: var(--accent-primary); box-shadow: 0 0 0 2px rgba(0, 255, 194, 0.2);">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Card Seleccionada</h3>
+          <p style="color: var(--text-secondary); font-size: 0.875rem;">
+            Estado activo con borde neón.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FLOATING TABLE ROWS ===== -->
+    <div class="section">
+      <h2 class="section-title">📋 Floating Table Rows (Nueva Estética)</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Remplazo de tablas tradicionales: cada fila es un bloque flotante independiente.
+      </p>
+
+      <!-- Table Header -->
+      <div class="table-header">
+        <div class="table-header-cell">Nombre</div>
+        <div class="table-header-cell">Email</div>
+        <div class="table-header-cell">Actividad</div>
+        <div class="table-header-cell">Estado Pago</div>
+        <div class="table-header-cell">Acciones</div>
+      </div>
+
+      <!-- Table Rows -->
+      <div class="floating-row">
+        <div class="floating-row-content">
+          <div>
+            <div class="text-primary font-medium">Juan Pérez</div>
+          </div>
+          <div class="text-secondary text-sm">juan.perez@email.com</div>
+          <div class="text-secondary text-sm">Basketball</div>
+          <div><span class="badge badge-active">Pagado</span></div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;">Editar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-row selected">
+        <div class="floating-row-content">
+          <div>
+            <div class="text-primary font-medium">María García</div>
+          </div>
+          <div class="text-secondary text-sm">maria.garcia@email.com</div>
+          <div class="text-secondary text-sm">Volleyball</div>
+          <div><span class="badge badge-pending">Pendiente</span></div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;">Editar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-row">
+        <div class="floating-row-content">
+          <div>
+            <div class="text-primary font-medium">Carlos López</div>
+          </div>
+          <div class="text-secondary text-sm">carlos.lopez@email.com</div>
+          <div class="text-secondary text-sm">Karate</div>
+          <div><span class="badge badge-alert">Vencido</span></div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;">Editar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-row">
+        <div class="floating-row-content">
+          <div>
+            <div class="text-primary font-medium">Ana Martínez</div>
+          </div>
+          <div class="text-secondary text-sm">ana.martinez@email.com</div>
+          <div class="text-secondary text-sm">Gym</div>
+          <div><span class="badge badge-active">Pagado</span></div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;">Editar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SPLIT SCREEN LAYOUT ===== -->
+    <div class="section">
+      <h2 class="section-title">🖥️ Split-Screen Layout (Master/Detail)</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Layout de dos paneles: Izquierda (35%) para navegación + listas, Derecha (65%) para detalles/formularios.
+      </p>
+
+      <div class="split-screen-demo">
+        <!-- LEFT PANEL -->
+        <div class="split-left">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 20px;">Panel Izquierdo</h3>
+
+          <!-- Sidebar Navigation -->
+          <div style="margin-bottom: 24px;">
+            <div class="sidebar-item active">
+              <div class="sidebar-icon">📊</div>
+              <span>Dashboard</span>
+            </div>
+            <div class="sidebar-item">
+              <div class="sidebar-icon">👥</div>
+              <span>Miembros</span>
+            </div>
+            <div class="sidebar-item">
+              <div class="sidebar-icon">💳</div>
+              <span>Pagos</span>
+            </div>
+            <div class="sidebar-item">
+              <div class="sidebar-icon">🏀</div>
+              <span>Actividades</span>
+            </div>
+          </div>
+
+          <!-- List Preview -->
+          <div>
+            <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase;">
+              Lista de Miembros
+            </h4>
+            <div style="font-size: 0.875rem;">
+              <div style="padding: 12px; background: var(--surface-default); border-radius: 4px; margin-bottom: 8px; cursor: pointer;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface-default)'">
+                <div style="font-weight: 600; color: var(--text-primary);">Juan Pérez</div>
+                <div style="color: var(--text-secondary); font-size: 0.75rem;">Basketball</div>
+              </div>
+              <div style="padding: 12px; background: var(--accent-primary); color: #000; border-radius: 4px; margin-bottom: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 0 20px rgba(0, 255, 194, 0.2);">
+                <div>María García</div>
+                <div style="opacity: 0.7; font-size: 0.75rem;">Volleyball</div>
+              </div>
+              <div style="padding: 12px; background: var(--surface-default); border-radius: 4px; margin-bottom: 8px; cursor: pointer;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface-default)'">
+                <div style="font-weight: 600; color: var(--text-primary);">Carlos López</div>
+                <div style="color: var(--text-secondary); font-size: 0.75rem;">Karate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="split-right">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 20px;">Panel Derecho (Detalle)</h3>
+
+          <!-- Member Detail Card -->
+          <div class="card mb-4">
+            <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">María García</h2>
+            <p style="color: var(--text-secondary);">maria.garcia@email.com</p>
+          </div>
+
+          <!-- Tabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-default);">
+            <button style="padding: 12px 16px; border: none; background: transparent; color: var(--accent-primary); border-bottom: 2px solid var(--accent-primary); cursor: pointer; font-weight: 600;">
+              Perfil
+            </button>
+            <button style="padding: 12px 16px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer;">
+              Pagos
+            </button>
+            <button style="padding: 12px 16px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer;">
+              Familia
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="card">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.875rem;">
+              <div>
+                <div style="color: var(--text-tertiary); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 4px;">Actividad</div>
+                <div style="color: var(--text-primary);">Volleyball</div>
+              </div>
+              <div>
+                <div style="color: var(--text-tertiary); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 4px;">Estado</div>
+                <div><span class="badge badge-active">Activo</span></div>
+              </div>
+              <div>
+                <div style="color: var(--text-tertiary); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 4px;">Teléfono</div>
+                <div style="color: var(--text-primary);">+54 11 2345-6789</div>
+              </div>
+              <div>
+                <div style="color: var(--text-tertiary); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 4px;">Estado Pago</div>
+                <div><span class="badge badge-pending">Pendiente</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <div style="text-align: center; margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border-default);">
+      <p style="color: var(--text-secondary); font-size: 0.875rem;">
+        Design System Preview - Club Comandante Espora © 2026
+      </p>
+      <p style="color: var(--text-tertiary); font-size: 0.75rem; margin-top: 8px;">
+        Dark Swiss Split-Screen Fintech Terminal Aesthetic
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    console.log('%c Club Comandante Espora Design System ', 'background: #00FFC2; color: #000; font-size: 20px; font-weight: bold; padding: 10px;');
+    console.log('%c Dark Fintech Terminal Aesthetic Preview ', 'background: #1A1A1A; color: #00FFC2; font-size: 14px; padding: 5px;');
+  </script>
+</body>
+</html>
