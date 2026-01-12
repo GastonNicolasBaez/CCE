@@ -154,22 +154,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     }
   ]
 
-  // Only use the hook after mounting to avoid SSR issues
-  const commandPalette = isMounted ? useCommandPalette(commands) : null
+  // Always call hooks unconditionally (React rules)
+  // But only render the component after client-side mount
+  const { isOpen, open, close, toggle, CommandPaletteComponent } = useCommandPalette(commands)
 
   return (
-    <CommandPaletteContext.Provider
-      value={commandPalette ? {
-        open: commandPalette.open,
-        close: commandPalette.close,
-        toggle: commandPalette.toggle
-      } : {
-        open: () => {},
-        close: () => {},
-        toggle: () => {}
-      }}
-    >
-      {isMounted && commandPalette?.CommandPaletteComponent}
+    <CommandPaletteContext.Provider value={{ open, close, toggle }}>
+      {isMounted && CommandPaletteComponent}
       {children}
     </CommandPaletteContext.Provider>
   )
