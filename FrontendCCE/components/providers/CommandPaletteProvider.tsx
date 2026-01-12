@@ -139,9 +139,11 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       icon: LogOut,
       keywords: ['salir', 'logout', 'exit'],
       onSelect: () => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        router.push('/login')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          router.push('/login')
+        }
       }
     }
   ]

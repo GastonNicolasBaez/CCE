@@ -22,9 +22,15 @@ export default function Home() {
 
   useEffect(() => {
     // Detect if we're on a subdomain
-    const slug = getTenantSlugFromSubdomain()
-    setTenantSlug(slug)
-    setIsLoading(false)
+    try {
+      const slug = getTenantSlugFromSubdomain()
+      setTenantSlug(slug)
+    } catch (error) {
+      console.error('Error detecting tenant:', error)
+      setTenantSlug(null)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   const renderContent = () => {
