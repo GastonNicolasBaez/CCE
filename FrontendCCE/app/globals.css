@@ -2,7 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@700;900&display=swap');
+
+/* ===== CSS VARIABLES (Design Tokens) ===== */
+:root {
+  /* Backgrounds */
+  --bg-primary: #121212;
+  --bg-secondary: #1A1A1A;
+  --bg-tertiary: #252525;
+
+  /* Surfaces */
+  --surface-default: #252525;
+  --surface-hover: #2D2D2D;
+  --surface-active: #333333;
+
+  /* Borders */
+  --border-default: #333333;
+  --border-emphasis: #404040;
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --text-tertiary: #666666;
+
+  /* Accents */
+  --accent-primary: #00FFC2;
+  --accent-primary-hover: #00E5B0;
+  --accent-secondary: #00E5FF;
+  --accent-alert: #FF4757;
+  --accent-alert-hover: #FF3545;
+  --accent-warning: #FFAA00;
+  --accent-success: #00FF88;
+  --accent-focus: #BB86FC;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Transitions */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+}
+
+/* ===== CUSTOM SCROLLBARS ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-emphasis);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-emphasis) var(--bg-primary);
+}
 
 @layer base {
   html {
@@ -73,27 +144,200 @@
   .form-label {
     @apply block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2;
   }
+
+  /* ===== NEW: FINTECH DESIGN COMPONENTS ===== */
+
+  /* Buttons */
+  .btn-primary-fintech {
+    @apply bg-accent-primary text-black font-semibold;
+    @apply px-6 py-3 rounded-sharp;
+    @apply shadow-glow-primary;
+    @apply transition-all duration-[100ms];
+    @apply hover:bg-accent-primary-hover hover:shadow-glow-primary-lg hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+  }
+
+  .btn-secondary-fintech {
+    @apply bg-transparent text-text-primary font-semibold;
+    @apply px-6 py-3 rounded-sharp;
+    @apply border-2 border-border-emphasis;
+    @apply transition-all duration-[100ms];
+    @apply hover:bg-surface-hover hover:border-accent-primary;
+  }
+
+  .btn-danger-fintech {
+    @apply bg-accent-alert text-white font-semibold;
+    @apply px-6 py-3 rounded-sharp;
+    @apply shadow-glow-alert;
+    @apply transition-all duration-[100ms];
+    @apply hover:bg-accent-alert-hover hover:shadow-glow-alert-lg hover:-translate-y-0.5;
+  }
+
+  /* Input Fields */
+  .input-fintech {
+    @apply bg-bg-tertiary text-text-primary;
+    @apply border border-border-default rounded-sharp;
+    @apply px-4 py-3;
+    @apply placeholder:text-text-tertiary;
+    @apply transition-all duration-[100ms];
+    @apply focus:outline-none focus:border-accent-primary focus:shadow-glow-focus;
+  }
+
+  .input-fintech-error {
+    @apply input-fintech;
+    @apply border-accent-alert;
+    @apply focus:border-accent-alert focus:shadow-glow-focus-alert;
+  }
+
+  /* Cards */
+  .card-fintech {
+    @apply bg-surface-default;
+    @apply border border-border-default rounded-sharp;
+    @apply p-6;
+  }
+
+  /* Metric Cards */
+  .metric-card-fintech {
+    @apply card-fintech;
+  }
+
+  .metric-label-fintech {
+    @apply text-text-secondary text-xs font-semibold uppercase tracking-wide;
+    @apply mb-3;
+  }
+
+  .metric-value-fintech {
+    @apply font-mono text-5xl font-black;
+    @apply text-text-primary;
+    @apply tracking-tighter leading-none;
+    @apply mb-3;
+  }
+
+  .metric-change-positive {
+    @apply text-accent-success text-sm font-semibold;
+  }
+
+  .metric-change-negative {
+    @apply text-accent-alert text-sm font-semibold;
+  }
+
+  /* Floating Table Rows */
+  .floating-row {
+    @apply bg-surface-default;
+    @apply border border-border-default rounded-sharp;
+    @apply p-4 mb-2;
+    @apply transition-all duration-[100ms];
+    @apply hover:bg-surface-hover hover:border-border-emphasis;
+    @apply cursor-pointer;
+  }
+
+  .floating-row-selected {
+    @apply floating-row;
+    @apply border-accent-primary shadow-glow-primary;
+  }
+
+  /* Table Headers */
+  .table-header-fintech {
+    @apply text-text-secondary text-xs font-semibold uppercase tracking-wide;
+    @apply py-3 px-4;
+  }
+
+  /* Status Badges */
+  .badge-base {
+    @apply px-3 py-1 rounded-sharp;
+    @apply text-xs font-semibold uppercase tracking-wide;
+    @apply inline-block;
+  }
+
+  .badge-active {
+    @apply badge-base;
+    @apply bg-accent-primary/20 text-accent-primary;
+  }
+
+  .badge-pending {
+    @apply badge-base;
+    @apply bg-accent-warning/20 text-accent-warning;
+  }
+
+  .badge-alert {
+    @apply badge-base;
+    @apply bg-accent-alert/20 text-accent-alert;
+  }
+
+  .badge-inactive {
+    @apply badge-base;
+    @apply bg-surface-active text-text-tertiary;
+  }
+
+  /* Sidebar Nav Items (Fintech) */
+  .sidebar-item-fintech {
+    @apply flex items-center gap-3;
+    @apply px-4 py-3 rounded-sharp;
+    @apply text-text-secondary;
+    @apply transition-all duration-[100ms];
+    @apply hover:bg-surface-hover hover:text-text-primary;
+    @apply cursor-pointer;
+  }
+
+  .sidebar-item-active-fintech {
+    @apply sidebar-item-fintech;
+    @apply bg-accent-primary text-black font-semibold;
+    @apply shadow-glow-primary;
+  }
+
+  /* Split Screen Layout */
+  .split-screen-container {
+    @apply flex flex-col lg:flex-row;
+    @apply h-[calc(100vh-60px)];
+    @apply overflow-hidden;
+  }
+
+  .split-screen-left {
+    @apply w-full lg:w-[35%] lg:min-w-[320px] lg:max-w-[480px];
+    @apply bg-bg-secondary;
+    @apply border-r border-border-default;
+    @apply overflow-y-auto;
+  }
+
+  .split-screen-right {
+    @apply flex-1;
+    @apply bg-bg-primary;
+    @apply overflow-y-auto;
+  }
 }
 
 @layer utilities {
   .text-gradient {
     @apply bg-gradient-to-r from-blue-600 to-orange-500 bg-clip-text text-transparent;
   }
-  
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   .shadow-glass {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   }
-  
+
   .shadow-3xl {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* NEW: Fintech Utilities */
+  .text-gradient-fintech {
+    @apply bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent;
+  }
+
+  .glow-text-primary {
+    text-shadow: 0 0 20px rgba(0, 255, 194, 0.5);
+  }
+
+  .glow-text-alert {
+    text-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
   }
 }
