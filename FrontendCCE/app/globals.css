@@ -176,7 +176,7 @@
   /* Input Fields */
   .input-fintech {
     @apply bg-bg-tertiary text-text-primary;
-    @apply border border-border-default rounded-sharp;
+    @apply border border-border rounded-sharp;
     @apply px-4 py-3;
     @apply placeholder:text-text-tertiary;
     @apply transition-all duration-[100ms];
@@ -191,8 +191,7 @@
 
   /* Cards */
   .card-fintech {
-    @apply bg-surface-default;
-    @apply border border-border-default rounded-sharp;
+    @apply bg-surface border border-border rounded-sharp;
     @apply p-6;
   }
 
@@ -223,8 +222,8 @@
 
   /* Floating Table Rows */
   .floating-row {
-    @apply bg-surface-default;
-    @apply border border-border-default rounded-sharp;
+    @apply bg-surface;
+    @apply border border-border rounded-sharp;
     @apply p-4 mb-2;
     @apply transition-all duration-[100ms];
     @apply hover:bg-surface-hover hover:border-border-emphasis;
@@ -295,7 +294,7 @@
   .split-screen-left {
     @apply w-full lg:w-[35%] lg:min-w-[320px] lg:max-w-[480px];
     @apply bg-bg-secondary;
-    @apply border-r border-border-default;
+    @apply border-r border-border;
     @apply overflow-y-auto;
   }
 
